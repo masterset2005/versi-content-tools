@@ -27,6 +27,7 @@ $options = array(
 	'versi_vision_model',
 	'versi_text_model',
 	'versi_content_limit',
+	'versi_match_author_tone',
 	'versi_debug_mode',
 	'versi_job_status',
 	// Legacy autoalt_* options (cleanup from migration).

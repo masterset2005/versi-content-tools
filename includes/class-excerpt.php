@@ -67,6 +67,13 @@ class Versi_Excerpt_Processor {
 		$system = $this->build_prompt( $existing_excerpt, $target_length );
 		$prompt = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
 
+		if ( '1' === get_option( 'versi_match_author_tone', '0' ) ) {
+			$style = $shared->get_author_style_sample( $post_id );
+			if ( $style ) {
+				$system .= "\n\n" . $style;
+			}
+		}
+
 		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
 			error_log( '--- VERSI PROMPT DEBUG (excerpt) ---' );
 			error_log( 'SYSTEM: ' . $system );

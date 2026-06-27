@@ -130,6 +130,16 @@ class Versi_Admin {
 
 		register_setting(
 			'versi_settings',
+			'versi_match_author_tone',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '0',
+			)
+		);
+
+		register_setting(
+			'versi_settings',
 			'versi_debug_mode',
 			array(
 				'type'              => 'string',
@@ -383,6 +393,7 @@ class Versi_Admin {
 					<a class="nav-tab nav-tab-active" href="#versi-tab-general"><?php esc_html_e( 'General', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-alt"><?php esc_html_e( 'Alt Text', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-excerpt"><?php esc_html_e( 'Excerpts', 'versi-content-tools' ); ?></a>
+					<a class="nav-tab" href="#versi-tab-about"><?php esc_html_e( 'About', 'versi-content-tools' ); ?></a>
 				</h2>
 
 				<div id="versi-tab-general" class="versi-tab">
@@ -443,6 +454,17 @@ class Versi_Admin {
 									?>
 								</select>
 								<p class="description"><?php esc_html_e( 'Preferred model for text-only processing (excerpts, alt-text synthesizer).', 'versi-content-tools' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="versi_match_author_tone"><?php esc_html_e( 'Match Author Tone', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<label>
+									<input type="checkbox" id="versi_match_author_tone" name="versi_match_author_tone" value="1" <?php checked( get_option( 'versi_match_author_tone', '0' ), '1' ); ?>>
+									<?php esc_html_e( 'Include samples of the author\'s recent writing in prompts so generated content matches their tone and style.', 'versi-content-tools' ); ?>
+								</label>
 							</td>
 						</tr>
 						<tr>
@@ -540,6 +562,7 @@ class Versi_Admin {
 {article_title}   - Parent post title
 {article_content} - Parent post body content (first <?php echo absint( get_option( 'versi_content_limit', 500 ) ); ?> chars; also available as {article_excerpt})
 {existing_alt}    - Current alt text in database
+{author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 									</pre>
 								</details>
 								<details style="margin-top:8px;">
@@ -568,6 +591,7 @@ class Versi_Admin {
 {article_content} - Parent post body content (first <?php echo absint( get_option( 'versi_content_limit', 500 ) ); ?> chars; also available as {article_excerpt})
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
+{author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 
 Usage: Include these placeholders in your prompt text.
 Example: "The image is about {article_title}. Visual: {visual_desc}"
@@ -599,6 +623,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 {article_content} - Parent post body content (first <?php echo absint( get_option( 'versi_content_limit', 500 ) ); ?> chars; also available as {article_excerpt})
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
+{author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 									</pre>
 								</details>
 								<details style="margin-top:8px;">
@@ -643,6 +668,21 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 								<?php echo esc_textarea( get_option( 'versi_excerpt_prompt', '' ) ); ?>
 								</textarea>
 								<p class="description"><?php esc_html_e( 'Custom system instruction for excerpt generation. Leave empty for the built-in default.', 'versi-content-tools' ); ?></p>
+								<details style="margin-top:8px;">
+									<summary><?php esc_html_e( 'Available variables', 'versi-content-tools' ); ?></summary>
+									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;color:#666;">
+{post_content}    - Full post body content (truncated per Content Limit)
+{existing_excerpt}- Current excerpt in the database (empty if none)
+{target_length}   - Target word count from the setting above
+{author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
+									</pre>
+								</details>
+								<details style="margin-top:8px;">
+									<summary><?php esc_html_e( 'Default prompt (click to expand)', 'versi-content-tools' ); ?></summary>
+									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
+									<?php echo esc_textarea( Versi_Excerpt_Processor::init()->build_prompt() ); ?>
+									</pre>
+								</details>
 							</td>
 						</tr>
 					</table>
@@ -650,6 +690,29 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 				<?php submit_button(); ?>
 			</form>
+
+			<div id="versi-tab-about" class="versi-tab" style="display:none;margin-top:20px;">
+				<div class="postbox" style="max-width:640px;padding:24px;">
+					<h2><?php esc_html_e( 'Versi Content Tools', 'versi-content-tools' ); ?> <span class="version">v<?php echo esc_html( VERSI_VERSION ); ?></span></h2>
+					<p><?php esc_html_e( 'Generate image alt text and post excerpts using WordPress AI Client (WP 7.0+).', 'versi-content-tools' ); ?></p>
+					<hr>
+					<p>
+						<strong><?php esc_html_e( 'Author:', 'versi-content-tools' ); ?></strong>
+						<a href="https://profiles.wordpress.org/masterset2005/" target="_blank" rel="noopener noreferrer">masterset2005</a>
+					</p>
+					<p>
+						<a href="https://github.com/masterset2005/versi-content-tools" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View on GitHub', 'versi-content-tools' ); ?></a>
+						&middot;
+						<a href="https://wordpress.org/support/plugin/versi-content-tools/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Support', 'versi-content-tools' ); ?></a>
+					</p>
+					<hr>
+					<p>
+						<a href="https://www.paypal.com/donate/?hosted_button_id=YOUR_BUTTON_ID" target="_blank" rel="noopener noreferrer" class="button button-secondary">
+							<?php esc_html_e( 'Donate via PayPal', 'versi-content-tools' ); ?>
+						</a>
+					</p>
+				</div>
+			</div>
 		</div>
 
 		<script>

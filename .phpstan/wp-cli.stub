@@ -1,0 +1,53 @@
+<?php
+
+if ( ! class_exists( 'WP_CLI_Command' ) ) {
+	/**
+	 * Base class for WP-CLI commands.
+	 */
+	class WP_CLI_Command {
+	}
+}
+
+if ( ! class_exists( 'WP_CLI' ) ) {
+	/**
+	 * WP-CLI main class.
+	 */
+	class WP_CLI {
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function error( $message ) {
+		}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function line( $message ) {
+		}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function warning( $message ) {
+		}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function success( $message ) {
+		}
+
+		/**
+		 * @param string $name
+		 * @param string $class
+		 * @param array<string, mixed> $args
+		 * @return void
+		 */
+		public static function add_command( $name, $class, $args = array() ) {
+		}
+	}
+}

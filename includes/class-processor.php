@@ -89,7 +89,7 @@ class Versi_Processor {
 	 * Gather context for an attachment: caption, title, article content.
 	 *
 	 * @param int $attachment_id Attachment ID.
-	 * @return array{caption: string, title: string, article_title: string, article_content: string, existing_alt: string}
+	 * @return array{caption: string, title: string, article_title: string, article_content: string, existing_alt: string, author_style: string}
 	 */
 	public function get_attachment_context( $attachment_id ) {
 		$post      = get_post( $attachment_id );
@@ -100,22 +100,82 @@ class Versi_Processor {
 			'article_title'   => '',
 			'article_content' => '',
 			'existing_alt'    => $this->sanitize_input( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
+			'author_style'    => '',
 		);
 
+		$parent = null;
 		if ( $parent_id ) {
 			$parent = get_post( $parent_id );
-			if ( $parent ) {
-				$context['article_title']   = $this->sanitize_input( $parent->post_title );
-				$context['article_content'] = $this->sanitize_input(
-					mb_substr(
-						wp_strip_all_tags( $parent->post_content ),
-						0,
-						absint( get_option( 'versi_content_limit', 500 ) )
-					)
-				);
+		}
+
+		if ( $parent ) {
+			$context['article_title']   = $this->sanitize_input( $parent->post_title );
+			$context['article_content'] = $this->sanitize_input(
+				mb_substr(
+					wp_strip_all_tags( $parent->post_content ),
+					0,
+					absint( get_option( 'versi_content_limit', 500 ) )
+				)
+			);
+		}
+
+		if ( '1' === get_option( 'versi_match_author_tone', '0' ) ) {
+			$style_post_id = $parent ? $parent->ID : 0;
+			if ( $style_post_id ) {
+				$context['author_style'] = $this->get_author_style_sample( $style_post_id );
 			}
 		}
+
 		return $context;
+	}
+
+	/**
+	 * Sample recent posts by the same author to extract tone/style reference.
+	 *
+	 * @param int $post_id Current post ID to derive author from.
+	 * @return string Empty if no samples, or a formatted style reference.
+	 */
+	public function get_author_style_sample( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return '';
+		}
+
+		$samples = get_posts(
+			array(
+				'author'           => $post->post_author,
+				'post_type'        => $post->post_type,
+				'post_status'      => 'publish',
+				'posts_per_page'   => 3,
+				'orderby'          => 'date',
+				'order'            => 'DESC',
+				'exclude'          => array( $post_id ),
+				'suppress_filters' => true,
+			)
+		);
+
+		if ( empty( $samples ) ) {
+			return '';
+		}
+
+		$pieces = array();
+		foreach ( $samples as $sample ) {
+			$text = wp_strip_all_tags( $sample->post_content );
+			$text = trim( preg_replace( '/\s+/', ' ', $text ) );
+			if ( mb_strlen( $text ) < 30 ) {
+				continue;
+			}
+			$pieces[] = mb_substr( $text, 0, 250 );
+			if ( count( $pieces ) >= 2 ) {
+				break;
+			}
+		}
+
+		if ( empty( $pieces ) ) {
+			return '';
+		}
+
+		return "Author's writing style (recent samples):\n- \"" . implode( "\"\n- \"", $pieces ) . '"';
 	}
 
 	/**

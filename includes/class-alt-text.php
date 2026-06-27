@@ -202,8 +202,8 @@ class Versi_Alt_Text_Processor {
 		}
 
 		$system = str_replace(
-			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}' ),
-			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '' ),
+			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}' ),
+			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '', $context['author_style'] ),
 			$system
 		);
 
@@ -222,8 +222,8 @@ class Versi_Alt_Text_Processor {
 		if ( ! empty( trim( $custom ) ) ) {
 			$system = $custom;
 			$system = str_replace(
-				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}' ),
-				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt ),
+				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}' ),
+				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt, $context['author_style'] ),
 				$system
 			);
 		} else {
@@ -295,7 +295,8 @@ class Versi_Alt_Text_Processor {
 			. '**Title:** {title}' . "\n"
 			. '**Article:** {article_title}' . "\n"
 			. '**Content:** {article_content}' . "\n"
-			. '**Current alt:** {existing_alt}' . "\n\n"
+			. '**Current alt:** {existing_alt}' . "\n"
+			. '**Author style:** {author_style}' . "\n\n"
 			. 'Output a single clean string. When uncertain, use `[[DECORATIVE_ALT]]`.';
 	}
 
@@ -311,6 +312,7 @@ class Versi_Alt_Text_Processor {
 			. '**Rules:**' . "\n"
 			. '- If decorative or redundant → `[[DECORATIVE_ALT]]`' . "\n"
 			. '- Otherwise → one sentence describing the image using context' . "\n"
+			. '- Match the author writing style from the style samples below' . "\n"
 			. '- **Forbidden labels:** `Informative:`, `Output:`, `Functional:`, `Alt:`' . "\n"
 			. '- **Forbidden starts:** `Image of`, `Photo of`, `Picture of`, `An image shows`, `The image features`' . "\n"
 			. '- Max **125 characters** — no quotes, no preamble, no explanations' . "\n\n"

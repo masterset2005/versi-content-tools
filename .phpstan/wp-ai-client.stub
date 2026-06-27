@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * Builder for AI Client prompts.
+ */
+class WP_AI_Client_Prompt_Builder {
+	/**
+	 * @param string $system_instruction
+	 * @return $this
+	 */
+	public function using_system_instruction( $system_instruction ) {
+		return $this;
+	}
+
+	/**
+	 * @param string $file_url
+	 * @param string $mime_type
+	 * @return $this
+	 */
+	public function with_file( $file_url, $mime_type ) {
+		return $this;
+	}
+
+	/**
+	 * @return string|\WP_Error
+	 */
+	public function generate_text() {
+	}
+}
+
+/**
+ * Create an AI Client prompt builder.
+ *
+ * @param string $prompt User message content.
+ * @return WP_AI_Client_Prompt_Builder
+ */
+function wp_ai_client_prompt( $prompt ) {
+}
