@@ -977,12 +977,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					done = job.done;
 					
 					$resumeNotice.show();
-					$resumeText.text('
-					<?php
-						// translators: %1$s: mode, %2$s: done, %3$s: total
-						echo esc_js( __( 'You have a paused job (%1$s mode, %2$s/%3$s items processed).', 'versi-content-tools' ) );
-					?>
-						'.replace('%1$s', mode).replace('%2$s', done).replace('%3$s', total));
+					var msg = <?php echo json_encode( __( 'You have a paused job (%1$s mode, %2$s/%3$s items processed).', 'versi-content-tools' ) ); ?>;
+					$resumeText.text(msg.replace('%1$s', mode).replace('%2$s', done).replace('%3$s', total));
 				}
 			});
 
@@ -1030,6 +1026,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			}
 
 			$modeBtns.on('click', function() {
+				console.log('Button clicked');
 				var $btn = $(this);
 				mode = $btn.data('mode');
 
@@ -1050,6 +1047,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				done = 0;
 				offset = 0;
 
+				console.log('Calling fetchBatch');
 				fetchBatch();
 			});
 
@@ -1186,7 +1184,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			}
 
 			function fetchBatch() {
-				if (!running) return;
+				if (!running) {
+					console.log('fetchBatch: not running');
+					return;
+				}
+				console.log('Fetching batch...');
 
 				$.ajax({
 					url: ajaxurl,
@@ -1200,6 +1202,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						batch: batchSize,
 					},
 					success: function(response) {
+						console.log('fetchBatch: success', response);
 						if (stopRequested) return;
 
 						var d = response.data;
@@ -1219,7 +1222,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							setTimeout(fetchBatch, 100);
 						});
 					},
-					error: function() {
+					error: function(xhr, status, error) {
+						console.log('fetchBatch: error', error);
 						if (stopRequested) return;
 						running = false;
 						$stopLink.hide();
