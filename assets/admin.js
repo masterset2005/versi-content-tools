@@ -173,7 +173,7 @@
 			method: 'POST',
 			data: {
 				action: actionName,
-				nonce: data.nonce,
+				_ajax_nonce: data.nonce,
 				id: id,
 				mode: mode,
 			},
@@ -205,7 +205,7 @@
 			method: 'POST',
 			data: {
 				action: actionName,
-				nonce: data.nonce,
+				_ajax_nonce: data.nonce,
 				id: id,
 				alt: prev,
 			},
@@ -250,7 +250,7 @@
 			method: 'POST',
 			data: {
 				action: actionName,
-				nonce: data.nonce,
+				_ajax_nonce: data.nonce,
 				id: id,
 				mode: mode,
 			},
