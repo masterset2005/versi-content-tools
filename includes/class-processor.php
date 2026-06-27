@@ -181,15 +181,15 @@ class Versi_Processor {
 	 */
 	public function get_image_ids( $mode, $offset, $batch, $cat_id = 0 ) {
 		$args = array(
-			'post_type'      => 'attachment',
-			'post_mime_type' => 'image',
-			'post_status'    => 'inherit',
-			'posts_per_page' => $batch,
-			'offset'         => $offset,
-			'orderby'        => 'ID',
-			'order'          => 'ASC',
-			'fields'         => 'ids',
-			'no_found_rows'  => false,
+			'post_type'        => 'attachment',
+			'post_mime_type'   => 'image',
+			'post_status'      => 'inherit',
+			'posts_per_page'   => $batch,
+			'offset'           => $offset,
+			'orderby'          => 'ID',
+			'order'            => 'ASC',
+			'fields'           => 'ids',
+			'no_found_rows'    => false,
 			'suppress_filters' => true,
 		);
 
@@ -235,14 +235,14 @@ class Versi_Processor {
 	 */
 	public function get_excerpt_ids( $mode, $offset, $batch ) {
 		$args = array(
-			'post_type'      => 'post',
-			'post_status'    => 'publish',
-			'posts_per_page' => $batch,
-			'offset'         => $offset,
-			'orderby'        => 'ID',
-			'order'          => 'ASC',
-			'fields'         => 'ids',
-			'no_found_rows'  => false,
+			'post_type'        => 'post',
+			'post_status'      => 'publish',
+			'posts_per_page'   => $batch,
+			'offset'           => $offset,
+			'orderby'          => 'ID',
+			'order'            => 'ASC',
+			'fields'           => 'ids',
+			'no_found_rows'    => false,
 			'suppress_filters' => true,
 		);
 

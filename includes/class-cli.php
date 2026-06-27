@@ -119,11 +119,11 @@ class Versi_CLI extends WP_CLI_Command {
 			WP_CLI::error( 'Mode must be missing or improve.' );
 		}
 
-		$shared      = Versi_Processor::init();
-		$excl_proc   = Versi_Excerpt_Processor::init();
-		$offset      = 0;
-		$batch       = absint( get_option( 'versi_batch_size', 5 ) );
-		$done        = 0;
+		$shared    = Versi_Processor::init();
+		$excl_proc = Versi_Excerpt_Processor::init();
+		$offset    = 0;
+		$batch     = absint( get_option( 'versi_batch_size', 5 ) );
+		$done      = 0;
 
 		if ( $batch < 1 ) {
 			$batch = 1;

@@ -1,0 +1,20 @@
+{
+	"name": "masterset2005/versi-content-tools",
+	"description": "AI-powered alt-text and excerpt generation plugin for WordPress.",
+	"type": "wordpress-plugin",
+	"require": {
+		"php": ">=8.1"
+	},
+	"require-dev": {
+		"wp-coding-standards/wpcs": "^3.1"
+	},
+	"scripts": {
+		"lint": "phpcs --standard=phpcs.xml.dist",
+		"lint:fix": "phpcbf --standard=phpcs.xml.dist"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		}
+	}
+}

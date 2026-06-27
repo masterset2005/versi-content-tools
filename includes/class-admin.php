@@ -98,16 +98,16 @@ class Versi_Admin {
 		}
 
 		$data = array(
-			'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-			'nonce'         => wp_create_nonce( 'versi_process' ),
+			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+			'nonce'          => wp_create_nonce( 'versi_process' ),
 			'getModelsNonce' => wp_create_nonce( 'versi_get_models' ),
-			'batchSize'     => $batch_sz,
+			'batchSize'      => $batch_sz,
 		);
 
 		if ( $is_upload || $is_processing ) {
-			$action = isset( $_GET['versi_action'] ) ? sanitize_key( wp_unslash( $_GET['versi_action'] ) ) : '';
-			$workload = isset( $_GET['versi_workload'] ) ? sanitize_key( wp_unslash( $_GET['versi_workload'] ) ) : 'alt';
-			$data['action'] = $action;
+			$action           = isset( $_GET['versi_action'] ) ? sanitize_key( wp_unslash( $_GET['versi_action'] ) ) : '';
+			$workload         = isset( $_GET['versi_workload'] ) ? sanitize_key( wp_unslash( $_GET['versi_workload'] ) ) : 'alt';
+			$data['action']   = $action;
 			$data['workload'] = $workload;
 		}
 
@@ -493,13 +493,13 @@ class Versi_Admin {
 								<?php
 								wp_dropdown_categories(
 									array(
-										'name'              => 'versi_alt_cat_filter',
-										'id'                => 'versi_alt_cat_filter',
-										'show_option_none'  => __( 'All Categories', 'versi-content-tools' ),
+										'name'             => 'versi_alt_cat_filter',
+										'id'               => 'versi_alt_cat_filter',
+										'show_option_none' => __( 'All Categories', 'versi-content-tools' ),
 										'option_none_value' => 0,
-										'selected'          => get_option( 'versi_alt_cat_filter', 0 ),
-										'hierarchical'      => true,
-										'hide_empty'        => false,
+										'selected'         => get_option( 'versi_alt_cat_filter', 0 ),
+										'hierarchical'     => true,
+										'hide_empty'       => false,
 									)
 								);
 								?>
@@ -778,19 +778,74 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		</p>
 
 		<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-			<a href="<?php echo esc_url( add_query_arg( array( 'versi_workload' => 'alt', 'versi_action' => 'missing' ) ) ); ?>" class="button button-primary <?php echo 'missing' === $action ? 'disabled' : ''; ?>">
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'versi_workload' => 'alt',
+						'versi_action'   => 'missing',
+					)
+				)
+			);
+			?>
+						" class="button button-primary <?php echo 'missing' === $action ? 'disabled' : ''; ?>">
 				<?php esc_html_e( 'Fill Missing Alt Text', 'versi-content-tools' ); ?>
 			</a>
-			<a href="<?php echo esc_url( add_query_arg( array( 'versi_workload' => 'alt', 'versi_action' => 'review' ) ) ); ?>" class="button <?php echo 'review' === $action ? 'disabled' : ''; ?>">
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'versi_workload' => 'alt',
+						'versi_action'   => 'review',
+					)
+				)
+			);
+			?>
+						" class="button <?php echo 'review' === $action ? 'disabled' : ''; ?>">
 				<?php esc_html_e( 'Review & Improve Alt Text', 'versi-content-tools' ); ?>
 			</a>
-			<a href="<?php echo esc_url( add_query_arg( array( 'versi_workload' => 'alt', 'versi_action' => 'regenerate' ) ) ); ?>" class="button <?php echo 'regenerate' === $action ? 'disabled' : ''; ?>">
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'versi_workload' => 'alt',
+						'versi_action'   => 'regenerate',
+					)
+				)
+			);
+			?>
+						" class="button <?php echo 'regenerate' === $action ? 'disabled' : ''; ?>">
 				<?php esc_html_e( 'Regenerate All Alt Text', 'versi-content-tools' ); ?>
 			</a>
-			<a href="<?php echo esc_url( add_query_arg( array( 'versi_workload' => 'alt', 'versi_action' => 'bg-missing' ) ) ); ?>" class="button autoalt-bg-btn" data-mode="missing" data-workload="alt">
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'versi_workload' => 'alt',
+						'versi_action'   => 'bg-missing',
+					)
+				)
+			);
+			?>
+			" class="button autoalt-bg-btn" data-mode="missing" data-workload="alt">
 				<?php esc_html_e( 'Background: Fill Missing', 'versi-content-tools' ); ?>
 			</a>
-			<a href="<?php echo esc_url( add_query_arg( array( 'versi_workload' => 'alt', 'versi_action' => 'bg-review' ) ) ); ?>" class="button autoalt-bg-btn" data-mode="review" data-workload="alt">
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'versi_workload' => 'alt',
+						'versi_action'   => 'bg-review',
+					)
+				)
+			);
+			?>
+			" class="button autoalt-bg-btn" data-mode="review" data-workload="alt">
 				<?php esc_html_e( 'Background: Review', 'versi-content-tools' ); ?>
 			</a>
 		</div>
@@ -828,10 +883,32 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		</p>
 
 		<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-			<a href="<?php echo esc_url( add_query_arg( array( 'versi_workload' => 'excerpt', 'versi_action' => 'missing' ) ) ); ?>" class="button button-primary <?php echo 'missing' === $action ? 'disabled' : ''; ?>">
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'versi_workload' => 'excerpt',
+						'versi_action'   => 'missing',
+					)
+				)
+			);
+			?>
+			" class="button button-primary <?php echo 'missing' === $action ? 'disabled' : ''; ?>">
 				<?php esc_html_e( 'Generate Missing Excerpts', 'versi-content-tools' ); ?>
 			</a>
-			<a href="<?php echo esc_url( add_query_arg( array( 'versi_workload' => 'excerpt', 'versi_action' => 'improve' ) ) ); ?>" class="button <?php echo 'improve' === $action ? 'disabled' : ''; ?>">
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'versi_workload' => 'excerpt',
+						'versi_action'   => 'improve',
+					)
+				)
+			);
+			?>
+			" class="button <?php echo 'improve' === $action ? 'disabled' : ''; ?>">
 				<?php esc_html_e( 'Improve All Excerpts', 'versi-content-tools' ); ?>
 			</a>
 		</div>
@@ -981,7 +1058,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			wp_send_json_error( 'Insufficient permissions' );
 		}
 
-		$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$id  = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$alt = isset( $_POST['alt'] ) ? sanitize_text_field( wp_unslash( $_POST['alt'] ) ) : '';
 
 		if ( ! $id ) {
@@ -1144,8 +1221,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$mode     = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
 		$workload = isset( $_POST['workload'] ) ? sanitize_key( $_POST['workload'] ) : 'alt';
 
-		$total   = 0;
-		$cat_id  = 0;
+		$total  = 0;
+		$cat_id = 0;
 
 		if ( 'alt' === $workload ) {
 			$cat_id = absint( get_option( 'versi_alt_cat_filter', 0 ) );
@@ -1177,8 +1254,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 		wp_send_json_success(
 			array(
-				'total'     => $total,
-				'workload'  => $workload,
+				'total'    => $total,
+				'workload' => $workload,
 			)
 		);
 	}

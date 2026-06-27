@@ -38,7 +38,7 @@ class Versi_Alt_Text_Processor {
 	 * @return array
 	 */
 	public function process_single( $attachment_id ) {
-		$shared = Versi_Processor::init();
+		$shared  = Versi_Processor::init();
 		$context = $shared->get_attachment_context( $attachment_id );
 		$file    = get_attached_file( $attachment_id );
 		$mime    = get_post_mime_type( $attachment_id );
@@ -72,10 +72,10 @@ class Versi_Alt_Text_Processor {
 
 		if ( 'single-pass' === $mode ) {
 			list( $system, $prompt ) = $this->build_single_prompt( $context );
-			$builder = wp_ai_client_prompt( $prompt )
+			$builder                 = wp_ai_client_prompt( $prompt )
 				->using_system_instruction( $system )
 				->with_file( $file, $mime );
-			$builder = $shared->apply_vision_preference( $builder );
+			$builder                 = $shared->apply_vision_preference( $builder );
 
 			if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
 				error_log( '--- VERSI PROMPT DEBUG (single-pass) ---' );
@@ -86,18 +86,24 @@ class Versi_Alt_Text_Processor {
 			$alt_text = $builder->generate_text();
 
 			if ( is_wp_error( $alt_text ) ) {
-				return $shared->result( $attachment_id, $title, 'error', null, sprintf(
+				return $shared->result(
+					$attachment_id,
+					$title,
+					'error',
+					null,
+					sprintf(
 					/* translators: %s: AI provider error message */
-					__( 'AI generation failed: %s', 'versi-content-tools' ),
-					$alt_text->get_error_message()
-				) );
+						__( 'AI generation failed: %s', 'versi-content-tools' ),
+						$alt_text->get_error_message()
+					)
+				);
 			}
 		} else {
 			list( $prompt, $system ) = $this->build_prompt();
-			$builder = wp_ai_client_prompt( $prompt )
+			$builder                 = wp_ai_client_prompt( $prompt )
 				->using_system_instruction( $system )
 				->with_file( $file, $mime );
-			$builder = $shared->apply_vision_preference( $builder );
+			$builder                 = $shared->apply_vision_preference( $builder );
 
 			if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
 				error_log( '--- VERSI PROMPT DEBUG (two-pass vision) ---' );
@@ -108,11 +114,17 @@ class Versi_Alt_Text_Processor {
 			$alt_text = $builder->generate_text();
 
 			if ( is_wp_error( $alt_text ) ) {
-				return $shared->result( $attachment_id, $title, 'error', null, sprintf(
+				return $shared->result(
+					$attachment_id,
+					$title,
+					'error',
+					null,
+					sprintf(
 					/* translators: %s: AI provider error message */
-					__( 'AI generation failed: %s', 'versi-content-tools' ),
-					$alt_text->get_error_message()
-				) );
+						__( 'AI generation failed: %s', 'versi-content-tools' ),
+						$alt_text->get_error_message()
+					)
+				);
 			}
 
 			$alt_text = $this->compare_alt_texts( $context, $alt_text );
@@ -218,12 +230,12 @@ class Versi_Alt_Text_Processor {
 			$system = $this->default_compare_prompt();
 		}
 
-		$prompt = "**Caption:** " . $context['caption'] . "\n"
-			. "**Title:** " . $context['title'] . "\n"
-			. "**Article:** " . $context['article_title'] . "\n"
-			. "**Content:** " . $context['article_content'] . "\n"
-			. "**Current alt:** " . $context['existing_alt'] . "\n\n"
-			. "**Vision:** " . $new_alt;
+		$prompt = '**Caption:** ' . $context['caption'] . "\n"
+			. '**Title:** ' . $context['title'] . "\n"
+			. '**Article:** ' . $context['article_title'] . "\n"
+			. '**Content:** ' . $context['article_content'] . "\n"
+			. '**Current alt:** ' . $context['existing_alt'] . "\n\n"
+			. '**Vision:** ' . $new_alt;
 
 		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
 			error_log( '--- VERSI PROMPT DEBUG (synthesizer) ---' );

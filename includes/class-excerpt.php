@@ -64,8 +64,8 @@ class Versi_Excerpt_Processor {
 			error_log( '--- VERSI MODE DEBUG --- Excerpt processing for post #' . $post_id );
 		}
 
-		$system  = $this->build_prompt( $existing_excerpt, $target_length );
-		$prompt  = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
+		$system = $this->build_prompt( $existing_excerpt, $target_length );
+		$prompt = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
 
 		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
 			error_log( '--- VERSI PROMPT DEBUG (excerpt) ---' );
@@ -80,11 +80,17 @@ class Versi_Excerpt_Processor {
 		$generated = $builder->generate_text();
 
 		if ( is_wp_error( $generated ) ) {
-			return $shared->result( $post_id, $post->post_title, 'error', null, sprintf(
+			return $shared->result(
+				$post_id,
+				$post->post_title,
+				'error',
+				null,
+				sprintf(
 				/* translators: %s: AI provider error message */
-				__( 'AI generation failed: %s', 'versi-content-tools' ),
-				$generated->get_error_message()
-			) );
+					__( 'AI generation failed: %s', 'versi-content-tools' ),
+					$generated->get_error_message()
+				)
+			);
 		}
 
 		$generated = $this->clean_excerpt( $generated, $target_length );

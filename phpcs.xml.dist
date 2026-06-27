@@ -2,7 +2,10 @@
 <ruleset name="versi-content-tools">
 	<description>PHPCS config for Versi Content Tools</description>
 
-	<rule ref="WordPress" />
+	<rule ref="WordPress">
+		<!-- Short descriptive filenames (class-admin.php etc.) are intentional -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+	</rule>
 
 	<config name="minimum_wp_version" value="7.0" />
 	<config name="text_domain" value="versi-content-tools" />
@@ -15,11 +18,27 @@
 	<exclude-pattern>*/.git/*</exclude-pattern>
 
 	<rule ref="WordPress.PHP.DevelopmentFunctions">
-		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log" />
+		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log_error_log" />
 	</rule>
 
 	<rule ref="WordPress.DB.SlowDBQuery">
 		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_query" />
 		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_tax_query" />
+	</rule>
+
+	<rule ref="WordPress.DB.DirectDatabaseQuery">
+		<!-- Stats queries use custom SQL for performance; caching is acceptable here -->
+		<exclude name="WordPress.DB.DirectDatabaseQuery.DirectQuery" />
+		<exclude name="WordPress.DB.DirectDatabaseQuery.NoCaching" />
+	</rule>
+
+	<rule ref="WordPress.Security.NonceVerification">
+		<!-- Read-only $_GET access for UI display context (settings/processing pages) -->
+		<exclude name="WordPress.Security.NonceVerification.Recommended" />
+	</rule>
+
+	<rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+		<!-- WordPress action/filter hook signatures often include unused params -->
+		<exclude name="Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed" />
 	</rule>
 </ruleset>

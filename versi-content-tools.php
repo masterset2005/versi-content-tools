@@ -11,6 +11,8 @@
  * Domain Path: /languages
  * Requires at least: 7.0
  * Requires PHP: 8.1
+ *
+ * @package Versi_Content_Tools
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -34,25 +36,25 @@ require_once VERSI_PLUGIN_DIR . 'includes/class-cli.php';
 function versi_upgrade() {
 	$stored_version = get_option( 'versi_version', '' );
 
-	if ( $stored_version === VERSI_VERSION ) {
+	if ( VERSI_VERSION === $stored_version ) {
 		return;
 	}
 
 	$migration_map = array(
-		'autoalt_version'          => 'versi_version',
-		'autoalt_batch_size'       => 'versi_batch_size',
-		'autoalt_debug_mode'       => 'versi_debug_mode',
-		'autoalt_vision_model'     => 'versi_vision_model',
-		'autoalt_text_model'       => 'versi_text_model',
-		'autoalt_excerpt_limit'    => 'versi_content_limit',
-		'autoalt_system_prompt'    => 'versi_alt_system_prompt',
-		'autoalt_compare_prompt'   => 'versi_alt_compare_prompt',
-		'autoalt_single_prompt'    => 'versi_alt_single_prompt',
-		'autoalt_processing_mode'  => 'versi_alt_processing_mode',
-		'autoalt_auto_generate'    => 'versi_alt_auto_generate',
-		'autoalt_show_generated'   => 'versi_alt_show_generated',
-		'autoalt_cat_filter'       => 'versi_alt_cat_filter',
-		'autoalt_job_status'       => 'versi_job_status',
+		'autoalt_version'         => 'versi_version',
+		'autoalt_batch_size'      => 'versi_batch_size',
+		'autoalt_debug_mode'      => 'versi_debug_mode',
+		'autoalt_vision_model'    => 'versi_vision_model',
+		'autoalt_text_model'      => 'versi_text_model',
+		'autoalt_excerpt_limit'   => 'versi_content_limit',
+		'autoalt_system_prompt'   => 'versi_alt_system_prompt',
+		'autoalt_compare_prompt'  => 'versi_alt_compare_prompt',
+		'autoalt_single_prompt'   => 'versi_alt_single_prompt',
+		'autoalt_processing_mode' => 'versi_alt_processing_mode',
+		'autoalt_auto_generate'   => 'versi_alt_auto_generate',
+		'autoalt_show_generated'  => 'versi_alt_show_generated',
+		'autoalt_cat_filter'      => 'versi_alt_cat_filter',
+		'autoalt_job_status'      => 'versi_job_status',
 	);
 
 	foreach ( $migration_map as $old => $new ) {
