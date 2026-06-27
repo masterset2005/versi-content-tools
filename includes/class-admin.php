@@ -89,26 +89,24 @@ class Versi_Admin {
 			true
 		);
 
-		$batch_sz = absint( get_option( 'versi_batch_size', 5 ) );
-		if ( $batch_sz < 1 ) {
-			$batch_sz = 1;
-		}
-		if ( $batch_sz > 50 ) {
-			$batch_sz = 50;
-		}
-
 		$data = array(
 			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 			'nonce'          => wp_create_nonce( 'versi_process' ),
 			'getModelsNonce' => wp_create_nonce( 'versi_get_models' ),
-			'batchSize'      => $batch_sz,
 		);
 
-		if ( $is_upload || $is_processing ) {
-			$action           = isset( $_GET['versi_action'] ) ? sanitize_key( wp_unslash( $_GET['versi_action'] ) ) : '';
-			$workload         = isset( $_GET['versi_workload'] ) ? sanitize_key( wp_unslash( $_GET['versi_workload'] ) ) : 'alt';
-			$data['action']   = $action;
-			$data['workload'] = $workload;
+		// Only send processing params on the upload page (media library overlay).
+		if ( $is_upload ) {
+			$batch_sz = absint( get_option( 'versi_batch_size', 5 ) );
+			if ( $batch_sz < 1 ) {
+				$batch_sz = 1;
+			}
+			if ( $batch_sz > 50 ) {
+				$batch_sz = 50;
+			}
+			$data['batchSize'] = $batch_sz;
+			$data['action']    = '';
+			$data['workload']  = 'alt';
 		}
 
 		wp_localize_script( 'versi-admin', 'versiBulkData', $data );
@@ -713,7 +711,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	}
 
 	/**
-	 * Render the processing page.
+	 * Render the processing page with workload tabs and live/background modes.
 	 *
 	 * @return void
 	 */
@@ -723,242 +721,487 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		}
 
 		$workload = isset( $_GET['versi_workload'] ) ? sanitize_key( wp_unslash( $_GET['versi_workload'] ) ) : 'alt';
-		$action   = isset( $_GET['versi_action'] ) ? sanitize_key( wp_unslash( $_GET['versi_action'] ) ) : '';
+		$mode_tab = isset( $_GET['versi_mode_tab'] ) ? sanitize_key( wp_unslash( $_GET['versi_mode_tab'] ) ) : 'live';
 
+		$alt_stats = Versi_Alt_Text_Processor::init()->get_stats();
+		$exc_stats = Versi_Excerpt_Processor::init()->get_stats();
+
+		$base_url    = admin_url( 'media.php?page=versi-processing' );
+		$alt_url     = add_query_arg( 'versi_workload', 'alt', $base_url );
+		$exc_url     = add_query_arg( 'versi_workload', 'excerpt', $base_url );
+		$live_url    = add_query_arg( 'versi_mode_tab', 'live', $base_url );
+		$bg_url      = add_query_arg( 'versi_mode_tab', 'bg', $base_url );
+		$refresh_url = 'alt' === $workload ? $alt_url : $exc_url;
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Versi Processing', 'versi-content-tools' ); ?></h1>
 
-			<form method="get" action="" style="margin-bottom:16px;">
-				<input type="hidden" name="page" value="versi-processing">
-				<label style="margin-right:12px;">
-					<?php esc_html_e( 'Workload:', 'versi-content-tools' ); ?>
-					<select name="versi_workload" onchange="this.form.submit()">
-						<option value="alt" <?php selected( $workload, 'alt' ); ?>><?php esc_html_e( 'Alt Text', 'versi-content-tools' ); ?></option>
-						<option value="excerpt" <?php selected( $workload, 'excerpt' ); ?>><?php esc_html_e( 'Excerpts', 'versi-content-tools' ); ?></option>
-					</select>
-				</label>
-			</form>
+			<!-- Workload tabs -->
+			<h2 class="nav-tab-wrapper">
+				<a href="<?php echo esc_url( $alt_url ); ?>" class="nav-tab <?php echo 'alt' === $workload ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Alt Text', 'versi-content-tools' ); ?>
+				</a>
+				<a href="<?php echo esc_url( $exc_url ); ?>" class="nav-tab <?php echo 'excerpt' === $workload ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Excerpts', 'versi-content-tools' ); ?>
+				</a>
+			</h2>
 
-			<?php if ( 'alt' === $workload ) : ?>
-				<?php $this->render_alt_actions( $action ); ?>
+			<!-- Stats bar -->
+			<div class="versi-stats" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+				<?php if ( 'alt' === $workload ) : ?>
+					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
+						<strong><?php echo esc_html( $alt_stats['total'] ); ?></strong>
+						<?php esc_html_e( 'total', 'versi-content-tools' ); ?>
+					</div>
+					<div class="versi-stat" style="background:#fcf0f1;padding:6px 14px;border-radius:4px;">
+						<strong><?php echo esc_html( $alt_stats['missing'] ); ?></strong>
+						<?php esc_html_e( 'missing', 'versi-content-tools' ); ?>
+					</div>
+					<div class="versi-stat" style="background:#fef8ee;padding:6px 14px;border-radius:4px;">
+						<strong><?php echo esc_html( $alt_stats['too_long'] ); ?></strong>
+						<?php esc_html_e( 'over 125 chars', 'versi-content-tools' ); ?>
+					</div>
+					<div class="versi-stat" style="background:#fef8ee;padding:6px 14px;border-radius:4px;">
+						<strong><?php echo esc_html( $alt_stats['too_short'] ); ?></strong>
+						<?php esc_html_e( 'under 15 chars', 'versi-content-tools' ); ?>
+					</div>
+				<?php else : ?>
+					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
+						<strong><?php echo esc_html( $exc_stats['total'] ); ?></strong>
+						<?php esc_html_e( 'total posts', 'versi-content-tools' ); ?>
+					</div>
+					<div class="versi-stat" style="background:#fcf0f1;padding:6px 14px;border-radius:4px;">
+						<strong><?php echo esc_html( $exc_stats['missing'] ); ?></strong>
+						<?php esc_html_e( 'missing excerpts', 'versi-content-tools' ); ?>
+					</div>
+					<div class="versi-stat" style="background:#edfaef;padding:6px 14px;border-radius:4px;">
+						<strong><?php echo esc_html( $exc_stats['has_excerpt'] ); ?></strong>
+						<?php esc_html_e( 'have excerpts', 'versi-content-tools' ); ?>
+					</div>
+				<?php endif; ?>
+				<a href="<?php echo esc_url( $refresh_url ); ?>" class="button" style="margin-left:auto;">
+					<?php esc_html_e( 'Refresh', 'versi-content-tools' ); ?>
+				</a>
+			</div>
+
+			<!-- Mode sub-tabs: Live Process / Background Jobs -->
+			<h3 class="nav-tab-wrapper" style="margin-bottom:16px;">
+				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'live', $refresh_url ) ); ?>" class="nav-tab <?php echo 'live' === $mode_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Live Process', 'versi-content-tools' ); ?>
+				</a>
+				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'bg', $refresh_url ) ); ?>" class="nav-tab <?php echo 'bg' === $mode_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Background Jobs', 'versi-content-tools' ); ?>
+				</a>
+			</h3>
+
+			<?php if ( 'bg' === $mode_tab ) : ?>
+				<?php $this->render_background_tab( $workload ); ?>
 			<?php else : ?>
-				<?php $this->render_excerpt_actions( $action ); ?>
+				<?php $this->render_live_tab( $workload ); ?>
 			<?php endif; ?>
 		</div>
 		<?php
 	}
 
 	/**
-	 * Render alt-text action buttons and results.
-	 *
-	 * @param string $action Current action.
-	 * @return void
-	 */
-	private function render_alt_actions( $action ) {
-		$stats = Versi_Alt_Text_Processor::init()->get_stats();
-		?>
-		<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-			<div style="background:#f0f6fc;padding:8px 14px;border-radius:4px;">
-				<strong><?php echo esc_html( $stats['total'] ); ?></strong> <?php esc_html_e( 'total', 'versi-content-tools' ); ?>
-			</div>
-			<div style="background:#fcf0f1;padding:8px 14px;border-radius:4px;">
-				<strong><?php echo esc_html( $stats['missing'] ); ?></strong> <?php esc_html_e( 'missing', 'versi-content-tools' ); ?>
-			</div>
-			<div style="background:#fef8ee;padding:8px 14px;border-radius:4px;">
-				<strong><?php echo esc_html( $stats['too_long'] ); ?></strong> <?php esc_html_e( 'too long (>125)', 'versi-content-tools' ); ?>
-			</div>
-			<div style="background:#fef8ee;padding:8px 14px;border-radius:4px;">
-				<strong><?php echo esc_html( $stats['too_short'] ); ?></strong> <?php esc_html_e( 'too short (<15)', 'versi-content-tools' ); ?>
-			</div>
-		</div>
-
-		<p>
-			<a href="<?php echo esc_url( add_query_arg( 'versi_workload', 'alt' ) ); ?>" class="button"><?php esc_html_e( 'Refresh Stats', 'versi-content-tools' ); ?></a>
-		</p>
-
-		<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-			<a href="
-			<?php
-			echo esc_url(
-				add_query_arg(
-					array(
-						'versi_workload' => 'alt',
-						'versi_action'   => 'missing',
-					)
-				)
-			);
-			?>
-						" class="button button-primary <?php echo 'missing' === $action ? 'disabled' : ''; ?>">
-				<?php esc_html_e( 'Fill Missing Alt Text', 'versi-content-tools' ); ?>
-			</a>
-			<a href="
-			<?php
-			echo esc_url(
-				add_query_arg(
-					array(
-						'versi_workload' => 'alt',
-						'versi_action'   => 'review',
-					)
-				)
-			);
-			?>
-						" class="button <?php echo 'review' === $action ? 'disabled' : ''; ?>">
-				<?php esc_html_e( 'Review & Improve Alt Text', 'versi-content-tools' ); ?>
-			</a>
-			<a href="
-			<?php
-			echo esc_url(
-				add_query_arg(
-					array(
-						'versi_workload' => 'alt',
-						'versi_action'   => 'regenerate',
-					)
-				)
-			);
-			?>
-						" class="button <?php echo 'regenerate' === $action ? 'disabled' : ''; ?>">
-				<?php esc_html_e( 'Regenerate All Alt Text', 'versi-content-tools' ); ?>
-			</a>
-			<a href="
-			<?php
-			echo esc_url(
-				add_query_arg(
-					array(
-						'versi_workload' => 'alt',
-						'versi_action'   => 'bg-missing',
-					)
-				)
-			);
-			?>
-			" class="button autoalt-bg-btn" data-mode="missing" data-workload="alt">
-				<?php esc_html_e( 'Background: Fill Missing', 'versi-content-tools' ); ?>
-			</a>
-			<a href="
-			<?php
-			echo esc_url(
-				add_query_arg(
-					array(
-						'versi_workload' => 'alt',
-						'versi_action'   => 'bg-review',
-					)
-				)
-			);
-			?>
-			" class="button autoalt-bg-btn" data-mode="review" data-workload="alt">
-				<?php esc_html_e( 'Background: Review', 'versi-content-tools' ); ?>
-			</a>
-		</div>
-		<?php
-		if ( in_array( $action, array( 'missing', 'review', 'regenerate' ), true ) ) {
-			$this->render_processing_area( 'alt', $action );
-		} elseif ( in_array( $action, array( 'bg-missing', 'bg-review' ), true ) ) {
-			$this->render_background_status( 'alt', str_replace( 'bg-', '', $action ) );
-		}
-	}
-
-	/**
-	 * Render excerpt action buttons and results.
-	 *
-	 * @param string $action Current action.
-	 * @return void
-	 */
-	private function render_excerpt_actions( $action ) {
-		$stats = Versi_Excerpt_Processor::init()->get_stats();
-		?>
-		<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-			<div style="background:#f0f6fc;padding:8px 14px;border-radius:4px;">
-				<strong><?php echo esc_html( $stats['total'] ); ?></strong> <?php esc_html_e( 'total posts', 'versi-content-tools' ); ?>
-			</div>
-			<div style="background:#fcf0f1;padding:8px 14px;border-radius:4px;">
-				<strong><?php echo esc_html( $stats['missing'] ); ?></strong> <?php esc_html_e( 'missing excerpts', 'versi-content-tools' ); ?>
-			</div>
-			<div style="background:#edfaef;padding:8px 14px;border-radius:4px;">
-				<strong><?php echo esc_html( $stats['has_excerpt'] ); ?></strong> <?php esc_html_e( 'have excerpts', 'versi-content-tools' ); ?>
-			</div>
-		</div>
-
-		<p>
-			<a href="<?php echo esc_url( add_query_arg( 'versi_workload', 'excerpt' ) ); ?>" class="button"><?php esc_html_e( 'Refresh Stats', 'versi-content-tools' ); ?></a>
-		</p>
-
-		<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-			<a href="
-			<?php
-			echo esc_url(
-				add_query_arg(
-					array(
-						'versi_workload' => 'excerpt',
-						'versi_action'   => 'missing',
-					)
-				)
-			);
-			?>
-			" class="button button-primary <?php echo 'missing' === $action ? 'disabled' : ''; ?>">
-				<?php esc_html_e( 'Generate Missing Excerpts', 'versi-content-tools' ); ?>
-			</a>
-			<a href="
-			<?php
-			echo esc_url(
-				add_query_arg(
-					array(
-						'versi_workload' => 'excerpt',
-						'versi_action'   => 'improve',
-					)
-				)
-			);
-			?>
-			" class="button <?php echo 'improve' === $action ? 'disabled' : ''; ?>">
-				<?php esc_html_e( 'Improve All Excerpts', 'versi-content-tools' ); ?>
-			</a>
-		</div>
-		<?php
-		if ( in_array( $action, array( 'missing', 'improve' ), true ) ) {
-			$this->render_processing_area( 'excerpt', $action );
-		}
-	}
-
-	/**
-	 * Render the live-processing area.
+	 * Render the Live Process tab: mode buttons, overwrite warning, processing area.
 	 *
 	 * @param string $workload 'alt' or 'excerpt'.
-	 * @param string $action   Processing action.
 	 * @return void
 	 */
-	private function render_processing_area( $workload, $action ) {
-		?>
-		<div id="versi-processing-area">
-			<h2>
-				<?php esc_html_e( 'Processing', 'versi-content-tools' ); ?>&hellip;
-			</h2>
-			<a href="#" id="versi-stop-link" class="versi-stop-link" style="display:inline-block;margin-left:12px;color:#d63638;vertical-align:middle;">
-				<?php esc_html_e( 'stop', 'versi-content-tools' ); ?>
-			</a>
-			<div id="versi-status" style="margin:8px 0;font-size:13px;"></div>
-			<div id="versi-results" style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-height:600px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.6;"></div>
-		</div>
-		<?php
-	}
+	private function render_live_tab( $workload ) {
+		$base_url = admin_url( 'media.php?page=versi-processing&versi_workload=' . $workload . '&versi_mode_tab=live' );
 
-	/**
-	 * Render background job status.
-	 *
-	 * @param string $workload 'alt' or 'excerpt'.
-	 * @param string $mode     Processing mode.
-	 * @return void
-	 */
-	private function render_background_status( $workload, $mode ) {
-		$job = get_option( 'versi_job_status', false );
+		if ( 'alt' === $workload ) {
+			$safe_label = __( 'Generate Missing Alt Text', 'versi-content-tools' );
+			$safe_mode  = 'missing';
+			$dest_label = __( 'Regenerate All Alt Text', 'versi-content-tools' );
+			$dest_mode  = 'regenerate';
+		} else {
+			$safe_label = __( 'Generate Missing Excerpts', 'versi-content-tools' );
+			$safe_mode  = 'missing';
+			$dest_label = __( 'Improve All Excerpts', 'versi-content-tools' );
+			$dest_mode  = 'improve';
+		}
 		?>
-		<div id="versi-bg-status">
-			<h2><?php esc_html_e( 'Background Job', 'versi-content-tools' ); ?></h2>
-			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
-				<p><?php esc_html_e( 'A background job is currently running.', 'versi-content-tools' ); ?></p>
+		<div id="versi-live-tab">
+			<div class="versi-mode-selector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;">
+				<button type="button" class="button button-primary versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
+					<?php echo esc_html( $safe_label ); ?>
+				</button>
+				<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>" data-destructive="1">
+					<?php echo esc_html( $dest_label ); ?>
+				</button>
+				<span class="versi-or-text" style="color:#888;font-style:italic;"><?php esc_html_e( 'Choose a mode above to begin.', 'versi-content-tools' ); ?></span>
+			</div>
+
+			<!-- Overwrite warning (shown via JS when destructive mode is selected) -->
+			<div class="notice notice-warning versi-overwrite-warning" style="display:none;">
 				<p>
-					<strong><?php esc_html_e( 'Progress:', 'versi-content-tools' ); ?></strong>
-					<span id="versi-bg-progress"><?php echo esc_html( $job['processed'] ); ?> / <?php echo esc_html( $job['total'] ); ?></span>
+					<strong><?php esc_html_e( 'Warning:', 'versi-content-tools' ); ?></strong>
+					<?php esc_html_e( 'This will overwrite existing content for all items. You can undo individual items after processing using the per-item undo button. Consider running "Generate Missing" first.', 'versi-content-tools' ); ?>
 				</p>
-				<button id="versi-bg-cancel" class="button"><?php esc_html_e( 'Cancel', 'versi-content-tools' ); ?></button>
+			</div>
+
+			<!-- Processing area (hidden until start is clicked) -->
+			<div id="versi-processing-area" style="display:none;">
+				<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+					<h2 style="margin:0;padding:0;font-size:1.3em;">
+						<?php esc_html_e( 'Processing', 'versi-content-tools' ); ?>&hellip;
+					</h2>
+					<a href="#" id="versi-stop-link" class="versi-stop-link" style="color:#d63638;text-decoration:none;font-size:13px;">
+						<?php esc_html_e( 'stop', 'versi-content-tools' ); ?>
+					</a>
+				</div>
+				<div id="versi-status" style="margin:8px 0;font-size:13px;color:#555;"></div>
+				<div id="versi-results" style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-height:600px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.6;"></div>
+			</div>
+		</div>
+
+		<script>
+		jQuery(function($) {
+			var $modeBtns = $('.versi-start-btn');
+			var $warning = $('.versi-overwrite-warning');
+			var $processingArea = $('#versi-processing-area');
+			var $stopLink = $('#versi-stop-link');
+			var $status = $('#versi-status');
+			var $results = $('#versi-results');
+			var $orText = $('.versi-or-text');
+			var running = false;
+			var mode = '';
+			var total = 0;
+			var done = 0;
+			var offset = 0;
+			var catId = 0;
+			var batchSize = <?php echo absint( get_option( 'versi_batch_size', 5 ) ); ?>;
+			var resultsData = [];
+			var workload = '<?php echo esc_js( $workload ); ?>';
+			var stopRequested = false;
+
+			$modeBtns.on('click', function() {
+				var $btn = $(this);
+				mode = $btn.data('mode');
+
+				if ($btn.data('destructive') && !confirm('<?php echo esc_js( __( 'This will overwrite existing content. Are you sure?', 'versi-content-tools' ) ); ?>')) {
+					return;
+				}
+
+				$processingArea.show();
+				$orText.hide();
+				$results.empty();
+				$status.text('<?php echo esc_js( __( 'Starting...', 'versi-content-tools' ) ); ?>');
+				$stopLink.show();
+				resultsData = [];
+				running = true;
+				stopRequested = false;
+				done = 0;
+				offset = 0;
+
+				fetchBatch();
+			});
+
+			$stopLink.on('click', function(e) {
+				e.preventDefault();
+				if (!running) return;
+				stopRequested = true;
+				running = false;
+				$stopLink.hide();
+				var ok = 0, errs = 0;
+				resultsData.forEach(function(r) {
+					if (r.status === 'success') ok++;
+					else if (r.status === 'error') errs++;
+				});
+				var summary = '<?php echo esc_js( __( 'Stopped.', 'versi-content-tools' ) ); ?> ' + done + ' / ' + total +
+					' (ok: ' + ok + (errs > 0 ? ', errors: ' + errs : '') + ')';
+				$status.text(summary);
+			});
+
+			function updateSummary() {
+				$stopLink.hide();
+				var ok = 0, errs = 0;
+				resultsData.forEach(function(r) {
+					if (r.status === 'success') ok++;
+					else if (r.status === 'error') errs++;
+				});
+				$status.text('<?php echo esc_js( __( 'Complete.', 'versi-content-tools' ) ); ?> ' + ok + ' ok' + (errs > 0 ? ', ' + errs + ' errors' : ''));
+			}
+
+			function getActionName(prefix) {
+				return workload === 'alt' ? 'versi_alt_' + prefix : 'versi_excerpt_' + prefix;
+			}
+
+			function addEntry(r) {
+				var $entry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
+
+				if (workload === 'alt') {
+					var thumbUrl = r.thumbnail || '';
+					if (thumbUrl) {
+						$entry.append('<img src="' + thumbUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:2px;flex-shrink:0;margin-top:2px;">');
+					} else {
+						$entry.append('<span style="width:40px;height:40px;flex-shrink:0;background:#f0f0f1;border-radius:2px;display:inline-block;"></span>');
+					}
+				}
+
+				var $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
+
+				if (r.status === 'success') {
+					var cur = r.previous ? r.previous.substring(0, 200) : '';
+					var gen = (r.generated || '').substring(0, 200);
+
+					if (r.changed && cur) {
+						$body.text('#' + r.id + ' ' + (r.title || '') + ' → REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"');
+						$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
+					} else if (r.changed) {
+						$body.text('#' + r.id + ' ' + (r.title || '') + ' + ADDED\n  value: "' + gen + '"');
+						$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
+					} else {
+						$body.text('#' + r.id + ' ' + (r.title || '') + ' ✓ KEPT\n  value: "' + gen + '"');
+						$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
+					}
+				} else if (r.status === 'error') {
+					$body.text('#' + r.id + ' ' + (r.title || '') + ' ✗ ' + (r.error || 'Error'));
+					$entry.css('background', '#fcf0f1').css('border-left', '3px solid #d63638');
+				} else {
+					$body.text('#' + r.id + ' ' + (r.title || '') + ' — ' + (r.reason || 'Skipped'));
+					$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
+				}
+
+				$entry.append($body);
+
+				if (r.status === 'success' && r.previous !== undefined) {
+					$entry.append(
+						'<button class="versi-redo-btn" data-attachment-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">redo</button>' +
+						'<button class="versi-undo-btn" data-attachment-id="' + r.id + '" data-previous="' + (r.previous || '').replace(/"/g, '&quot;') + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">undo</button>'
+					);
+				}
+
+				$entry.data('attachment-id', r.id);
+				$results.append($entry);
+				$results.scrollTop($results[0].scrollHeight);
+			}
+
+			function processId(id, cb) {
+				$status.text('Processing — ' + (done + 1) + ' / ' + total + '...');
+
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						action: getActionName('process_single'),
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						id: id,
+						mode: mode,
+					},
+					success: function(response) {
+						if (stopRequested) return;
+						var r = response.data;
+						resultsData.push(r);
+						addEntry(r);
+					},
+					error: function() {
+						if (stopRequested) return;
+						resultsData.push({ id: id, status: 'error' });
+						addEntry({ id: id, title: '', status: 'error', error: '<?php echo esc_js( __( 'Request failed', 'versi-content-tools' ) ); ?>' });
+					},
+					complete: function() {
+						done++;
+						cb();
+					},
+				});
+			}
+
+			function processBatch(ids, cb) {
+				if (!running || ids.length === 0) {
+					cb();
+					return;
+				}
+
+				var i = 0;
+				function nextInBatch() {
+					if (!running || i >= ids.length) {
+						cb();
+						return;
+					}
+					processId(ids[i], function() {
+						i++;
+						setTimeout(nextInBatch, 300);
+					});
+				}
+				nextInBatch();
+			}
+
+			function fetchBatch() {
+				if (!running) return;
+
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						action: getActionName('get_ids'),
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						mode: mode,
+						catId: catId,
+						offset: offset,
+						batch: batchSize,
+					},
+					success: function(response) {
+						if (stopRequested) return;
+
+						var d = response.data;
+						total = d.total;
+						var ids = d.ids || [];
+
+						if (ids.length === 0) {
+							running = false;
+							updateSummary();
+							return;
+						}
+
+						processBatch(ids, function() {
+							if (stopRequested) return;
+							offset += ids.length;
+							setTimeout(fetchBatch, 100);
+						});
+					},
+					error: function() {
+						if (stopRequested) return;
+						running = false;
+						$stopLink.hide();
+						$status.text('<?php echo esc_js( __( 'Failed to fetch item list.', 'versi-content-tools' ) ); ?>');
+					},
+				});
+			}
+
+			// Redo / Undo
+			$results.on('click', '.versi-redo-btn', function() {
+				var $btn = $(this);
+				var $entry = $btn.closest('.versi-entry');
+				var id = $entry.data('attachment-id');
+				if (!id) return;
+
+				$btn.text('...').prop('disabled', true);
+				$entry.css('opacity', '0.5');
+
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						action: getActionName('process_single'),
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						id: id,
+						mode: mode,
+					},
+					success: function(response) {
+						var r = response.data;
+						// Rebuild entry in-place.
+						var $newEntry = $('<div>');
+						// Quick re-render.
+						var cur = r.previous ? r.previous.substring(0, 200) : '';
+						var gen = (r.generated || '').substring(0, 200);
+						var html = '';
+						if (workload === 'alt') {
+							var thumbUrl = r.thumbnail || '';
+							html += thumbUrl
+								? '<img src="' + thumbUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:2px;flex-shrink:0;margin-top:2px;">'
+								: '<span style="width:40px;height:40px;flex-shrink:0;background:#f0f0f1;border-radius:2px;display:inline-block;"></span>';
+						}
+						if (r.changed && cur) {
+							$newEntry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
+							$newEntry.html(html + '<div style="flex:1;white-space:pre-wrap;word-break:break-word;">#' + r.id + ' → REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"</div>');
+						} else if (r.changed) {
+							$newEntry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
+							$newEntry.html(html + '<div style="flex:1;white-space:pre-wrap;word-break:break-word;">#' + r.id + ' + ADDED\n  value: "' + gen + '"</div>');
+						} else {
+							$newEntry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
+							$newEntry.html(html + '<div style="flex:1;white-space:pre-wrap;word-break:break-word;">#' + r.id + ' ✓ KEPT\n  value: "' + gen + '"</div>');
+						}
+						$newEntry.css('display', 'flex').css('align-items', 'flex-start').css('gap', '8px').css('padding', '4px 6px').css('margin', '1px 0').css('border-radius', '2px');
+						if (r.previous !== undefined) {
+							$newEntry.append(
+								'<button class="versi-redo-btn" data-attachment-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">redo</button>' +
+								'<button class="versi-undo-btn" data-attachment-id="' + r.id + '" data-previous="' + (r.previous || '').replace(/"/g, '&quot;') + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">undo</button>'
+							);
+						}
+						$newEntry.data('attachment-id', r.id);
+						$entry.replaceWith($newEntry);
+					},
+					error: function() {
+						$btn.text('redo').prop('disabled', false);
+						$entry.css('opacity', '1');
+					},
+				});
+			});
+
+			$results.on('click', '.versi-undo-btn', function() {
+				var $btn = $(this);
+				var $entry = $btn.closest('.versi-entry');
+				var id = $btn.data('attachment-id');
+				var prev = $btn.data('previous');
+				if (!id) return;
+
+				$btn.text('...').prop('disabled', true);
+				$entry.css('opacity', '0.5');
+
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						action: getActionName('undo'),
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						id: id,
+						alt: prev,
+					},
+					success: function(response) {
+						var r = response.data;
+						$entry.css('opacity', '1');
+						$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
+						$entry.find('.versi-redo-btn').remove();
+						$entry.find('.versi-undo-btn').remove();
+						$entry.find('div:last').text('#' + r.id + ' (Reverted to: "' + r.alt.substring(0, 100) + '")');
+					},
+					error: function() {
+						$btn.text('undo').prop('disabled', false);
+						$entry.css('opacity', '1');
+					},
+				});
+			});
+		});
+		</script>
+		<?php
+	}
+
+	/**
+	 * Render the Background Jobs tab.
+	 *
+	 * @param string $workload 'alt' or 'excerpt'.
+	 * @return void
+	 */
+	private function render_background_tab( $workload ) {
+		$job = get_option( 'versi_job_status', false );
+		if ( 'alt' === $workload ) {
+			$safe_label = __( 'Fill Missing Alt Text', 'versi-content-tools' );
+			$safe_mode  = 'missing';
+			$dest_label = __( 'Regenerate All Alt Text', 'versi-content-tools' );
+			$dest_mode  = 'regenerate';
+		} else {
+			$safe_label = __( 'Generate Missing Excerpts', 'versi-content-tools' );
+			$safe_mode  = 'missing';
+			$dest_label = __( 'Improve All Excerpts', 'versi-content-tools' );
+			$dest_mode  = 'improve';
+		}
+		?>
+		<div id="versi-bg-tab">
+			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
+				<div class="notice notice-info">
+					<p><strong><?php esc_html_e( 'Background job running', 'versi-content-tools' ); ?></strong></p>
+					<p>
+						<?php esc_html_e( 'Progress:', 'versi-content-tools' ); ?>
+						<span id="versi-bg-progress"><?php echo esc_html( $job['processed'] ); ?> / <?php echo esc_html( $job['total'] ); ?></span>
+						&mdash;
+						<?php echo esc_html( $job['workload'] ); ?> / <?php echo esc_html( $job['mode'] ); ?>
+					</p>
+					<button id="versi-bg-cancel" class="button"><?php esc_html_e( 'Cancel Job', 'versi-content-tools' ); ?></button>
+				</div>
 				<script>
 				jQuery(function($) {
 					function poll() {
@@ -971,7 +1214,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 								if (resp.data.is_running) {
 									setTimeout(poll, 3000);
 								} else {
-									$('#versi-bg-status').append('<p><em><?php esc_html_e( 'Complete!', 'versi-content-tools' ); ?></em></p>');
+									$('#versi-bg-tab .notice-info').removeClass('notice-info').addClass('notice-success')
+										.append('<p><em><?php esc_html_e( 'Complete!', 'versi-content-tools' ); ?></em></p>');
 								}
 							}
 						});
@@ -987,12 +1231,35 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				});
 				</script>
 			<?php else : ?>
-				<form method="post">
-					<?php wp_nonce_field( 'versi_bg_start' ); ?>
-					<input type="hidden" name="versi_bg_workload" value="<?php echo esc_attr( $workload ); ?>">
-					<input type="hidden" name="versi_bg_mode" value="<?php echo esc_attr( $mode ); ?>">
-					<p><?php esc_html_e( 'No active background job. Start one from the buttons above.', 'versi-content-tools' ); ?></p>
-				</form>
+				<p><?php esc_html_e( 'No active background job. Start a new one:', 'versi-content-tools' ); ?></p>
+				<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+					<button type="button" class="button button-primary versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
+						<?php echo esc_html( $safe_label ); ?>
+					</button>
+					<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>">
+						<?php echo esc_html( $dest_label ); ?>
+					</button>
+				</div>
+				<script>
+				jQuery(function($) {
+					$('.versi-bg-start-btn').on('click', function() {
+						var $btn = $(this);
+						var btnMode = $btn.data('mode');
+						var btnWorkload = $btn.data('workload');
+						if (!confirm('<?php echo esc_js( __( 'Start background processing? You can close the browser and check back later.', 'versi-content-tools' ) ); ?>')) {
+							return;
+						}
+						$.post(ajaxurl, {
+							action: 'versi_create_job',
+							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+							mode: btnMode,
+							workload: btnWorkload,
+						});
+						$btn.prop('disabled', true).text('<?php esc_html_e( 'Started', 'versi-content-tools' ); ?>');
+						$('.versi-bg-start-btn').not($btn).prop('disabled', true);
+					});
+				});
+				</script>
 			<?php endif; ?>
 		</div>
 		<?php
