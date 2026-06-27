@@ -30,6 +30,7 @@ $options = array(
 	'versi_match_author_tone',
 	'versi_debug_mode',
 	'versi_job_status',
+	'versi_live_job_status',
 	// Legacy autoalt_* options (cleanup from migration).
 	'autoalt_system_prompt',
 	'autoalt_compare_prompt',

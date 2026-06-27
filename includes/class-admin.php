@@ -61,6 +61,9 @@ class Versi_Admin {
 		add_action( 'wp_ajax_versi_create_job', array( $this, 'ajax_create_job' ) );
 		add_action( 'wp_ajax_versi_job_status', array( $this, 'ajax_job_status' ) );
 		add_action( 'wp_ajax_versi_cancel_job', array( $this, 'ajax_cancel_job' ) );
+		add_action( 'wp_ajax_versi_save_job', array( $this, 'ajax_save_job' ) );
+		add_action( 'wp_ajax_versi_load_job', array( $this, 'ajax_load_job' ) );
+		add_action( 'wp_ajax_versi_dismiss_job', array( $this, 'ajax_dismiss_job' ) );
 		add_action( 'versi_process_batch', array( $this, 'process_background_batch' ) );
 	}
 
@@ -906,6 +909,18 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				</p>
 			</div>
 
+			<!-- Resume notice (shown if a paused job exists) -->
+			<div id="versi-resume-notice" class="notice notice-info" style="display:none;">
+				<p>
+					<strong><?php esc_html_e( 'Resume previous session?', 'versi-content-tools' ); ?></strong>
+					<span id="versi-resume-text"></span>
+				</p>
+				<p>
+					<button type="button" id="versi-resume-btn" class="button button-primary"><?php esc_html_e( 'Resume', 'versi-content-tools' ); ?></button>
+					<button type="button" id="versi-dismiss-btn" class="button"><?php esc_html_e( 'Start Fresh', 'versi-content-tools' ); ?></button>
+				</p>
+			</div>
+
 			<!-- Processing area (hidden until start is clicked) -->
 			<div id="versi-processing-area" style="display:none;">
 				<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
@@ -926,6 +941,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			var $modeBtns = $('.versi-start-btn');
 			var $warning = $('.versi-overwrite-warning');
 			var $processingArea = $('#versi-processing-area');
+			var $resumeNotice = $('#versi-resume-notice');
 			var $stopLink = $('#versi-stop-link');
 			var $status = $('#versi-status');
 			var $results = $('#versi-results');
@@ -940,6 +956,78 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			var resultsData = [];
 			var workload = '<?php echo esc_js( $workload ); ?>';
 			var stopRequested = false;
+			var $resumeText = $('#versi-resume-text');
+
+			// Check for saved job
+			$.ajax({
+				url: ajaxurl,
+				method: 'POST',
+				data: {
+					action: 'versi_load_job',
+					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+				},
+				success: function(response) {
+					if (!response.success || !response.data.exists) return;
+					var job = response.data.data;
+					if (job.workload !== workload) return;
+
+					mode = job.mode;
+					offset = job.offset;
+					total = job.total;
+					done = job.done;
+					
+					$resumeNotice.show();
+					$resumeText.text('
+					<?php
+						// translators: %1$s: mode, %2$s: done, %3$s: total
+						echo esc_js( __( 'You have a paused job (%1$s mode, %2$s/%3$s items processed).', 'versi-content-tools' ) );
+					?>
+						'.replace('%1$s', mode).replace('%2$s', done).replace('%3$s', total));
+				}
+			});
+
+			$('#versi-resume-btn').on('click', function() {
+				$resumeNotice.hide();
+				$processingArea.show();
+				$orText.hide();
+				$status.text('<?php echo esc_js( __( 'Resuming...', 'versi-content-tools' ) ); ?>');
+				$stopLink.show();
+				running = true;
+				fetchBatch();
+			});
+
+			$('#versi-dismiss-btn').on('click', function() {
+				$resumeNotice.hide();
+				dismissSavedJob();
+			});
+
+			function saveJobState(status) {
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						action: 'versi_save_job',
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						workload: workload,
+						mode: mode,
+						offset: offset,
+						total: total,
+						done: done,
+						status: status,
+					},
+				});
+			}
+
+			function dismissSavedJob() {
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						action: 'versi_dismiss_job',
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+					},
+				});
+			}
 
 			$modeBtns.on('click', function() {
 				var $btn = $(this);
@@ -949,7 +1037,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					return;
 				}
 
+				dismissSavedJob();
 				$processingArea.show();
+				$resumeNotice.hide();
 				$orText.hide();
 				$results.empty();
 				$status.text('<?php echo esc_js( __( 'Starting...', 'versi-content-tools' ) ); ?>');
@@ -977,6 +1067,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				var summary = '<?php echo esc_js( __( 'Stopped.', 'versi-content-tools' ) ); ?> ' + done + ' / ' + total +
 					' (ok: ' + ok + (errs > 0 ? ', errors: ' + errs : '') + ')';
 				$status.text(summary);
+				saveJobState('paused');
 			});
 
 			function updateSummary() {
@@ -987,6 +1078,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					else if (r.status === 'error') errs++;
 				});
 				$status.text('<?php echo esc_js( __( 'Complete.', 'versi-content-tools' ) ); ?> ' + ok + ' ok' + (errs > 0 ? ', ' + errs + ' errors' : ''));
+				dismissSavedJob();
 			}
 
 			function getActionName(prefix) {
@@ -1123,6 +1215,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						processBatch(ids, function() {
 							if (stopRequested) return;
 							offset += ids.length;
+							saveJobState('paused');
 							setTimeout(fetchBatch, 100);
 						});
 					},
@@ -1634,6 +1727,87 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		);
 
 		wp_send_json_success( array( 'cancelled' => true ) );
+	}
+
+	/**
+	 * AJAX: save live job state so the user can resume later.
+	 *
+	 * @return void
+	 */
+	public function ajax_save_job() {
+		check_ajax_referer( 'versi_process' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
+		$workload = isset( $_POST['workload'] ) ? sanitize_key( $_POST['workload'] ) : '';
+		$mode     = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : '';
+		$offset   = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
+		$total    = isset( $_POST['total'] ) ? absint( $_POST['total'] ) : 0;
+		$done     = isset( $_POST['done'] ) ? absint( $_POST['done'] ) : 0;
+		$status   = isset( $_POST['status'] ) ? sanitize_key( $_POST['status'] ) : 'paused';
+
+		if ( ! $workload || ! $mode ) {
+			wp_send_json_error( 'Missing workload or mode' );
+		}
+
+		update_option(
+			'versi_live_job_status',
+			array(
+				'workload' => $workload,
+				'mode'     => $mode,
+				'offset'   => $offset,
+				'total'    => $total,
+				'done'     => $done,
+				'status'   => $status,
+				'updated'  => time(),
+			),
+			false
+		);
+
+		wp_send_json_success( array( 'saved' => true ) );
+	}
+
+	/**
+	 * AJAX: load saved live job state.
+	 *
+	 * @return void
+	 */
+	public function ajax_load_job() {
+		check_ajax_referer( 'versi_process' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
+		$status = get_option( 'versi_live_job_status' );
+		if ( ! $status ) {
+			wp_send_json_success( array( 'exists' => false ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'exists' => true,
+				'data'   => $status,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: dismiss a saved live job (user chose to start fresh).
+	 *
+	 * @return void
+	 */
+	public function ajax_dismiss_job() {
+		check_ajax_referer( 'versi_process' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
+		delete_option( 'versi_live_job_status' );
+		wp_send_json_success( array( 'dismissed' => true ) );
 	}
 
 	/**
