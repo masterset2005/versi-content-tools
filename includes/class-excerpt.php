@@ -171,20 +171,23 @@ class Versi_Excerpt_Processor {
 			$sentences = preg_split( '/(?<=[.!?])\s+/', $raw );
 			$new_raw   = '';
 			foreach ( $sentences as $s ) {
-				$count = count( preg_split( '/\s+/', $new_raw . ' ' . $s ) );
-				// Always take at least the first sentence to avoid mid-sentence cutoffs.
-				if ( $count <= $target_length || empty( $new_raw ) ) {
+				$words_in_s = preg_split( '/\s+/', $new_raw . ' ' . $s );
+				if ( count( $words_in_s ) <= $target_length ) {
 					$new_raw .= ( $new_raw ? ' ' : '' ) . $s;
-					// If we already exceed the target, don't add more sentences.
-					if ( $count > $target_length ) {
-						break;
-					}
 				} else {
 					break;
 				}
 			}
 
-			$raw = $new_raw;
+			if ( ! empty( $new_raw ) ) {
+				$raw = $new_raw;
+			} else {
+				// First sentence is too long, force truncate
+				$words_arr = preg_split( '/\s+/', $raw );
+				$raw       = implode( ' ', array_slice( $words_arr, 0, $target_length ) );
+				// Remove trailing partial word to avoid mid-sentence cutoffs
+				$raw = preg_replace( '/\s+[^\s]+$/', '', $raw );
+			}
 		}
 
 		return $raw;
