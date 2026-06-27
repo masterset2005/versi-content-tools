@@ -2047,7 +2047,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	public function mark_auto_generated( $response, $attachment ) {
 		$alt = get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true );
 		if ( ! empty( $alt ) ) {
-			$response['autoalt_generated'] = $alt; // Keep key for backward compat.
+			$response['versi_generated'] = $alt;
 		}
 		return $response;
 	}
@@ -2066,8 +2066,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			wp.media.view.Attachment.Library = orig.extend({
 				render: function() {
 					var r = orig.prototype.render.apply(this, arguments);
-					if (this.model && this.model.get('autoalt_generated')) {
-						var alt = this.model.get('autoalt_generated');
+					if (this.model && this.model.get('versi_generated')) {
+						var alt = this.model.get('versi_generated');
 						this.$el.append(
 							'<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:2px 4px;line-height:1.3;word-break:break-word;max-height:100%;overflow:hidden;">AI: ' + $('<span>').text(alt).html() + '</div>'
 						);

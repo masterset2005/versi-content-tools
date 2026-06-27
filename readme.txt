@@ -84,4 +84,3 @@ targets all excerpts.
 * Excerpt workload (missing / improve) with configurable word count
 * Tabbed settings page, bulk processing page, background cron jobs
 * WP-CLI commands, auto-generate on upload/save, Media Library overlay
-* Option migration from `autoalt_*` keys for existing wp-auto-alt-text users

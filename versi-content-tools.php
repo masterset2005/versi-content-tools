@@ -31,55 +31,17 @@ require_once VERSI_PLUGIN_DIR . 'includes/class-admin.php';
 require_once VERSI_PLUGIN_DIR . 'includes/class-cli.php';
 
 /**
- * Upgrade routine: migrate autoalt_* options to versi_* and clear saved prompts.
+ * Initialize plugin.
  */
-function versi_upgrade() {
+function versi_init() {
 	$stored_version = get_option( 'versi_version', '' );
-
-	if ( VERSI_VERSION === $stored_version ) {
-		return;
+	if ( VERSI_VERSION !== $stored_version ) {
+		update_option( 'versi_version', VERSI_VERSION, false );
 	}
 
-	$migration_map = array(
-		'autoalt_version'         => 'versi_version',
-		'autoalt_batch_size'      => 'versi_batch_size',
-		'autoalt_debug_mode'      => 'versi_debug_mode',
-		'autoalt_vision_model'    => 'versi_vision_model',
-		'autoalt_text_model'      => 'versi_text_model',
-		'autoalt_excerpt_limit'   => 'versi_content_limit',
-		'autoalt_system_prompt'   => 'versi_alt_system_prompt',
-		'autoalt_compare_prompt'  => 'versi_alt_compare_prompt',
-		'autoalt_single_prompt'   => 'versi_alt_single_prompt',
-		'autoalt_processing_mode' => 'versi_alt_processing_mode',
-		'autoalt_auto_generate'   => 'versi_alt_auto_generate',
-		'autoalt_show_generated'  => 'versi_alt_show_generated',
-		'autoalt_cat_filter'      => 'versi_alt_cat_filter',
-		'autoalt_job_status'      => 'versi_job_status',
-	);
-
-	foreach ( $migration_map as $old => $new ) {
-		$value = get_option( $old, null );
-		if ( null !== $value ) {
-			update_option( $new, $value, false );
-		}
-	}
-
-	// On upgrade from v1.2+ (prompt-clear versions), clear saved prompts to force fresh defaults.
-	if ( '' === $stored_version || version_compare( $stored_version, '1.2.0', '>=' ) ) {
-		delete_option( 'versi_alt_system_prompt' );
-		delete_option( 'versi_alt_compare_prompt' );
-		delete_option( 'versi_alt_single_prompt' );
-		delete_option( 'versi_excerpt_prompt' );
-	}
-
-	update_option( 'versi_version', VERSI_VERSION, false );
+	Versi_Processor::init();
+	Versi_Alt_Text_Processor::init();
+	Versi_Excerpt_Processor::init();
 }
-add_action( 'admin_init', 'versi_upgrade' );
-
-/**
- * Initialize singletons.
- */
-Versi_Processor::init();
-Versi_Alt_Text_Processor::init();
-Versi_Excerpt_Processor::init();
+add_action( 'plugins_loaded', 'versi_init' );
 Versi_Admin::init();
