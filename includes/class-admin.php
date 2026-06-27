@@ -789,7 +789,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$alt_stats = Versi_Alt_Text_Processor::init()->get_stats();
 		$exc_stats = Versi_Excerpt_Processor::init()->get_stats();
 
-		$base_url    = admin_url( 'media.php?page=versi-processing' );
+		$base_url    = admin_url( 'upload.php?page=versi-processing' );
 		$alt_url     = add_query_arg( 'versi_workload', 'alt', $base_url );
 		$exc_url     = add_query_arg( 'versi_workload', 'excerpt', $base_url );
 		$live_url    = add_query_arg( 'versi_mode_tab', 'live', $base_url );
@@ -873,7 +873,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	private function render_live_tab( $workload ) {
-		$base_url = admin_url( 'media.php?page=versi-processing&versi_workload=' . $workload . '&versi_mode_tab=live' );
+		$base_url = admin_url( 'upload.php?page=versi-processing&versi_workload=' . $workload . '&versi_mode_tab=live' );
 
 		if ( 'alt' === $workload ) {
 			$safe_label = __( 'Generate Missing Alt Text', 'versi-content-tools' );
@@ -1814,10 +1814,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<?php esc_html_e( 'Let AI fix them:', 'versi-content-tools' ); ?>
 			</p>
 			<p style="margin:8px 0;">
-				<a href="<?php echo esc_url( admin_url( 'media.php?page=versi-processing&versi_workload=alt&versi_action=missing' ) ); ?>" class="button button-primary" style="text-decoration:none;">
+				<a href="<?php echo esc_url( admin_url( 'upload.php?page=versi-processing&versi_workload=alt&versi_action=missing' ) ); ?>" class="button button-primary" style="text-decoration:none;">
 					<?php esc_html_e( 'Fill Missing', 'versi-content-tools' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'media.php?page=versi-processing&versi_workload=alt&versi_action=review' ) ); ?>" class="button" style="text-decoration:none;">
+				<a href="<?php echo esc_url( admin_url( 'upload.php?page=versi-processing&versi_workload=alt&versi_action=review' ) ); ?>" class="button" style="text-decoration:none;">
 					<?php esc_html_e( 'Review & Improve', 'versi-content-tools' ); ?>
 				</a>
 			</p>
