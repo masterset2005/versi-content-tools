@@ -3,7 +3,7 @@
  * Plugin Name: Versi Content Tools
  * Plugin URI:  https://versihosting.com/
  * Description: AI-powered alt-text generation and excerpt management. Uses the WP AI Client (WordPress 7.0+).
- * Version:     1.1.0
+ * Version:     1.2.0
  * Author:      Sean Thompson
  * Author URI:  https://stprojects.net/
  * License:     GPL v2 or later
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'VERSI_VERSION', '1.1.0' );
+define( 'VERSI_VERSION', '1.2.0' );
 define( 'VERSI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -36,6 +36,19 @@ require_once VERSI_PLUGIN_DIR . 'includes/class-cli.php';
 function versi_init() {
 	$stored_version = get_option( 'versi_version', '' );
 	if ( VERSI_VERSION !== $stored_version ) {
+		// Migrate legacy global model settings to workload-specific settings.
+		$vision = get_option( 'versi_vision_model' );
+		if ( $vision ) {
+			update_option( 'versi_alt_vision_model', $vision );
+			delete_option( 'versi_vision_model' );
+		}
+		$text = get_option( 'versi_text_model' );
+		if ( $text ) {
+			update_option( 'versi_alt_text_model', $text );
+			update_option( 'versi_excerpt_text_model', $text );
+			delete_option( 'versi_text_model' );
+		}
+
 		update_option( 'versi_version', VERSI_VERSION, false );
 	}
 

@@ -32,12 +32,12 @@ class Versi_Processor {
 	}
 
 	/**
-	 * Get vision model preference as an array.
+	 * Get vision model preference as an array (for alt-text).
 	 *
 	 * @return string[]
 	 */
 	public function get_vision_model_preference() {
-		$models = get_option( 'versi_vision_model', '' );
+		$models = get_option( 'versi_alt_vision_model', '' );
 		if ( '' === trim( $models ) ) {
 			return array();
 		}
@@ -47,10 +47,12 @@ class Versi_Processor {
 	/**
 	 * Get text model preference as an array.
 	 *
+	 * @param string $workload 'alt' or 'excerpt'.
 	 * @return string[]
 	 */
-	public function get_text_model_preference() {
-		$models = get_option( 'versi_text_model', '' );
+	public function get_text_model_preference( $workload ) {
+		$option_name = 'alt' === $workload ? 'versi_alt_text_model' : 'versi_excerpt_text_model';
+		$models      = get_option( $option_name, '' );
 		if ( '' === trim( $models ) ) {
 			return array();
 		}
@@ -74,11 +76,12 @@ class Versi_Processor {
 	/**
 	 * Apply text model preference to a prompt builder.
 	 *
-	 * @param object $builder WP_AI_Client_Prompt_Builder instance.
+	 * @param object $builder  WP_AI_Client_Prompt_Builder instance.
+	 * @param string $workload 'alt' or 'excerpt'.
 	 * @return object
 	 */
-	public function apply_text_preference( $builder ) {
-		$models = $this->get_text_model_preference();
+	public function apply_text_preference( $builder, $workload ) {
+		$models = $this->get_text_model_preference( $workload );
 		if ( ! empty( $models ) ) {
 			$builder = $builder->using_model_preference( ...$models );
 		}

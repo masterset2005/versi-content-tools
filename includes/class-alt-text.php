@@ -246,7 +246,7 @@ class Versi_Alt_Text_Processor {
 		$builder = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
 
-		$builder = Versi_Processor::init()->apply_text_preference( $builder );
+		$builder = Versi_Processor::init()->apply_text_preference( $builder, 'alt' );
 
 		$result = $builder->generate_text();
 

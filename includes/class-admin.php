@@ -171,6 +171,35 @@ class Versi_Admin {
 			)
 		);
 
+		// Workload-specific model settings.
+		register_setting(
+			'versi_settings',
+			'versi_alt_vision_model',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
+				'default'           => '',
+			)
+		);
+		register_setting(
+			'versi_settings',
+			'versi_alt_text_model',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
+				'default'           => '',
+			)
+		);
+		register_setting(
+			'versi_settings',
+			'versi_excerpt_text_model',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
+				'default'           => '',
+			)
+		);
+
 		register_setting(
 			'versi_settings',
 			'versi_content_limit',
@@ -424,7 +453,7 @@ class Versi_Admin {
 								<label for="versi_vision_model"><?php esc_html_e( 'Vision Model', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
-								<select id="versi_vision_model" name="versi_vision_model" class="regular-text" style="max-width:400px;">
+								<select id="versi_vision_model" name="versi_vision_model" class="regular-text versi-model-select" style="max-width:400px;">
 									<option value=""><?php esc_html_e( '- Default -', 'versi-content-tools' ); ?></option>
 									<?php
 									$saved = get_option( 'versi_vision_model', '' );
@@ -444,7 +473,7 @@ class Versi_Admin {
 								<label for="versi_text_model"><?php esc_html_e( 'Text Model', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
-								<select id="versi_text_model" name="versi_text_model" class="regular-text" style="max-width:400px;">
+								<select id="versi_text_model" name="versi_text_model" class="regular-text versi-model-select" style="max-width:400px;">
 									<option value=""><?php esc_html_e( '- Default -', 'versi-content-tools' ); ?></option>
 									<?php
 									$saved = get_option( 'versi_text_model', '' );
@@ -736,11 +765,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$('input[name="versi_alt_processing_mode"]').on('change', toggleMode);
 			toggleMode();
 
-			var $vision = $('#versi_vision_model');
-			var $text   = $('#versi_text_model');
-			if ($vision.length) {
-				var savedVision = $vision.val();
-				var savedText   = $text.val();
+			$('.versi-model-select').each(function() {
+				var $select = $(this);
+				var savedValue = $select.val();
 
 				$.ajax({
 					url: ajaxurl,
@@ -756,18 +783,15 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							$.each(provider.models, function(j, model) {
 								$group.append($('<option>').val(model.id).text(model.name + ' (' + model.id + ')'));
 							});
-							$vision.append($group.clone());
-							$text.append($group);
+							$select.append($group);
 						});
-						if (savedVision) $vision.val(savedVision);
-						if (savedText) $text.val(savedText);
+						if (savedValue) $select.val(savedValue);
 					},
 					error: function() {
-						$vision.replaceWith('<input type="text" id="versi_vision_model" name="versi_vision_model" value="' + (savedVision || '') + '" class="regular-text code">');
-						$text.replaceWith('<input type="text" id="versi_text_model" name="versi_text_model" value="' + (savedText || '') + '" class="regular-text code">');
+						$select.replaceWith('<input type="text" id="' + $select.attr('id') + '" name="' + $select.attr('name') + '" value="' + (savedValue || '') + '" class="regular-text code">');
 					}
 				});
-			}
+			});
 		})(jQuery);
 		</script>
 		<style>

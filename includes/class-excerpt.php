@@ -82,7 +82,7 @@ class Versi_Excerpt_Processor {
 
 		$builder = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
-		$builder = $shared->apply_text_preference( $builder );
+		$builder = $shared->apply_text_preference( $builder, 'excerpt' );
 
 		$generated = $builder->generate_text();
 
