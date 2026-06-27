@@ -172,20 +172,19 @@ class Versi_Excerpt_Processor {
 			$new_raw   = '';
 			foreach ( $sentences as $s ) {
 				$count = count( preg_split( '/\s+/', $new_raw . ' ' . $s ) );
-				if ( $count <= $target_length ) {
+				// Always take at least the first sentence to avoid mid-sentence cutoffs.
+				if ( $count <= $target_length || empty( $new_raw ) ) {
 					$new_raw .= ( $new_raw ? ' ' : '' ) . $s;
+					// If we already exceed the target, don't add more sentences.
+					if ( $count > $target_length ) {
+						break;
+					}
 				} else {
 					break;
 				}
 			}
 
-			if ( ! empty( $new_raw ) ) {
-				$raw = $new_raw;
-			} else {
-				// Fallback: Force word-based truncation
-				$words_arr = preg_split( '/\s+/', $raw );
-				$raw       = implode( ' ', array_slice( $words_arr, 0, $target_length ) );
-			}
+			$raw = $new_raw;
 		}
 
 		return $raw;
