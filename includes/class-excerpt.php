@@ -137,7 +137,7 @@ class Versi_Excerpt_Processor {
 			. '**Input:** Blog post content below' . "\n"
 			. '**Output:** Excerpt only, no preamble' . "\n\n"
 			. '**Rules:**' . "\n"
-			. '- Target **' . $target_length . ' words** max' . "\n"
+			. '- Target **' . $target_length . ' words** max. IMPORTANT: Always complete the final sentence naturally. Do not end mid-sentence, even if it slightly exceeds the target length.' . "\n"
 			. '- Capture the essence — hook the reader, summarize the angle' . "\n"
 			. '- Complete sentences, no trailing ellipsis' . "\n"
 			. '- No labels, no quotes around the excerpt itself' . "\n"
@@ -167,8 +167,25 @@ class Versi_Excerpt_Processor {
 
 		$words = str_word_count( $raw, 0, '0123456789' );
 		if ( $words > $target_length ) {
-			$words_arr = preg_split( '/\s+/', $raw );
-			$raw       = implode( ' ', array_slice( $words_arr, 0, $target_length ) );
+			// Try to truncate at the last full sentence
+			$sentences = preg_split( '/(?<=[.!?])\s+/', $raw );
+			$new_raw   = '';
+			foreach ( $sentences as $s ) {
+				$count = count( preg_split( '/\s+/', $new_raw . ' ' . $s ) );
+				if ( $count <= $target_length ) {
+					$new_raw .= ( $new_raw ? ' ' : '' ) . $s;
+				} else {
+					break;
+				}
+			}
+
+			if ( ! empty( $new_raw ) ) {
+				$raw = $new_raw;
+			} else {
+				// Fallback: Force word-based truncation
+				$words_arr = preg_split( '/\s+/', $raw );
+				$raw       = implode( ' ', array_slice( $words_arr, 0, $target_length ) );
+			}
 		}
 
 		return $raw;

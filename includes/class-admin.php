@@ -798,9 +798,50 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$live_url    = add_query_arg( 'versi_mode_tab', 'live', $base_url );
 		$bg_url      = add_query_arg( 'versi_mode_tab', 'bg', $base_url );
 		$refresh_url = 'alt' === $workload ? $alt_url : $exc_url;
+
+		$job = get_option( 'versi_job_status' );
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Versi Processing', 'versi-content-tools' ); ?></h1>
+
+			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
+				<div class="notice notice-info" style="margin: 20px 0;">
+					<p><strong><?php esc_html_e( 'Background job running', 'versi-content-tools' ); ?></strong></p>
+					<p>
+						<?php esc_html_e( 'Progress:', 'versi-content-tools' ); ?>
+						<span id="versi-bg-progress"><?php echo esc_html( $job['processed'] ); ?> / <?php echo esc_html( $job['total'] ); ?></span>
+						&mdash;
+						<?php echo esc_html( $job['workload'] ); ?> / <?php echo esc_html( $job['mode'] ); ?>
+					</p>
+					<button id="versi-bg-cancel" class="button"><?php esc_html_e( 'Cancel Job', 'versi-content-tools' ); ?></button>
+				</div>
+				<script>
+				jQuery(function($) {
+					$('#versi-bg-cancel').on('click', function() {
+						$.post(ajaxurl, {
+							action: 'versi_cancel_job',
+							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						}, function() {
+							location.reload();
+						});
+					});
+					function poll() {
+						$.post(ajaxurl, {
+							action: 'versi_job_status',
+							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						}, function(r) {
+							if (r.success && r.data.is_running) {
+								$('#versi-bg-progress').text(r.data.processed + ' / ' + r.data.total);
+								setTimeout(poll, 3000);
+							} else {
+								location.reload();
+							}
+						});
+					}
+					setTimeout(poll, 3000);
+				});
+				</script>
+			<?php endif; ?>
 
 			<!-- Workload tabs -->
 			<h2 class="nav-tab-wrapper">
