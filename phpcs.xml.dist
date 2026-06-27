@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="versi-content-tools">
+	<description>PHPCS config for Versi Content Tools</description>
+
+	<rule ref="WordPress" />
+
+	<config name="minimum_wp_version" value="7.0" />
+	<config name="text_domain" value="versi-content-tools" />
+
+	<arg name="extensions" value="php" />
+
+	<file>.</file>
+
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/.git/*</exclude-pattern>
+
+	<rule ref="WordPress.PHP.DevelopmentFunctions">
+		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log" />
+	</rule>
+
+	<rule ref="WordPress.DB.SlowDBQuery">
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_query" />
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_tax_query" />
+	</rule>
+</ruleset>

@@ -1,0 +1,184 @@
+<?php
+/**
+ * Excerpt workload: prompts, cleanup, excerpt generation.
+ *
+ * @package Versi_Content_Tools
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Processes posts to generate or improve excerpts using AI.
+ */
+class Versi_Excerpt_Processor {
+
+	/**
+	 * Singleton instance.
+	 *
+	 * @var self|null
+	 */
+	private static $instance = null;
+
+	/**
+	 * Get or create the singleton.
+	 *
+	 * @return self
+	 */
+	public static function init() {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+
+	/**
+	 * Process a single post: generate excerpt via AI.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array
+	 */
+	public function process_single( $post_id ) {
+		$shared = Versi_Processor::init();
+		$post   = get_post( $post_id );
+
+		if ( ! $post ) {
+			return $shared->result( $post_id, '', 'error', null, __( 'Post not found.', 'versi-content-tools' ) );
+		}
+
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			return $shared->result( $post_id, $post->post_title, 'error', null, __( 'AI Client not available.', 'versi-content-tools' ) );
+		}
+
+		$content = wp_strip_all_tags( $post->post_content );
+		if ( mb_strlen( $content ) < 20 ) {
+			return $shared->result( $post_id, $post->post_title, 'skipped', null, null, __( 'Post content too short.', 'versi-content-tools' ) );
+		}
+
+		$existing_excerpt = $shared->sanitize_input( $post->post_excerpt );
+		$target_length    = absint( get_option( 'versi_excerpt_length', 55 ) );
+		if ( $target_length < 10 ) {
+			$target_length = 55;
+		}
+
+		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
+			error_log( '--- VERSI MODE DEBUG --- Excerpt processing for post #' . $post_id );
+		}
+
+		$system  = $this->build_prompt( $existing_excerpt, $target_length );
+		$prompt  = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
+
+		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
+			error_log( '--- VERSI PROMPT DEBUG (excerpt) ---' );
+			error_log( 'SYSTEM: ' . $system );
+			error_log( 'CONTENT: ' . mb_substr( $prompt, 0, 300 ) );
+		}
+
+		$builder = wp_ai_client_prompt( $prompt )
+			->using_system_instruction( $system );
+		$builder = $shared->apply_text_preference( $builder );
+
+		$generated = $builder->generate_text();
+
+		if ( is_wp_error( $generated ) ) {
+			return $shared->result( $post_id, $post->post_title, 'error', null, sprintf(
+				/* translators: %s: AI provider error message */
+				__( 'AI generation failed: %s', 'versi-content-tools' ),
+				$generated->get_error_message()
+			) );
+		}
+
+		$generated = $this->clean_excerpt( $generated, $target_length );
+
+		if ( empty( $generated ) ) {
+			return $shared->result( $post_id, $post->post_title, 'error', null, __( 'Generated excerpt was empty after cleaning.', 'versi-content-tools' ) );
+		}
+
+		$changed = $generated !== $existing_excerpt;
+
+		wp_update_post(
+			array(
+				'ID'           => $post_id,
+				'post_excerpt' => $generated,
+			)
+		);
+
+		update_post_meta( $post_id, 'versi_excerpt_generated', '1' );
+
+		return $shared->result( $post_id, $post->post_title, 'success', $existing_excerpt, null, null, $generated, $changed );
+	}
+
+	/**
+	 * Build the system prompt for excerpt generation.
+	 *
+	 * @param string $existing      Current excerpt (may be empty).
+	 * @param int    $target_length Target word count.
+	 * @return string
+	 */
+	public function build_prompt( $existing = '', $target_length = 55 ) {
+		$custom = get_option( 'versi_excerpt_prompt', '' );
+		if ( ! empty( trim( $custom ) ) ) {
+			return $custom;
+		}
+
+		$prompt = 'You are an **editorial assistant**. Generate a compelling post excerpt.' . "\n\n"
+			. '**Input:** Blog post content below' . "\n"
+			. '**Output:** Excerpt only, no preamble' . "\n\n"
+			. '**Rules:**' . "\n"
+			. '- Target **' . $target_length . ' words** max' . "\n"
+			. '- Capture the essence — hook the reader, summarize the angle' . "\n"
+			. '- Complete sentences, no trailing ellipsis' . "\n"
+			. '- No labels, no quotes around the excerpt itself' . "\n"
+			. '- Do not start with `An article about` or similar filler' . "\n";
+
+		if ( ! empty( $existing ) ) {
+			$prompt .= "\n" . '**Existing excerpt for reference:** ' . $existing . "\n"
+				. 'Improve upon it — do not repeat it verbatim.' . "\n";
+		}
+
+		return $prompt;
+	}
+
+	/**
+	 * Clean generated excerpt: strip labels, trim, enforce length.
+	 *
+	 * @param string $raw           Raw excerpt from AI.
+	 * @param int    $target_length Target word count.
+	 * @return string
+	 */
+	public function clean_excerpt( $raw, $target_length = 55 ) {
+		$raw = sanitize_text_field( $raw );
+		$raw = preg_replace( '/^(?:Excerpt|Summary|Output)::?\s*/i', '', $raw );
+		$raw = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $raw );
+		$raw = preg_replace( '/\[\[.*?\]\]/s', '', $raw );
+		$raw = trim( $raw );
+
+		$words = str_word_count( $raw, 0, '0123456789' );
+		if ( $words > $target_length ) {
+			$words_arr = preg_split( '/\s+/', $raw );
+			$raw       = implode( ' ', array_slice( $words_arr, 0, $target_length ) );
+		}
+
+		return $raw;
+	}
+
+	/**
+	 * Get excerpt stats.
+	 *
+	 * @return array{total: int, missing: int, has_excerpt: int}
+	 */
+	public function get_stats() {
+		global $wpdb;
+
+		$total = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish'"
+		);
+
+		$missing = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND (post_excerpt IS NULL OR post_excerpt = '')"
+		);
+
+		$has_excerpt = $total - $missing;
+
+		return compact( 'total', 'missing', 'has_excerpt' );
+	}
+}
