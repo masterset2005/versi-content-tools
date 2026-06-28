@@ -127,13 +127,13 @@ class Versi_Excerpt_Processor {
 			return $custom;
 		}
 
-		$prompt = 'You are an **SEO editor** creating excerpts that are warm, supportive, and human. The goal is to be clear, skimmable, and emotionally engaging.' . "\n\n"
+		$prompt = 'You are an **SEO editor** creating a concise summary of the article below. The goal is to be warm, supportive, and human while summarizing the core message clearly.' . "\n\n"
 			. '**Input:** Blog post content below' . "\n"
-			. '**Output:** Excerpt only, no preamble, no labels, no meta-commentary' . "\n\n"
+			. '**Output:** Summary only, no preamble, no labels, no meta-commentary' . "\n\n"
 			. '**Style & Content Rules:**' . "\n"
 			. '- Tone: Warm, supportive, human, and encouraging.' . "\n"
 			. '- Structure: Short sentences, simple language. Keep paragraphs to 1–3 sentences.' . "\n"
-			. '- Flow: Lead with the core idea, then helpful detail.' . "\n"
+			. '- Focus: Summarize the article\'s main point. Do not attempt to write an engaging "opening" or narrative hook.' . "\n"
 			. '- Grammar: Use active voice and direct phrasing.' . "\n"
 			. '- Length: Approx **' . $target_length . ' words** (aim for 20–35).' . "\n"
 			. '- SEO: Naturally include 1-2 key search terms if provided.' . "\n"
