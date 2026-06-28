@@ -343,14 +343,14 @@ class Versi_Admin {
 	}
 
 	/**
-	 * Register the Media > Versi Processing page.
+	 * Register the Media > Versi Content Actions page.
 	 *
 	 * @return void
 	 */
 	public function add_processing_page() {
 		add_media_page(
-			__( 'Versi Processing', 'versi-content-tools' ),
-			__( 'Versi Processing', 'versi-content-tools' ),
+			__( 'Versi Content Actions', 'versi-content-tools' ),
+			__( 'Versi Content Actions', 'versi-content-tools' ),
 			'edit_posts',
 			'versi-processing',
 			array( $this, 'render_processing_page' )
@@ -795,7 +795,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$job = get_option( 'versi_job_status' );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Versi Processing', 'versi-content-tools' ); ?></h1>
+			<h1><?php esc_html_e( 'Versi Content Actions', 'versi-content-tools' ); ?></h1>
 
 			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
 				<div class="notice notice-info" style="margin: 20px 0;">
