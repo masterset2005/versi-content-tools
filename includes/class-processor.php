@@ -34,7 +34,7 @@ class Versi_Processor {
 	 * @return string[]
 	 */
 	public function get_text_model_preference( $workload ) {
-		$option_map = array(
+		$option_map  = array(
 			'alt'     => 'versi_alt_text_model',
 			'excerpt' => 'versi_excerpt_text_model',
 			'seo'     => 'versi_seo_text_model',

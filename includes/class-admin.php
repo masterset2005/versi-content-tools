@@ -790,7 +790,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$seo_url     = add_query_arg( 'versi_workload', 'seo', $base_url );
 		$live_url    = add_query_arg( 'versi_mode_tab', 'live', $base_url );
 		$bg_url      = add_query_arg( 'versi_mode_tab', 'bg', $base_url );
-		$refresh_url = 'alt' === $workload ? $alt_url : ('seo' === $workload ? $seo_url : $exc_url);
+		$refresh_url = 'alt' === $workload ? $alt_url : ( 'seo' === $workload ? $seo_url : $exc_url );
 
 		$job = get_option( 'versi_job_status' );
 		?>
@@ -930,11 +930,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$safe_mode  = 'missing';
 			$dest_label = __( 'Regenerate All Alt Text', 'versi-content-tools' );
 			$dest_mode  = 'regenerate';
-		} else {
+		} elseif ( 'excerpt' === $workload ) {
 			$safe_label = __( 'Generate Missing Excerpts', 'versi-content-tools' );
 			$safe_mode  = 'missing';
 			$dest_label = __( 'Improve All Excerpts', 'versi-content-tools' );
 			$dest_mode  = 'improve';
+		} else {
+			$safe_label = __( 'Generate Missing Keywords', 'versi-content-tools' );
+			$safe_mode  = 'missing';
+			$dest_label = __( 'Regenerate All Keywords', 'versi-content-tools' );
+			$dest_mode  = 'regenerate';
 		}
 		?>
 		<div id="versi-live-tab">
@@ -1139,7 +1144,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			}
 
 			function getActionName(prefix) {
-				return workload === 'alt' ? 'versi_alt_' + prefix : 'versi_excerpt_' + prefix;
+				if (workload === 'alt') return 'versi_alt_' + prefix;
+				if (workload === 'excerpt') return 'versi_excerpt_' + prefix;
+				return 'versi_seo_' + prefix;
 			}
 
 			function truncateText(text, maxLen) {
@@ -1625,7 +1632,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 		$ext    = Versi_Extensions::init();
 		$status = $ext->generate_focus_keywords( $id );
-		
+
 		$result = Versi_Processor::init()->result(
 			$id,
 			$post->post_title,

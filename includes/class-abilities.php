@@ -31,7 +31,7 @@ class Versi_Abilities {
 				'description'         => __( 'Generates alt text for images.', 'versi-content-tools' ),
 				'category'            => 'content-generation',
 				'execute_callback'    => array( $this, 'execute_alt_text' ),
-				'permission_callback' => function(): bool {
+				'permission_callback' => function (): bool {
 					return current_user_can( 'edit_posts' );
 				},
 			)
@@ -44,7 +44,7 @@ class Versi_Abilities {
 				'description'         => __( 'Generates excerpts for posts.', 'versi-content-tools' ),
 				'category'            => 'content-generation',
 				'execute_callback'    => array( $this, 'execute_excerpt' ),
-				'permission_callback' => function(): bool {
+				'permission_callback' => function (): bool {
 					return current_user_can( 'edit_posts' );
 				},
 			)
@@ -57,7 +57,7 @@ class Versi_Abilities {
 				'description'         => __( 'Generates SEO focus keywords.', 'versi-content-tools' ),
 				'category'            => 'content-generation',
 				'execute_callback'    => array( $this, 'execute_seo' ),
-				'permission_callback' => function(): bool {
+				'permission_callback' => function (): bool {
 					return current_user_can( 'edit_posts' );
 				},
 			)
@@ -66,6 +66,8 @@ class Versi_Abilities {
 
 	/**
 	 * Execute alt text generation.
+	 *
+	 * @param array $input Input data.
 	 */
 	public function execute_alt_text( $input ) {
 		$attachment_id = isset( $input['attachment_id'] ) ? (int) $input['attachment_id'] : 0;
@@ -77,6 +79,8 @@ class Versi_Abilities {
 
 	/**
 	 * Execute excerpt generation.
+	 *
+	 * @param array $input Input data.
 	 */
 	public function execute_excerpt( $input ) {
 		$post_id = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
@@ -88,6 +92,8 @@ class Versi_Abilities {
 
 	/**
 	 * Execute SEO keyword generation.
+	 *
+	 * @param array $input Input data.
 	 */
 	public function execute_seo( $input ) {
 		$post_id = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
