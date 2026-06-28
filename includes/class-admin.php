@@ -904,13 +904,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			<?php if ( 'bg' === $mode_tab ) : ?>
 				<?php $this->render_background_tab( $workload ); ?>
 			<?php else : ?>
-				<?php if ( 'seo' === $workload ) : ?>
-					<div class="versi-tab" id="versi-tab-seo">
-						<p><?php esc_html_e( 'SEO keyword generation is currently only available for individual posts via the post editor.', 'versi-content-tools' ); ?></p>
-					</div>
-				<?php else : ?>
-					<?php $this->render_live_tab( $workload ); ?>
-				<?php endif; ?>
+				<?php $this->render_live_tab( $workload ); ?>
 			<?php endif; ?>
 		</div>
 		<?php
