@@ -82,11 +82,11 @@ class Versi_Admin {
 			return;
 		}
 
-		$js_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/admin.js' );
+		$js_ver = filemtime( VERSI_PLUGIN_DIR . 'js/admin.js' );
 
 		wp_enqueue_script(
 			'versi-admin',
-			VERSI_PLUGIN_URL . 'assets/admin.js',
+			VERSI_PLUGIN_URL . 'js/admin.js',
 			array( 'jquery' ),
 			$js_ver,
 			true

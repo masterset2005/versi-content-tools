@@ -41,7 +41,7 @@ built-in `wp_ai_client_prompt()` API.
 
 1. Upload the `versi-content-tools` folder to `/wp-content/plugins/`
 2. Activate the plugin through the **Plugins** screen
-3. Configure your AI providers under **Settings > AI Client** (part of WordPress 7.0)
+3. Configure your AI providers under **Settings > Connectors** (part of WordPress 7.0)
 4. Go to **Settings > Versi Content Tools** to configure model preferences and prompts
 5. Process content under **Media > Versi Processing**
 
@@ -49,7 +49,7 @@ built-in `wp_ai_client_prompt()` API.
 
 = Do I need an API key? =
 
-Yes. You must have at least one AI provider configured under Settings > AI Client.
+Yes. You must have at least one AI provider configured under Settings > Connectors.
 WordPress 7.0 includes built-in support for OpenAI, Anthropic, Google AI, and local providers.
 
 = What models are supported? =

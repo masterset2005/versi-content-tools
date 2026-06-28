@@ -1,0 +1,11 @@
+/.git
+/.gitignore
+/.gitattributes
+/.distignore
+/.phpstan
+/composer.json
+/composer.lock
+/phpcs.xml.dist
+/phpstan.neon.dist
+/TODO.md
+/vendor
