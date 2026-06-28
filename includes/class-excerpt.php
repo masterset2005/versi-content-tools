@@ -137,11 +137,11 @@ class Versi_Excerpt_Processor {
 			. '**Input:** Blog post content below' . "\n"
 			. '**Output:** Excerpt only, no preamble' . "\n\n"
 			. '**Rules:**' . "\n"
-			. '- Target **' . $target_length . ' words** max. IMPORTANT: Always complete the final sentence naturally. Do not end mid-sentence, even if it slightly exceeds the target length.' . "\n"
-			. '- Capture the essence — hook the reader, summarize the angle' . "\n"
-			. '- Complete sentences, no trailing ellipsis' . "\n"
-			. '- No labels, no quotes around the excerpt itself' . "\n"
-			. '- Do not start with `An article about` or similar filler' . "\n";
+			. '- Structure: 1-2 sentences. Maximum **' . $target_length . ' words**.' . "\n"
+			. '- IMPORTANT: Complete the final sentence naturally. Do not end mid-sentence.' . "\n"
+			. '- Capture the essence: hook the reader, summarize the core angle.' . "\n"
+			. '- No labels (like "Excerpt:"), no quotes, no preamble.' . "\n"
+			. '- Do not start with filler like `An article about` or `This post discusses`.' . "\n";
 
 		if ( ! empty( $existing ) ) {
 			$prompt .= "\n" . '**Existing excerpt for reference:** ' . $existing . "\n"
