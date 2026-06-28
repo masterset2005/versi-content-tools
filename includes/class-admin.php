@@ -450,46 +450,6 @@ class Versi_Admin {
 						</tr>
 						<tr>
 							<th scope="row">
-								<label for="versi_vision_model"><?php esc_html_e( 'Vision Model', 'versi-content-tools' ); ?></label>
-							</th>
-							<td>
-								<select id="versi_vision_model" name="versi_vision_model" class="regular-text versi-model-select" style="max-width:400px;">
-									<option value=""><?php esc_html_e( '- Default -', 'versi-content-tools' ); ?></option>
-									<?php
-									$saved = get_option( 'versi_vision_model', '' );
-									if ( '' !== $saved ) {
-										$saved_models = array_map( 'trim', explode( ',', $saved ) );
-										foreach ( $saved_models as $m ) {
-											echo '<option value="' . esc_attr( $m ) . '" selected>' . esc_html( $m ) . '</option>';
-										}
-									}
-									?>
-								</select>
-								<p class="description"><?php esc_html_e( 'Preferred model for image analysis. Populated from your configured AI providers.', 'versi-content-tools' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="versi_text_model"><?php esc_html_e( 'Text Model', 'versi-content-tools' ); ?></label>
-							</th>
-							<td>
-								<select id="versi_text_model" name="versi_text_model" class="regular-text versi-model-select" style="max-width:400px;">
-									<option value=""><?php esc_html_e( '- Default -', 'versi-content-tools' ); ?></option>
-									<?php
-									$saved = get_option( 'versi_text_model', '' );
-									if ( '' !== $saved ) {
-										$saved_models = array_map( 'trim', explode( ',', $saved ) );
-										foreach ( $saved_models as $m ) {
-											echo '<option value="' . esc_attr( $m ) . '" selected>' . esc_html( $m ) . '</option>';
-										}
-									}
-									?>
-								</select>
-								<p class="description"><?php esc_html_e( 'Preferred model for text-only processing (excerpts, alt-text synthesizer).', 'versi-content-tools' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
 								<label for="versi_match_author_tone"><?php esc_html_e( 'Match Author Tone', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
@@ -556,6 +516,38 @@ class Versi_Admin {
 								);
 								?>
 								<p class="description"><?php esc_html_e( 'Only process images attached to posts in this category.', 'versi-content-tools' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="versi_alt_vision_model"><?php esc_html_e( 'Vision Model', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<select id="versi_alt_vision_model" name="versi_alt_vision_model" class="regular-text versi-model-select" style="max-width:400px;">
+									<option value=""><?php esc_html_e( '- Default -', 'versi-content-tools' ); ?></option>
+									<?php
+									$saved = get_option( 'versi_alt_vision_model', '' );
+									if ( '' !== $saved ) {
+										echo '<option value="' . esc_attr( $saved ) . '" selected>' . esc_html( $saved ) . '</option>';
+									}
+									?>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="versi_alt_text_model"><?php esc_html_e( 'Text Model', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<select id="versi_alt_text_model" name="versi_alt_text_model" class="regular-text versi-model-select" style="max-width:400px;">
+									<option value=""><?php esc_html_e( '- Default -', 'versi-content-tools' ); ?></option>
+									<?php
+									$saved = get_option( 'versi_alt_text_model', '' );
+									if ( '' !== $saved ) {
+										echo '<option value="' . esc_attr( $saved ) . '" selected>' . esc_html( $saved ) . '</option>';
+									}
+									?>
+								</select>
 							</td>
 						</tr>
 						<tr>
@@ -689,6 +681,22 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							<td>
 								<input type="number" id="versi_excerpt_length" name="versi_excerpt_length" value="<?php echo esc_attr( get_option( 'versi_excerpt_length', 55 ) ); ?>" min="10" max="200" step="5" style="width:80px;">
 								<p class="description"><?php esc_html_e( 'Target word count for generated excerpts.', 'versi-content-tools' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="versi_excerpt_text_model"><?php esc_html_e( 'Text Model', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<select id="versi_excerpt_text_model" name="versi_excerpt_text_model" class="regular-text versi-model-select" style="max-width:400px;">
+									<option value=""><?php esc_html_e( '- Default -', 'versi-content-tools' ); ?></option>
+									<?php
+									$saved = get_option( 'versi_excerpt_text_model', '' );
+									if ( '' !== $saved ) {
+										echo '<option value="' . esc_attr( $saved ) . '" selected>' . esc_html( $saved ) . '</option>';
+									}
+									?>
+								</select>
 							</td>
 						</tr>
 						<tr>
