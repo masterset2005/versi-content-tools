@@ -12,24 +12,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Processor {
 
-	/**
-	 * Singleton instance.
-	 *
-	 * @var self|null
-	 */
-	private static $instance = null;
-
-	/**
-	 * Get or create the singleton.
-	 *
-	 * @return self
-	 */
-	public static function init() {
-		if ( null === self::$instance ) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
+	use Versi_Singleton;
 
 	/**
 	 * Get vision model preference as an array (for alt-text).

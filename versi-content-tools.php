@@ -24,6 +24,7 @@ define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 /**
  * Include core classes.
  */
+require_once VERSI_PLUGIN_DIR . 'includes/trait-singleton.php';
 require_once VERSI_PLUGIN_DIR . 'includes/class-processor.php';
 require_once VERSI_PLUGIN_DIR . 'includes/class-alt-text.php';
 require_once VERSI_PLUGIN_DIR . 'includes/class-excerpt.php';

@@ -12,24 +12,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Admin {
 
-	/**
-	 * Singleton instance.
-	 *
-	 * @var self|null
-	 */
-	private static $instance = null;
-
-	/**
-	 * Get or create the singleton.
-	 *
-	 * @return self
-	 */
-	public static function init() {
-		if ( null === self::$instance ) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
+	use Versi_Singleton;
 
 	/**
 	 * Hook into WordPress admin.
@@ -68,51 +51,15 @@ class Versi_Admin {
 	}
 
 	/**
-	 * Enqueue scripts for processing and settings pages.
+	 * No-op stub (scripts are inlined). Kept for future extensibility.
 	 *
 	 * @param string $hook Current admin page hook.
 	 * @return void
 	 */
 	public function enqueue_scripts( $hook ) {
-		$is_processing = 'media_page_versi-processing' === $hook;
-		$is_upload     = 'upload.php' === $hook;
-		$is_settings   = 'settings_page_versi' === $hook;
-
-		if ( ! $is_upload && ! $is_processing && ! $is_settings ) {
-			return;
-		}
-
-		$js_ver = filemtime( VERSI_PLUGIN_DIR . 'js/admin.js' );
-
-		wp_enqueue_script(
-			'versi-admin',
-			VERSI_PLUGIN_URL . 'js/admin.js',
-			array( 'jquery' ),
-			$js_ver,
-			true
-		);
-
-		$data = array(
-			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-			'nonce'          => wp_create_nonce( 'versi_process' ),
-			'getModelsNonce' => wp_create_nonce( 'versi_get_models' ),
-		);
-
-		// Only send processing params on the upload page (media library overlay).
-		if ( $is_upload ) {
-			$batch_sz = absint( get_option( 'versi_batch_size', 5 ) );
-			if ( $batch_sz < 1 ) {
-				$batch_sz = 1;
-			}
-			if ( $batch_sz > 50 ) {
-				$batch_sz = 50;
-			}
-			$data['batchSize'] = $batch_sz;
-			$data['action']    = '';
-			$data['workload']  = 'alt';
-		}
-
-		wp_localize_script( 'versi-admin', 'versiBulkData', $data );
+		// All JS is currently inlined in render methods.
+		// This method is kept as a placeholder.
+		unset( $hook );
 	}
 
 	/**
@@ -766,7 +713,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			});
 
 			function toggleMode() {
-				var mode = $('input[name="versi_alt_processing_mode"]:checked').val();
+				const mode = $('input[name="versi_alt_processing_mode"]:checked').val();
 				$('tr[data-mode]').addClass('hidden');
 				$('tr[data-mode="' + mode + '"]').removeClass('hidden');
 			}
@@ -774,8 +721,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			toggleMode();
 
 			$('.versi-model-select').each(function() {
-				var $select = $(this);
-				var savedValue = $select.val();
+				const $select = $(this);
+				const savedValue = $select.val();
 
 				$.ajax({
 					url: ajaxurl,
@@ -784,23 +731,24 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						action: 'versi_get_models',
 						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_get_models' ) ); ?>',
 					},
-					success: function(response) {
+					success(response) {
 						if (!response.success || !response.data) return;
-						$.each(response.data, function(i, provider) {
-							var $group = $('<optgroup>').attr('label', provider.provider);
-							$.each(provider.models, function(j, model) {
+						response.data.forEach(provider => {
+							const $group = $('<optgroup>').attr('label', provider.provider);
+							provider.models.forEach(model => {
 								$group.append($('<option>').val(model.id).text(model.name + ' (' + model.id + ')'));
 							});
 							$select.append($group);
 						});
 						if (savedValue) $select.val(savedValue);
 					},
-					error: function() {
+					error() {
 						$select.replaceWith('<input type="text" id="' + $select.attr('id') + '" name="' + $select.attr('name') + '" value="' + (savedValue || '') + '" class="regular-text code">');
 					}
+				});
 			});
-		});
-</script>
+		})(jQuery);
+		</script>
 		<style>
 		tr[data-mode].hidden { display: none; }
 		</style>
@@ -848,20 +796,18 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				</div>
 				<script>
 				jQuery(function($) {
-					$('#versi-bg-cancel').on('click', function() {
+					$('#versi-bg-cancel').on('click', () => {
 						$.post(ajaxurl, {
 							action: 'versi_cancel_job',
 							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						}, function() {
-							location.reload();
-			});
+						}).always(() => location.reload());
+					});
 
-		});
 					function poll() {
 						$.post(ajaxurl, {
 							action: 'versi_job_status',
 							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						}, function(r) {
+						}, r => {
 							if (r.success && r.data.is_running) {
 								$('#versi-bg-progress').text(r.data.processed + ' / ' + r.data.total);
 								setTimeout(poll, 3000);
@@ -1011,28 +957,28 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 		<script>
 		jQuery(function($) {
-			var $modeBtns = $('.versi-start-btn');
-			var $warning = $('.versi-overwrite-warning');
-			var $processingArea = $('#versi-processing-area');
-			var $resumeNotice = $('#versi-resume-notice');
-			var $stopLink = $('#versi-stop-link');
-			var $status = $('#versi-status');
-			var $results = $('#versi-results');
-			var $orText = $('.versi-or-text');
-			var running = false;
-			var mode = '';
-			var total = 0;
-			var done = 0;
-			var offset = 0;
-			var catId = 0;
-			var batchSize = <?php echo absint( get_option( 'versi_batch_size', 5 ) ); ?>;
-			var resultsData = [];
-			var workload = '<?php echo esc_js( $workload ); ?>';
-			var stopRequested = false;
-			var $resumeText = $('#versi-resume-text');
-			var startTime = 0;
-			var itemDurations = [];
-			var etaTimer = null;
+			const $modeBtns = $('.versi-start-btn');
+			const $warning = $('.versi-overwrite-warning');
+			const $processingArea = $('#versi-processing-area');
+			const $resumeNotice = $('#versi-resume-notice');
+			const $stopLink = $('#versi-stop-link');
+			const $status = $('#versi-status');
+			const $results = $('#versi-results');
+			const $orText = $('.versi-or-text');
+			const $resumeText = $('#versi-resume-text');
+			const catId = 0;
+			const batchSize = <?php echo absint( get_option( 'versi_batch_size', 5 ) ); ?>;
+			const workload = '<?php echo esc_js( $workload ); ?>';
+			let running = false;
+			let mode = '';
+			let total = 0;
+			let done = 0;
+			let offset = 0;
+			let resultsData = [];
+			let stopRequested = false;
+			let startTime = 0;
+			let itemDurations = [];
+			let etaTimer = null;
 
 			// Check for saved job
 			$.ajax({
@@ -1053,7 +999,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					done = job.done;
 					
 					$resumeNotice.show();
-					var msg = <?php echo json_encode( __( 'You have a paused job (%1$s mode, %2$s/%3$s items processed).', 'versi-content-tools' ) ); ?>;
+					/* translators: 1: mode, 2: done count, 3: total count */
+					var msg = <?php echo wp_json_encode( __( 'You have a paused job (%1$s mode, %2$s/%3$s items processed).', 'versi-content-tools' ) ); // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment ?>;
 					$resumeText.text(msg.replace('%1$s', mode).replace('%2$s', done).replace('%3$s', total));
 				}
 			});
@@ -1106,8 +1053,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			}
 
 			$modeBtns.on('click', function() {
-				console.log('Button clicked');
-				var $btn = $(this);
+				const $btn = $(this);
 				mode = $btn.data('mode');
 
 				if ($btn.data('destructive') && !confirm('<?php echo esc_js( __( 'This will overwrite existing content. Are you sure?', 'versi-content-tools' ) ); ?>')) {
@@ -1131,7 +1077,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				if (etaTimer) clearInterval(etaTimer);
 				etaTimer = setInterval(updateEtaStatus, 5000);
 
-				console.log('Calling fetchBatch');
 				fetchBatch();
 			});
 
@@ -1141,12 +1086,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				stopRequested = true;
 				running = false;
 				$stopLink.hide();
-				var ok = 0, errs = 0;
-				resultsData.forEach(function(r) {
+				let ok = 0, errs = 0;
+				resultsData.forEach(r => {
 					if (r.status === 'success') ok++;
 					else if (r.status === 'error') errs++;
 				});
-				var summary = '<?php echo esc_js( __( 'Stopped.', 'versi-content-tools' ) ); ?> ' + done + ' / ' + total +
+				const summary = '<?php echo esc_js( __( 'Stopped.', 'versi-content-tools' ) ); ?> ' + done + ' / ' + total +
 					' (ok: ' + ok + (errs > 0 ? ', errors: ' + errs : '') + ')';
 				$status.text(summary);
 				saveJobState('paused');
@@ -1156,8 +1101,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			function updateSummary() {
 				$stopLink.hide();
 				if (etaTimer) clearInterval(etaTimer);
-				var ok = 0, errs = 0;
-				resultsData.forEach(function(r) {
+				let ok = 0, errs = 0;
+				resultsData.forEach(r => {
 					if (r.status === 'success') ok++;
 					else if (r.status === 'error') errs++;
 				});
@@ -1175,11 +1120,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			}
 
 			function makeBodyText(r, full) {
-				var maxLen = full ? Infinity : 150;
-				var label = r.title ? r.title + ' ' : '';
+				const maxLen = full ? Infinity : 150;
+				const label = r.title ? r.title + ' ' : '';
 				if (r.status === 'success') {
-					var cur = r.previous ? truncateText(r.previous, maxLen) : '';
-					var gen = truncateText(r.generated || '', maxLen);
+					const cur = r.previous ? truncateText(r.previous, maxLen) : '';
+					const gen = truncateText(r.generated || '', maxLen);
 					if (r.changed && cur) {
 						return '#' + r.id + ' ' + label + '→ REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"';
 					} else if (r.changed) {
@@ -1193,11 +1138,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				return '#' + r.id + ' ' + label + '— ' + (r.reason || 'Skipped');
 			}
 
-			function addEntry(r) {
-				var $entry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
+			function createEntryElement(r) {
+				const $entry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
 
 				if (workload === 'alt') {
-					var thumbUrl = r.thumbnail || '';
+					const thumbUrl = r.thumbnail || '';
 					if (thumbUrl) {
 						$entry.append('<img src="' + thumbUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:2px;flex-shrink:0;margin-top:2px;">');
 					} else {
@@ -1205,23 +1150,20 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					}
 				}
 
-				var $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
+				const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
 
 				if (r.status === 'success') {
-					var curFull = r.previous || '';
-					var genFull = r.generated || '';
-					var needsExpand = curFull.length > 150 || genFull.length > 150;
-
-					var shortText = makeBodyText(r, false);
+					const curFull = r.previous || '';
+					const genFull = r.generated || '';
+					const needsExpand = curFull.length > 150 || genFull.length > 150;
+					const shortText = makeBodyText(r, false);
 					$body.text(shortText);
 
 					if (needsExpand) {
 						$body.append(' <a href="#" class="versi-expand" data-full="' + encodeURIComponent(makeBodyText(r, true)) + '" data-short="' + encodeURIComponent(shortText) + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
 					}
 
-					if (r.changed && curFull) {
-						$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
-					} else if (r.changed) {
+					if (r.changed) {
 						$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
 					} else {
 						$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
@@ -1244,17 +1186,22 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				}
 
 				$entry.data('attachment-id', r.id);
+				return $entry;
+			}
+
+			function addEntry(r) {
+				const $entry = createEntryElement(r);
 				$results.append($entry);
 				$results.scrollTop($results[0].scrollHeight);
 			}
 
 			function formatEta(ms) {
 				if (ms <= 0) return '';
-				var totalSec = Math.ceil(ms / 1000);
-				var min = Math.floor(totalSec / 60);
-				var sec = totalSec % 60;
+				const totalSec = Math.ceil(ms / 1000);
+				let min = Math.floor(totalSec / 60);
+				const sec = totalSec % 60;
 				if (min >= 60) {
-					var hr = Math.floor(min / 60);
+					const hr = Math.floor(min / 60);
 					min = min % 60;
 					return hr + 'h ' + min + 'm remaining';
 				}
@@ -1263,17 +1210,17 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			}
 
 			function updateEtaStatus() {
-				var remaining = total - done;
-				var eta = '';
+				const remaining = total - done;
+				let eta = '';
 				if (itemDurations.length > 0 && remaining > 0) {
-					var avg = itemDurations.reduce(function(a, b) { return a + b; }, 0) / itemDurations.length;
+					const avg = itemDurations.reduce((a, b) => a + b, 0) / itemDurations.length;
 					eta = ' — ' + formatEta(avg * remaining);
 				}
 				$status.text('Processing — ' + (done + 1) + ' / ' + total + eta);
 			}
 
 			function processId(id, cb) {
-				var itemStart = Date.now();
+				const itemStart = Date.now();
 				updateEtaStatus();
 
 				$.ajax({
@@ -1285,20 +1232,20 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						id: id,
 						mode: mode,
 					},
-					success: function(response) {
+					success(response) {
 						if (stopRequested) return;
-						var r = response.data;
+						const r = response.data;
 						resultsData.push(r);
 						addEntry(r);
 					},
-					error: function() {
+					error() {
 						if (stopRequested) return;
 						resultsData.push({ id: id, status: 'error' });
 						addEntry({ id: id, title: '', status: 'error', error: '<?php echo esc_js( __( 'Request failed', 'versi-content-tools' ) ); ?>' });
 					},
-					complete: function() {
+					complete() {
 						done++;
-						var elapsed = Date.now() - itemStart;
+						const elapsed = Date.now() - itemStart;
 						itemDurations.push(elapsed);
 						if (itemDurations.length > 10) itemDurations.shift();
 						cb();
@@ -1312,13 +1259,13 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					return;
 				}
 
-				var i = 0;
+				let i = 0;
 				function nextInBatch() {
 					if (!running || i >= ids.length) {
 						cb();
 						return;
 					}
-					processId(ids[i], function() {
+					processId(ids[i], () => {
 						i++;
 						setTimeout(nextInBatch, 300);
 					});
@@ -1328,10 +1275,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 			function fetchBatch() {
 				if (!running) {
-					console.log('fetchBatch: not running');
 					return;
 				}
-				console.log('Fetching batch...');
 
 				$.ajax({
 					url: ajaxurl,
@@ -1344,13 +1289,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						offset: offset,
 						batch: batchSize,
 					},
-					success: function(response) {
-						console.log('fetchBatch: success', response);
+					success(response) {
 						if (stopRequested) return;
 
-						var d = response.data;
+						const d = response.data;
 						total = d.total;
-						var ids = d.ids || [];
+						const ids = d.ids || [];
 
 						if (ids.length === 0) {
 							running = false;
@@ -1358,15 +1302,14 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							return;
 						}
 
-						processBatch(ids, function() {
+						processBatch(ids, () => {
 							if (stopRequested) return;
 							offset += ids.length;
 							saveJobState('paused');
 							setTimeout(fetchBatch, 100);
 						});
 					},
-					error: function(xhr, status, error) {
-						console.log('fetchBatch: error', error);
+					error() {
 						if (stopRequested) return;
 						running = false;
 						$stopLink.hide();
@@ -1377,9 +1320,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 			// Redo / Undo
 			$results.on('click', '.versi-redo-btn', function() {
-				var $btn = $(this);
-				var $entry = $btn.closest('.versi-entry');
-				var id = $entry.data('attachment-id');
+				const $btn = $(this);
+				const $entry = $btn.closest('.versi-entry');
+				const id = $entry.data('attachment-id');
 				if (!id) return;
 
 				$btn.text('...').prop('disabled', true);
@@ -1394,50 +1337,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						id: id,
 						mode: mode,
 					},
-					success: function(response) {
-						var r = response.data;
-						var $newEntry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
-
-						if (workload === 'alt') {
-							var thumbUrl = r.thumbnail || '';
-							if (thumbUrl) {
-								$newEntry.append('<img src="' + thumbUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:2px;flex-shrink:0;margin-top:2px;">');
-							} else {
-								$newEntry.append('<span style="width:40px;height:40px;flex-shrink:0;background:#f0f0f1;border-radius:2px;display:inline-block;"></span>');
-							}
-						}
-
-						var $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
-						var curFull = r.previous || '';
-						var genFull = r.generated || '';
-						var needsExpand = curFull.length > 150 || genFull.length > 150;
-
-						$body.text(makeBodyText(r, false));
-
-						if (needsExpand) {
-							$body.append(' <a href="#" class="versi-expand" data-full="' + encodeURIComponent(makeBodyText(r, true)) + '" data-short="' + encodeURIComponent(makeBodyText(r, false)) + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
-						}
-
-						if (r.changed && curFull) {
-							$newEntry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
-						} else if (r.changed) {
-							$newEntry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
-						} else {
-							$newEntry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
-						}
-
-						$newEntry.append($body);
-
-						if (r.previous !== undefined) {
-							$newEntry.append(
-								'<button class="versi-redo-btn" data-attachment-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">redo</button>' +
-								'<button class="versi-undo-btn" data-attachment-id="' + r.id + '" data-previous="' + (r.previous || '').replace(/"/g, '&quot;') + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">undo</button>'
-							);
-						}
-						$newEntry.data('attachment-id', r.id);
-						$entry.replaceWith($newEntry);
+					success(response) {
+						$entry.replaceWith(createEntryElement(response.data));
 					},
-					error: function() {
+					error() {
 						$btn.text('redo').prop('disabled', false);
 						$entry.css('opacity', '1');
 					},
@@ -1445,10 +1348,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			});
 
 			$results.on('click', '.versi-undo-btn', function() {
-				var $btn = $(this);
-				var $entry = $btn.closest('.versi-entry');
-				var id = $btn.data('attachment-id');
-				var prev = $btn.data('previous');
+				const $btn = $(this);
+				const $entry = $btn.closest('.versi-entry');
+				const id = $btn.data('attachment-id');
+				const prev = $btn.data('previous');
 				if (!id) return;
 
 				$btn.text('...').prop('disabled', true);
@@ -1463,15 +1366,15 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						id: id,
 						alt: prev,
 					},
-					success: function(response) {
-						var r = response.data;
+					success(response) {
+						const r = response.data;
 						$entry.css('opacity', '1');
 						$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
 						$entry.find('.versi-redo-btn').remove();
 						$entry.find('.versi-undo-btn').remove();
 						$entry.find('div:last').text('#' + r.id + ' (Reverted to: "' + r.alt.substring(0, 100) + '")');
 					},
-					error: function() {
+					error() {
 						$btn.text('undo').prop('disabled', false);
 						$entry.css('opacity', '1');
 					},
@@ -1480,19 +1383,19 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 			$results.on('click', '.versi-expand', function(e) {
 				e.preventDefault();
-				var $link = $(this);
-				var $body = $link.parent();
-				var isExpanded = $link.data('expanded');
+				const $link = $(this);
+				const $body = $link.parent();
+				const isExpanded = $link.data('expanded');
 				if (!isExpanded) {
 					$body.empty();
 					$body.text(decodeURIComponent($link.data('full')));
-					$link = $('<a href="#" class="versi-expand" data-full="' + $link.data('full') + '" data-expanded="1" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show less</a>');
-					$body.append(' ', $link);
+					const $newLink = $('<a href="#" class="versi-expand" data-full="' + $link.data('full') + '" data-expanded="1" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show less</a>');
+					$body.append(' ', $newLink);
 				} else {
 					$body.empty();
 					$body.text(decodeURIComponent($link.data('short')));
-					$link = $('<a href="#" class="versi-expand" data-full="' + $link.data('full') + '" data-short="' + $link.data('short') + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
-					$body.append(' ', $link);
+					const $newLink = $('<a href="#" class="versi-expand" data-full="' + $link.data('full') + '" data-short="' + $link.data('short') + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
+					$body.append(' ', $newLink);
 				}
 			});
 		});
@@ -1538,7 +1441,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						$.post(ajaxurl, {
 							action: 'versi_job_status',
 							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_job_status' ) ); ?>'
-						}, function(resp) {
+						}, resp => {
 							if (resp.success && resp.data) {
 								$('#versi-bg-progress').text(resp.data.processed + ' / ' + resp.data.total);
 								if (resp.data.is_running) {
@@ -1573,9 +1476,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<script>
 				jQuery(function($) {
 					$('.versi-bg-start-btn').on('click', function() {
-						var $btn = $(this);
-						var btnMode = $btn.data('mode');
-						var btnWorkload = $btn.data('workload');
+						const $btn = $(this);
+						const btnMode = $btn.data('mode');
+						const btnWorkload = $btn.data('workload');
 						if (!confirm('<?php echo esc_js( __( 'Start background processing? You can close the browser and check back later.', 'versi-content-tools' ) ); ?>')) {
 							return;
 						}
@@ -1600,16 +1503,26 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	// -------------------------------------------------------------------------
 
 	/**
+	 * Verify AJAX nonce and edit_posts capability.
+	 *
+	 * @param string $nonce_action Nonce action name.
+	 * @return void Sends error and exits on failure.
+	 */
+	private function ajax_check( $nonce_action = 'versi_process' ) {
+		check_ajax_referer( $nonce_action );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+	}
+
+	/**
 	 * AJAX: process a single image for alt text.
 	 *
 	 * @return void
 	 */
 	public function ajax_alt_process_single() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$mode = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
@@ -1628,11 +1541,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_alt_get_ids() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$mode   = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
@@ -1649,11 +1558,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_alt_undo() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$id  = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$alt = isset( $_POST['alt'] ) ? sanitize_text_field( wp_unslash( $_POST['alt'] ) ) : '';
@@ -1677,11 +1582,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_excerpt_process_single() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 
@@ -1699,11 +1600,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_excerpt_get_ids() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$mode   = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
@@ -1719,11 +1616,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_excerpt_undo() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$id      = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$excerpt = isset( $_POST['alt'] ) ? sanitize_text_field( wp_unslash( $_POST['alt'] ) ) : '';
@@ -1809,11 +1702,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_create_job() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$mode     = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
 		$workload = isset( $_POST['workload'] ) ? sanitize_key( $_POST['workload'] ) : 'alt';
@@ -1863,11 +1752,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_job_status() {
-		check_ajax_referer( 'versi_job_status' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check( 'versi_job_status' );
 
 		$job = get_option( 'versi_job_status', false );
 		if ( ! $job ) {
@@ -1883,11 +1768,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_cancel_job() {
-		check_ajax_referer( 'versi_cancel_job' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check( 'versi_cancel_job' );
 
 		update_option(
 			'versi_job_status',
@@ -1909,11 +1790,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_save_job() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$workload = isset( $_POST['workload'] ) ? sanitize_key( $_POST['workload'] ) : '';
 		$mode     = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : '';
@@ -1949,11 +1826,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_load_job() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		$status = get_option( 'versi_live_job_status' );
 		if ( ! $status ) {
@@ -1974,11 +1847,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function ajax_dismiss_job() {
-		check_ajax_referer( 'versi_process' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( 'Insufficient permissions' );
-		}
+		$this->ajax_check();
 
 		delete_option( 'versi_live_job_status' );
 		wp_send_json_success( array( 'dismissed' => true ) );
@@ -2062,10 +1931,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return;
 		}
 
-		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			return;
-		}
-
 		$mime = get_post_mime_type( $attachment_id );
 		if ( ! is_string( $mime ) || ! str_starts_with( $mime, 'image/' ) ) {
 			return;
@@ -2113,10 +1978,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		}
 
 		if ( ! empty( $post->post_excerpt ) ) {
-			return;
-		}
-
-		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
 			return;
 		}
 
@@ -2241,13 +2102,13 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		?>
 		<script>
 		jQuery(function($) {
-			var orig = wp.media.view.Attachment.Library;
+			const orig = wp.media.view.Attachment.Library;
 			if (!orig) return;
 			wp.media.view.Attachment.Library = orig.extend({
-				render: function() {
-					var r = orig.prototype.render.apply(this, arguments);
+				render() {
+					const r = orig.prototype.render.apply(this, arguments);
 					if (this.model && this.model.get('versi_generated')) {
-						var alt = this.model.get('versi_generated');
+						const alt = this.model.get('versi_generated');
 						this.$el.append(
 							'<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:2px 4px;line-height:1.3;word-break:break-word;max-height:100%;overflow:hidden;">AI: ' + $('<span>').text(alt).html() + '</div>'
 						);

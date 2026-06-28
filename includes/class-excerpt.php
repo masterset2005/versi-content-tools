@@ -12,24 +12,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Excerpt_Processor {
 
-	/**
-	 * Singleton instance.
-	 *
-	 * @var self|null
-	 */
-	private static $instance = null;
-
-	/**
-	 * Get or create the singleton.
-	 *
-	 * @return self
-	 */
-	public static function init() {
-		if ( null === self::$instance ) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
+	use Versi_Singleton;
 
 	/**
 	 * Process a single post: generate excerpt via AI.
@@ -170,7 +153,7 @@ class Versi_Excerpt_Processor {
 
 		$words = str_word_count( $raw, 0, '0123456789' );
 		if ( $words > $target_length ) {
-			// Try to truncate at the last full sentence
+			// Try to truncate at the last full sentence.
 			$sentences = preg_split( '/(?<=[.!?])\s+/', $raw );
 			$new_raw   = '';
 			foreach ( $sentences as $s ) {
@@ -185,10 +168,10 @@ class Versi_Excerpt_Processor {
 			if ( ! empty( $new_raw ) ) {
 				$raw = $new_raw;
 			} else {
-				// First sentence is too long, force truncate
+				// First sentence is too long, force truncate.
 				$words_arr = preg_split( '/\s+/', $raw );
 				$raw       = implode( ' ', array_slice( $words_arr, 0, $target_length ) );
-				// Remove trailing partial word to avoid mid-sentence cutoffs
+				// Remove trailing partial word to avoid mid-sentence cutoffs.
 				$raw = preg_replace( '/\s+[^\s]+$/', '', $raw );
 			}
 		}

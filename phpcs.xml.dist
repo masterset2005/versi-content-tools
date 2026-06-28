@@ -33,8 +33,13 @@
 	</rule>
 
 	<rule ref="WordPress.Security.NonceVerification">
-		<!-- Read-only $_GET access for UI display context (settings/processing pages) -->
+		<!--
+			Read-only $_GET access for UI display context (settings/processing pages).
+			AJAX handlers use check_ajax_referer() via ajax_check() but PHPCS cannot
+			trace the nonce check through the helper method.
+		-->
 		<exclude name="WordPress.Security.NonceVerification.Recommended" />
+		<exclude name="WordPress.Security.NonceVerification.Missing" />
 	</rule>
 
 	<rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
