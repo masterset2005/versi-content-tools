@@ -39,6 +39,10 @@ class Versi_Admin {
 		add_action( 'wp_ajax_versi_excerpt_get_ids', array( $this, 'ajax_excerpt_get_ids' ) );
 		add_action( 'wp_ajax_versi_excerpt_undo', array( $this, 'ajax_excerpt_undo' ) );
 
+		// AJAX: SEO.
+		add_action( 'wp_ajax_versi_seo_process_single', array( $this, 'ajax_seo_process_single' ) );
+		add_action( 'wp_ajax_versi_seo_get_ids', array( $this, 'ajax_seo_get_ids' ) );
+
 		// AJAX: shared.
 		add_action( 'wp_ajax_versi_get_models', array( $this, 'ajax_get_models' ) );
 		add_action( 'wp_ajax_versi_create_job', array( $this, 'ajax_create_job' ) );
@@ -783,9 +787,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$base_url    = admin_url( 'upload.php?page=versi-processing' );
 		$alt_url     = add_query_arg( 'versi_workload', 'alt', $base_url );
 		$exc_url     = add_query_arg( 'versi_workload', 'excerpt', $base_url );
+		$seo_url     = add_query_arg( 'versi_workload', 'seo', $base_url );
 		$live_url    = add_query_arg( 'versi_mode_tab', 'live', $base_url );
 		$bg_url      = add_query_arg( 'versi_mode_tab', 'bg', $base_url );
-		$refresh_url = 'alt' === $workload ? $alt_url : $exc_url;
+		$refresh_url = 'alt' === $workload ? $alt_url : ('seo' === $workload ? $seo_url : $exc_url);
 
 		$job = get_option( 'versi_job_status' );
 		?>
@@ -838,6 +843,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<a href="<?php echo esc_url( $exc_url ); ?>" class="nav-tab <?php echo 'excerpt' === $workload ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Excerpts', 'versi-content-tools' ); ?>
 				</a>
+				<a href="<?php echo esc_url( $seo_url ); ?>" class="nav-tab <?php echo 'seo' === $workload ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'SEO Keywords', 'versi-content-tools' ); ?>
+				</a>
 			</h2>
 
 			<!-- Stats bar -->
@@ -872,6 +880,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						<strong><?php echo esc_html( $exc_stats['has_excerpt'] ); ?></strong>
 						<?php esc_html_e( 'have excerpts', 'versi-content-tools' ); ?>
 					</div>
+				<?php elseif ( 'seo' === $workload ) : ?>
+					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
+						<strong><?php esc_html_e( 'SEO', 'versi-content-tools' ); ?></strong>
+						<?php esc_html_e( 'bulk generation', 'versi-content-tools' ); ?>
+					</div>
 				<?php endif; ?>
 				<a href="<?php echo esc_url( $refresh_url ); ?>" class="button" style="margin-left:auto;">
 					<?php esc_html_e( 'Refresh', 'versi-content-tools' ); ?>
@@ -891,7 +904,13 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			<?php if ( 'bg' === $mode_tab ) : ?>
 				<?php $this->render_background_tab( $workload ); ?>
 			<?php else : ?>
-				<?php $this->render_live_tab( $workload ); ?>
+				<?php if ( 'seo' === $workload ) : ?>
+					<div class="versi-tab" id="versi-tab-seo">
+						<p><?php esc_html_e( 'SEO keyword generation is currently only available for individual posts via the post editor.', 'versi-content-tools' ); ?></p>
+					</div>
+				<?php else : ?>
+					<?php $this->render_live_tab( $workload ); ?>
+				<?php endif; ?>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -1586,7 +1605,54 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	}
 
 	/**
-	 * AJAX: process a single post for excerpt.
+	 * AJAX: process a single post for SEO keywords.
+	 *
+	 * @return void
+	 */
+	public function ajax_seo_process_single() {
+		$this->ajax_check();
+
+		$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+
+		if ( ! $id ) {
+			wp_send_json_error( 'No ID provided' );
+		}
+
+		$post = get_post( $id );
+		if ( ! $post ) {
+			wp_send_json_error( 'Post not found' );
+		}
+
+		$ext    = Versi_Extensions::init();
+		$status = $ext->generate_focus_keywords( $id );
+		
+		$result = Versi_Processor::init()->result(
+			$id,
+			$post->post_title,
+			$status ? 'success' : 'error',
+			'',
+			$status ? null : __( 'AI generation failed.', 'versi-content-tools' ),
+			null,
+			'',
+			true
+		);
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: get post IDs for SEO batch processing.
+	 *
+	 * @return void
+	 */
+	public function ajax_seo_get_ids() {
+		$this->ajax_check();
+
+		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
+		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
+
+		$result = Versi_Processor::init()->get_seo_ids( $offset, $batch );
+		wp_send_json_success( $result );
+	}
 	 *
 	 * @return void
 	 */
