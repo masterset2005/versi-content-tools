@@ -867,6 +867,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						<strong><?php echo esc_html( $alt_stats['too_short'] ); ?></strong>
 						<?php esc_html_e( 'under 15 chars', 'versi-content-tools' ); ?>
 					</div>
+				<?php elseif ( 'seo' === $workload ) : ?>
+					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
+						<strong><?php esc_html_e( 'SEO', 'versi-content-tools' ); ?></strong>
+						<?php esc_html_e( 'bulk generation', 'versi-content-tools' ); ?>
+					</div>
 				<?php else : ?>
 					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
 						<strong><?php echo esc_html( $exc_stats['total'] ); ?></strong>
@@ -879,11 +884,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					<div class="versi-stat" style="background:#edfaef;padding:6px 14px;border-radius:4px;">
 						<strong><?php echo esc_html( $exc_stats['has_excerpt'] ); ?></strong>
 						<?php esc_html_e( 'have excerpts', 'versi-content-tools' ); ?>
-					</div>
-				<?php elseif ( 'seo' === $workload ) : ?>
-					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
-						<strong><?php esc_html_e( 'SEO', 'versi-content-tools' ); ?></strong>
-						<?php esc_html_e( 'bulk generation', 'versi-content-tools' ); ?>
 					</div>
 				<?php endif; ?>
 				<a href="<?php echo esc_url( $refresh_url ); ?>" class="button" style="margin-left:auto;">
@@ -1653,6 +1653,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$result = Versi_Processor::init()->get_seo_ids( $offset, $batch );
 		wp_send_json_success( $result );
 	}
+
+	/**
+	 * AJAX: process a single post for excerpt.
 	 *
 	 * @return void
 	 */

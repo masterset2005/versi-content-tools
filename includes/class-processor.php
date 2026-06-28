@@ -302,6 +302,9 @@ class Versi_Processor {
 			'total' => (int) $query->found_posts,
 		);
 	}
+
+	/**
+	 * Get post IDs for excerpt processing.
 	 *
 	 * @param string $mode   'missing' or 'improve'.
 	 * @param int    $offset Pagination offset.
