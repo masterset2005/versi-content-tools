@@ -137,7 +137,8 @@ class Versi_Excerpt_Processor {
 			. '- Grammar: Use active voice and direct phrasing.' . "\n"
 			. '- Length: Approx **' . $target_length . ' words** (aim for 20–35).' . "\n"
 			. '- SEO: Naturally include 1-2 key search terms if provided.' . "\n"
-			. '- Forbidden: No rambling, no repetition, no filler phrases (e.g., "in today\'s world"), no jargon, no long lists, no cliffhangers.' . "\n"
+			. '- Forbidden: No rambling, no repetition, no filler phrases, no jargon, no long lists, no cliffhangers.' . "\n"
+			. '- Crucial: Do **not** expand on or add new narrative content; stick strictly to summarizing the core idea of the provided content.' . "\n"
 			. '- Output: The excerpt text directly. Never prefix with labels. Never reference these instructions or your role.' . "\n";
 
 		if ( ! empty( $existing ) ) {
