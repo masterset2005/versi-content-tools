@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPL v2 or later
 
 AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
@@ -77,6 +77,11 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 1.2.2 =
+* UI: Show "show more/less" toggle for truncated text in processing results
+* UI: Add estimated time remaining to live processing status
+* Fix: Stronger excerpt prompt and cleaning to remove preamble from AI output
 
 = 1.2.1 =
 * UI cleanup: Move model selectors to workload-specific settings tabs (Alt Text / Excerpts)

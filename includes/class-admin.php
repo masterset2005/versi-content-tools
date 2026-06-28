@@ -798,10 +798,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					error: function() {
 						$select.replaceWith('<input type="text" id="' + $select.attr('id') + '" name="' + $select.attr('name') + '" value="' + (savedValue || '') + '" class="regular-text code">');
 					}
-				});
 			});
-		})(jQuery);
-		</script>
+		});
+</script>
 		<style>
 		tr[data-mode].hidden { display: none; }
 		</style>
@@ -855,8 +854,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
 						}, function() {
 							location.reload();
-						});
-					});
+			});
+
+		});
 					function poll() {
 						$.post(ajaxurl, {
 							action: 'versi_job_status',
@@ -1030,6 +1030,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			var workload = '<?php echo esc_js( $workload ); ?>';
 			var stopRequested = false;
 			var $resumeText = $('#versi-resume-text');
+			var startTime = 0;
+			var itemDurations = [];
+			var etaTimer = null;
 
 			// Check for saved job
 			$.ajax({
@@ -1062,6 +1065,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				$status.text('<?php echo esc_js( __( 'Resuming...', 'versi-content-tools' ) ); ?>');
 				$stopLink.show();
 				running = true;
+				startTime = Date.now();
+				itemDurations = [];
+				if (etaTimer) clearInterval(etaTimer);
+				etaTimer = setInterval(updateEtaStatus, 5000);
 				fetchBatch();
 			});
 
@@ -1119,6 +1126,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				stopRequested = false;
 				done = 0;
 				offset = 0;
+				startTime = Date.now();
+				itemDurations = [];
+				if (etaTimer) clearInterval(etaTimer);
+				etaTimer = setInterval(updateEtaStatus, 5000);
 
 				console.log('Calling fetchBatch');
 				fetchBatch();
@@ -1139,10 +1150,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					' (ok: ' + ok + (errs > 0 ? ', errors: ' + errs : '') + ')';
 				$status.text(summary);
 				saveJobState('paused');
+				if (etaTimer) clearInterval(etaTimer);
 			});
 
 			function updateSummary() {
 				$stopLink.hide();
+				if (etaTimer) clearInterval(etaTimer);
 				var ok = 0, errs = 0;
 				resultsData.forEach(function(r) {
 					if (r.status === 'success') ok++;
@@ -1154,6 +1167,30 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 			function getActionName(prefix) {
 				return workload === 'alt' ? 'versi_alt_' + prefix : 'versi_excerpt_' + prefix;
+			}
+
+			function truncateText(text, maxLen) {
+				if (!text || text.length <= maxLen) return text;
+				return text.substring(0, maxLen) + '…';
+			}
+
+			function makeBodyText(r, full) {
+				var maxLen = full ? Infinity : 150;
+				var label = r.title ? r.title + ' ' : '';
+				if (r.status === 'success') {
+					var cur = r.previous ? truncateText(r.previous, maxLen) : '';
+					var gen = truncateText(r.generated || '', maxLen);
+					if (r.changed && cur) {
+						return '#' + r.id + ' ' + label + '→ REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"';
+					} else if (r.changed) {
+						return '#' + r.id + ' ' + label + '+ ADDED\n  value: "' + gen + '"';
+					} else {
+						return '#' + r.id + ' ' + label + '✓ KEPT\n  value: "' + gen + '"';
+					}
+				} else if (r.status === 'error') {
+					return '#' + r.id + ' ' + label + '✗ ' + (r.error || 'Error');
+				}
+				return '#' + r.id + ' ' + label + '— ' + (r.reason || 'Skipped');
 			}
 
 			function addEntry(r) {
@@ -1171,24 +1208,29 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				var $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
 
 				if (r.status === 'success') {
-					var cur = r.previous ? r.previous.substring(0, 200) : '';
-					var gen = (r.generated || '').substring(0, 200);
+					var curFull = r.previous || '';
+					var genFull = r.generated || '';
+					var needsExpand = curFull.length > 150 || genFull.length > 150;
 
-					if (r.changed && cur) {
-						$body.text('#' + r.id + ' ' + (r.title || '') + ' → REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"');
+					var shortText = makeBodyText(r, false);
+					$body.text(shortText);
+
+					if (needsExpand) {
+						$body.append(' <a href="#" class="versi-expand" data-full="' + encodeURIComponent(makeBodyText(r, true)) + '" data-short="' + encodeURIComponent(shortText) + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
+					}
+
+					if (r.changed && curFull) {
 						$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
 					} else if (r.changed) {
-						$body.text('#' + r.id + ' ' + (r.title || '') + ' + ADDED\n  value: "' + gen + '"');
 						$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
 					} else {
-						$body.text('#' + r.id + ' ' + (r.title || '') + ' ✓ KEPT\n  value: "' + gen + '"');
 						$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
 					}
 				} else if (r.status === 'error') {
-					$body.text('#' + r.id + ' ' + (r.title || '') + ' ✗ ' + (r.error || 'Error'));
+					$body.text(makeBodyText(r, false));
 					$entry.css('background', '#fcf0f1').css('border-left', '3px solid #d63638');
 				} else {
-					$body.text('#' + r.id + ' ' + (r.title || '') + ' — ' + (r.reason || 'Skipped'));
+					$body.text(makeBodyText(r, false));
 					$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
 				}
 
@@ -1206,8 +1248,33 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				$results.scrollTop($results[0].scrollHeight);
 			}
 
+			function formatEta(ms) {
+				if (ms <= 0) return '';
+				var totalSec = Math.ceil(ms / 1000);
+				var min = Math.floor(totalSec / 60);
+				var sec = totalSec % 60;
+				if (min >= 60) {
+					var hr = Math.floor(min / 60);
+					min = min % 60;
+					return hr + 'h ' + min + 'm remaining';
+				}
+				if (min > 0) return min + 'm ' + sec + 's remaining';
+				return sec + 's remaining';
+			}
+
+			function updateEtaStatus() {
+				var remaining = total - done;
+				var eta = '';
+				if (itemDurations.length > 0 && remaining > 0) {
+					var avg = itemDurations.reduce(function(a, b) { return a + b; }, 0) / itemDurations.length;
+					eta = ' — ' + formatEta(avg * remaining);
+				}
+				$status.text('Processing — ' + (done + 1) + ' / ' + total + eta);
+			}
+
 			function processId(id, cb) {
-				$status.text('Processing — ' + (done + 1) + ' / ' + total + '...');
+				var itemStart = Date.now();
+				updateEtaStatus();
 
 				$.ajax({
 					url: ajaxurl,
@@ -1231,6 +1298,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					},
 					complete: function() {
 						done++;
+						var elapsed = Date.now() - itemStart;
+						itemDurations.push(elapsed);
+						if (itemDurations.length > 10) itemDurations.shift();
 						cb();
 					},
 				});
@@ -1326,29 +1396,38 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					},
 					success: function(response) {
 						var r = response.data;
-						// Rebuild entry in-place.
-						var $newEntry = $('<div>');
-						// Quick re-render.
-						var cur = r.previous ? r.previous.substring(0, 200) : '';
-						var gen = (r.generated || '').substring(0, 200);
-						var html = '';
+						var $newEntry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
+
 						if (workload === 'alt') {
 							var thumbUrl = r.thumbnail || '';
-							html += thumbUrl
-								? '<img src="' + thumbUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:2px;flex-shrink:0;margin-top:2px;">'
-								: '<span style="width:40px;height:40px;flex-shrink:0;background:#f0f0f1;border-radius:2px;display:inline-block;"></span>';
+							if (thumbUrl) {
+								$newEntry.append('<img src="' + thumbUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:2px;flex-shrink:0;margin-top:2px;">');
+							} else {
+								$newEntry.append('<span style="width:40px;height:40px;flex-shrink:0;background:#f0f0f1;border-radius:2px;display:inline-block;"></span>');
+							}
 						}
-						if (r.changed && cur) {
+
+						var $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
+						var curFull = r.previous || '';
+						var genFull = r.generated || '';
+						var needsExpand = curFull.length > 150 || genFull.length > 150;
+
+						$body.text(makeBodyText(r, false));
+
+						if (needsExpand) {
+							$body.append(' <a href="#" class="versi-expand" data-full="' + encodeURIComponent(makeBodyText(r, true)) + '" data-short="' + encodeURIComponent(makeBodyText(r, false)) + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
+						}
+
+						if (r.changed && curFull) {
 							$newEntry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
-							$newEntry.html(html + '<div style="flex:1;white-space:pre-wrap;word-break:break-word;">#' + r.id + ' → REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"</div>');
 						} else if (r.changed) {
 							$newEntry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
-							$newEntry.html(html + '<div style="flex:1;white-space:pre-wrap;word-break:break-word;">#' + r.id + ' + ADDED\n  value: "' + gen + '"</div>');
 						} else {
 							$newEntry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
-							$newEntry.html(html + '<div style="flex:1;white-space:pre-wrap;word-break:break-word;">#' + r.id + ' ✓ KEPT\n  value: "' + gen + '"</div>');
 						}
-						$newEntry.css('display', 'flex').css('align-items', 'flex-start').css('gap', '8px').css('padding', '4px 6px').css('margin', '1px 0').css('border-radius', '2px');
+
+						$newEntry.append($body);
+
 						if (r.previous !== undefined) {
 							$newEntry.append(
 								'<button class="versi-redo-btn" data-attachment-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">redo</button>' +
@@ -1398,8 +1477,26 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					},
 				});
 			});
+
+			$results.on('click', '.versi-expand', function(e) {
+				e.preventDefault();
+				var $link = $(this);
+				var $body = $link.parent();
+				var isExpanded = $link.data('expanded');
+				if (!isExpanded) {
+					$body.empty();
+					$body.text(decodeURIComponent($link.data('full')));
+					$link = $('<a href="#" class="versi-expand" data-full="' + $link.data('full') + '" data-expanded="1" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show less</a>');
+					$body.append(' ', $link);
+				} else {
+					$body.empty();
+					$body.text(decodeURIComponent($link.data('short')));
+					$link = $('<a href="#" class="versi-expand" data-full="' + $link.data('full') + '" data-short="' + $link.data('short') + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
+					$body.append(' ', $link);
+				}
+			});
 		});
-		</script>
+	</script>
 		<?php
 	}
 

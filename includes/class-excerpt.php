@@ -135,12 +135,12 @@ class Versi_Excerpt_Processor {
 
 		$prompt = 'You are an **editorial assistant**. Generate a compelling post excerpt.' . "\n\n"
 			. '**Input:** Blog post content below' . "\n"
-			. '**Output:** Excerpt only, no preamble' . "\n\n"
+			. '**Output:** Excerpt only, no preamble, no labels, no meta-commentary' . "\n\n"
 			. '**Rules:**' . "\n"
 			. '- Structure: 1-2 sentences. Maximum **' . $target_length . ' words**.' . "\n"
 			. '- IMPORTANT: Complete the final sentence naturally. Do not end mid-sentence.' . "\n"
 			. '- Capture the essence: hook the reader, summarize the core angle.' . "\n"
-			. '- No labels (like "Excerpt:"), no quotes, no preamble.' . "\n"
+			. '- Output the excerpt text directly. Never prefix with labels like "Excerpt:", "Here", "Summary", "Output", or any introductory phrase. Never reference these instructions or your role in the output.' . "\n"
 			. '- Do not start with filler like `An article about` or `This post discusses`.' . "\n";
 
 		if ( ! empty( $existing ) ) {
@@ -161,6 +161,9 @@ class Versi_Excerpt_Processor {
 	public function clean_excerpt( $raw, $target_length = 55 ) {
 		$raw = sanitize_text_field( $raw );
 		$raw = preg_replace( '/^(?:Excerpt|Summary|Output)::?\s*/i', '', $raw );
+		$raw = preg_replace( '/^(?:Here\'[sz]\s+.*?:\s*)/i', '', $raw );
+		$raw = preg_replace( '/^(?:Here\s+(?:is|are|was)\s+.*?:\s*)/i', '', $raw );
+		$raw = preg_replace( '/^(?:\*{1,2}Excerpt\s*Generating\s*AI\*{0,2}:?\s*)/i', '', $raw );
 		$raw = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $raw );
 		$raw = preg_replace( '/\[\[.*?\]\]/s', '', $raw );
 		$raw = trim( $raw );
