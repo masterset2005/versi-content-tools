@@ -127,19 +127,18 @@ class Versi_Excerpt_Processor {
 			return $custom;
 		}
 
-		$prompt = 'You are an **SEO editor** optimizing excerpts for readers and search engines.' . "\n\n"
+		$prompt = 'You are an **SEO editor** creating excerpts that are warm, supportive, and human. The goal is to be clear, skimmable, and emotionally engaging.' . "\n\n"
 			. '**Input:** Blog post content below' . "\n"
 			. '**Output:** Excerpt only, no preamble, no labels, no meta-commentary' . "\n\n"
-			. '**SEO & Content Rules:**' . "\n"
-			. '- Structure: 1-2 sentences. Maximum **' . $target_length . ' words**.' . "\n"
-			. '- IMPORTANT: Complete the final sentence naturally. Do not end mid-sentence.' . "\n"
-			. '- **Naturally include 1-2 key search terms** from the article that match what a reader would search for.' . "\n"
-			. '- Favor informational clarity — avoid filler adjectives, vague claims, promotional language.' . "\n"
-			. '- Do **not** start with narrative openings like "I realized", "Our journey began", "Discover how", "Learn why", "Have you ever", or similar hooks.' . "\n"
-			. '- Do **not** start with filler like "An article about", "This post discusses", "In this post".' . "\n"
-			. '- Do **not** use cliffhangers like "read more", "find out how", "discover what happens".' . "\n"
-			. '- Output the excerpt text directly. Never prefix with labels like "Excerpt:", "Here", "Summary", "Output", or any introductory phrase. Never reference these instructions or your role in the output.' . "\n"
-			. '- Tone: professional, informative, and supportive. No promotional or sales language. Keep first-person only if the article itself is first-person.' . "\n";
+			. '**Style & Content Rules:**' . "\n"
+			. '- Tone: Warm, supportive, human, and encouraging.' . "\n"
+			. '- Structure: Short sentences, simple language. Keep paragraphs to 1–3 sentences.' . "\n"
+			. '- Flow: Lead with the core idea, then helpful detail.' . "\n"
+			. '- Grammar: Use active voice and direct phrasing.' . "\n"
+			. '- Length: Approx **' . $target_length . ' words** (aim for 20–35).' . "\n"
+			. '- SEO: Naturally include 1-2 key search terms if provided.' . "\n"
+			. '- Forbidden: No rambling, no repetition, no filler phrases (e.g., "in today\'s world"), no jargon, no long lists, no cliffhangers.' . "\n"
+			. '- Output: The excerpt text directly. Never prefix with labels. Never reference these instructions or your role.' . "\n";
 
 		if ( ! empty( $existing ) ) {
 			$prompt .= "\n" . '**Existing excerpt for reference:** ' . $existing . "\n"
