@@ -44,7 +44,7 @@ class Versi_Admin {
 		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'mark_auto_generated' ), 10, 2 );
 		add_action( 'admin_footer-upload.php', array( $this, 'generated_script' ) );
 		add_action( 'add_attachment', array( $this, 'alt_auto_generate_on_upload' ) );
-		add_action( 'wp_insert_post', array( $this, 'excerpt_auto_generate_on_save' ), 10, 3 );
+		add_action( 'transition_post_status', array( $this, 'excerpt_auto_generate_on_publish' ), 10, 3 );
 
 		// AJAX: alt-text.
 		add_action( 'wp_ajax_versi_alt_process_single', array( $this, 'ajax_alt_process_single' ) );
@@ -2071,6 +2071,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return;
 		}
 
+		// Skip if alt text already exists.
+		$existing = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+		if ( is_string( $existing ) && '' !== trim( $existing ) ) {
+			return;
+		}
+
 		$result = Versi_Alt_Text_Processor::init()->process_single( $attachment_id );
 
 		if ( 'success' === $result['status'] && get_option( 'versi_alt_show_generated', '0' ) ) {
@@ -2086,23 +2092,23 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	}
 
 	/**
-	 * Auto-generate excerpt on post save.
+	 * Auto-generate excerpt when a post is published.
 	 *
-	 * @param int     $post_id Post ID.
-	 * @param WP_Post $post    Post object.
-	 * @param bool    $update  Whether this is an update.
+	 * @param string  $new_status New post status.
+	 * @param string  $old_status Old post status.
+	 * @param WP_Post $post       Post object.
 	 * @return void
 	 */
-	public function excerpt_auto_generate_on_save( $post_id, $post, $update ) {
+	public function excerpt_auto_generate_on_publish( $new_status, $old_status, $post ) {
 		if ( '1' !== get_option( 'versi_excerpt_auto_generate', '0' ) ) {
 			return;
 		}
 
-		if ( 'post' !== $post->post_type ) {
+		if ( 'publish' !== $new_status || 'publish' === $old_status ) {
 			return;
 		}
 
-		if ( 'publish' !== $post->post_status ) {
+		if ( 'post' !== $post->post_type ) {
 			return;
 		}
 
@@ -2114,7 +2120,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return;
 		}
 
-		Versi_Excerpt_Processor::init()->process_single( $post_id );
+		Versi_Excerpt_Processor::init()->process_single( $post->ID );
 	}
 
 	// -------------------------------------------------------------------------
