@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPL v2 or later
 
 AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
@@ -88,7 +88,7 @@ targets all excerpts.
 
 == Changelog ==
 
-= 1.3.0 =
+= 1.3.1 =
 * Add support for SEO plugin Extensions system (SmartCrawl, Yoast, Rank Math, SEOPress)
 * Add support for AI-generated focus keyword writing to SEO plugin metadata
 

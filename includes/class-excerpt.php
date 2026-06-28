@@ -127,18 +127,17 @@ class Versi_Excerpt_Processor {
 			return $custom;
 		}
 
-		$prompt = 'You are an **SEO editor** creating a concise summary of the article below. The goal is to be warm, supportive, and human while summarizing the core message clearly.' . "\n\n"
+		$prompt = 'You are an **SEO editor** creating excerpts that are skimmable, teasing, and emotionally engaging.' . "\n\n"
+			. '**Formula (Use This Every Time):** One clear idea + one emotional micro-hook + one hint of value (20–35 words).' . "\n\n"
 			. '**Input:** Blog post content below' . "\n"
-			. '**Output:** Summary only, no preamble, no labels, no meta-commentary' . "\n\n"
+			. '**Output:** Excerpt only, no preamble, no labels, no meta-commentary' . "\n\n"
 			. '**Style & Content Rules:**' . "\n"
-			. '- Tone: Warm, supportive, human, and encouraging.' . "\n"
-			. '- Structure: Short sentences, simple language. Keep paragraphs to 1–3 sentences.' . "\n"
-			. '- Focus: Summarize the article\'s main point. Do not attempt to write an engaging "opening" or narrative hook.' . "\n"
-			. '- Grammar: Use active voice and direct phrasing.' . "\n"
-			. '- Length: Approx **' . $target_length . ' words** (aim for 20–35).' . "\n"
-			. '- SEO: Naturally include 1-2 key search terms if provided.' . "\n"
-			. '- Forbidden: No rambling, no repetition, no filler phrases, no jargon, no long lists, no cliffhangers.' . "\n"
-			. '- Crucial: Do **not** expand on or add new narrative content; stick strictly to summarizing the core idea of the provided content.' . "\n"
+			. '- Tone: Match the post\'s tone (warm, practical, supportive, or professional).' . "\n"
+			. '- Focus: Tease the reader ("Why should I read this?") instead of revealing the "aha" moment, spoilers, or main advice.' . "\n"
+			. '- Reader: Focus on the reader, not the writer. Avoid starting with "I", "my", or "we" unless it is a personal story.' . "\n"
+			. '- Skimmability: Short sentences, simple language, no jargon, no long lists, no filler.' . "\n"
+			. '- Hook: Create a small spark of curiosity, hope, comfort, or relief.' . "\n"
+			. '- Forbidden: No rambling, no spoilers, no "in conclusion" fillers, no cliffhangers.' . "\n"
 			. '- Output: The excerpt text directly. Never prefix with labels. Never reference these instructions or your role.' . "\n";
 
 		if ( ! empty( $existing ) ) {
