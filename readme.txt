@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: GPL v2 or later
 
 AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
@@ -45,6 +45,16 @@ built-in `wp_ai_client_prompt()` API.
 4. Go to **Settings > Versi Content Tools** to configure model preferences and prompts
 5. Process content under **Media > Versi Processing**
 
+== Extensions ==
+
+Versi Content Tools detects installed SEO plugins (SmartCrawl, Yoast, Rank Math, SEOPress) and WooCommerce
+to provide context-aware content generation.
+
+* **Focus Keywords:** Automatically detect focus keywords and inject them into AI prompts for
+  improved SEO relevance.
+* **Auto-Focus:** AI-generate focus keywords based on your content and save them directly to the
+  SEO plugin's meta fields.
+
 == Frequently Asked Questions ==
 
 = Do I need an API key? =
@@ -77,6 +87,10 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 1.2.3 =
+* Add support for SEO plugin Extensions system (SmartCrawl, Yoast, Rank Math, SEOPress)
+* Add support for AI-generated focus keyword writing to SEO plugin metadata
 
 = 1.2.2 =
 * UI: Show "show more/less" toggle for truncated text in processing results

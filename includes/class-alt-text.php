@@ -21,11 +21,18 @@ class Versi_Alt_Text_Processor {
 	 * @return array
 	 */
 	public function process_single( $attachment_id ) {
-		$shared  = Versi_Processor::init();
-		$context = $shared->get_attachment_context( $attachment_id );
-		$file    = get_attached_file( $attachment_id );
-		$mime    = get_post_mime_type( $attachment_id );
-		$title   = get_the_title( $attachment_id );
+		$shared                    = Versi_Processor::init();
+		$context                   = $shared->get_attachment_context( $attachment_id );
+		$context['focus_keywords'] = '';
+		if ( class_exists( 'Versi_Extensions' ) ) {
+			$attachment                = get_post( $attachment_id );
+			$parent_id                 = $attachment ? (int) $attachment->post_parent : 0;
+			$kw_post_id                = $parent_id ? $parent_id : $attachment_id;
+			$context['focus_keywords'] = Versi_Extensions::init()->get_focus_keywords( $kw_post_id );
+		}
+		$file  = get_attached_file( $attachment_id );
+		$mime  = get_post_mime_type( $attachment_id );
+		$title = get_the_title( $attachment_id );
 
 		if ( ! $file || ! file_exists( $file ) ) {
 			return $shared->result( $attachment_id, $title, 'error', null, __( 'File not found on server.', 'versi-content-tools' ) );
@@ -118,6 +125,10 @@ class Versi_Alt_Text_Processor {
 		$changed = $alt_text !== $context['existing_alt'];
 		update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
 
+		if ( class_exists( 'Versi_Extensions' ) ) {
+			Versi_Extensions::init()->generate_focus_keywords( $kw_post_id );
+		}
+
 		return $shared->result( $attachment_id, $title, 'success', $context['existing_alt'], null, null, $alt_text, $changed, $shared->thumbnail_url( $attachment_id ) );
 	}
 
@@ -185,8 +196,8 @@ class Versi_Alt_Text_Processor {
 		}
 
 		$system = str_replace(
-			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}' ),
-			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '', $context['author_style'] ),
+			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}' ),
+			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '', $context['author_style'], $context['focus_keywords'] ),
 			$system
 		);
 
@@ -205,8 +216,8 @@ class Versi_Alt_Text_Processor {
 		if ( ! empty( trim( $custom ) ) ) {
 			$system = $custom;
 			$system = str_replace(
-				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}' ),
-				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt, $context['author_style'] ),
+				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}' ),
+				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt, $context['author_style'], $context['focus_keywords'] ),
 				$system
 			);
 		} else {

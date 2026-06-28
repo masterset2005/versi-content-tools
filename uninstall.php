@@ -34,6 +34,17 @@ $options = array(
 	'versi_debug_mode',
 	'versi_job_status',
 	'versi_live_job_status',
+	// Extension toggles — read.
+	'versi_ext_smartcrawl_focus',
+	'versi_ext_yoast_focus',
+	'versi_ext_rankmath_focus',
+	'versi_ext_seopress_focus',
+	'versi_ext_woocommerce_product',
+	// Extension toggles — auto-generate.
+	'versi_ext_smartcrawl_auto_focus',
+	'versi_ext_yoast_auto_focus',
+	'versi_ext_rankmath_auto_focus',
+	'versi_ext_seopress_auto_focus',
 );
 
 foreach ( $options as $opt ) {

@@ -372,6 +372,7 @@ class Versi_Admin {
 					<a class="nav-tab nav-tab-active" href="#versi-tab-general"><?php esc_html_e( 'General', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-alt"><?php esc_html_e( 'Alt Text', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-excerpt"><?php esc_html_e( 'Excerpts', 'versi-content-tools' ); ?></a>
+					<a class="nav-tab" href="#versi-tab-extensions"><?php esc_html_e( 'Extensions', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-about"><?php esc_html_e( 'About', 'versi-content-tools' ); ?></a>
 				</h2>
 
@@ -534,6 +535,7 @@ class Versi_Admin {
 {article_content} - Parent post body content (first <?php echo absint( get_option( 'versi_content_limit', 500 ) ); ?> chars; also available as {article_excerpt})
 {existing_alt}    - Current alt text in database
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
+{focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
 									</pre>
 								</details>
 								<details style="margin-top:8px;">
@@ -563,6 +565,7 @@ class Versi_Admin {
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
+{focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
 
 Usage: Include these placeholders in your prompt text.
 Example: "The image is about {article_title}. Visual: {visual_desc}"
@@ -595,6 +598,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
+{focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
 									</pre>
 								</details>
 								<details style="margin-top:8px;">
@@ -662,6 +666,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 {existing_excerpt}- Current excerpt in the database (empty if none)
 {target_length}   - Target word count from the setting above
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
+{focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
 									</pre>
 								</details>
 								<details style="margin-top:8px;">
@@ -673,6 +678,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							</td>
 						</tr>
 					</table>
+				</div>
+
+				<div id="versi-tab-extensions" class="versi-tab" style="display:none;">
+					<?php Versi_Extensions::init()->render_tab(); ?>
 				</div>
 
 				<?php submit_button(); ?>

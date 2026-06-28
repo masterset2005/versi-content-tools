@@ -57,6 +57,13 @@ class Versi_Excerpt_Processor {
 			}
 		}
 
+		if ( class_exists( 'Versi_Extensions' ) ) {
+			$keywords = Versi_Extensions::init()->get_focus_keywords( $post_id );
+			if ( $keywords ) {
+				$system .= "\n\n**SEO focus keyphrases:** {$keywords}\nNaturally incorporate these keyphrases into the excerpt where relevant.";
+			}
+		}
+
 		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
 			error_log( '--- VERSI PROMPT DEBUG (excerpt) ---' );
 			error_log( 'SYSTEM: ' . $system );
@@ -100,6 +107,10 @@ class Versi_Excerpt_Processor {
 
 		update_post_meta( $post_id, 'versi_excerpt_generated', '1' );
 
+		if ( class_exists( 'Versi_Extensions' ) ) {
+			Versi_Extensions::init()->generate_focus_keywords( $post_id );
+		}
+
 		return $shared->result( $post_id, $post->post_title, 'success', $existing_excerpt, null, null, $generated, $changed );
 	}
 
@@ -116,15 +127,19 @@ class Versi_Excerpt_Processor {
 			return $custom;
 		}
 
-		$prompt = 'You are an **editorial assistant**. Generate a compelling post excerpt.' . "\n\n"
+		$prompt = 'You are an **SEO editor** optimizing excerpts for readers and search engines.' . "\n\n"
 			. '**Input:** Blog post content below' . "\n"
 			. '**Output:** Excerpt only, no preamble, no labels, no meta-commentary' . "\n\n"
-			. '**Rules:**' . "\n"
+			. '**SEO & Content Rules:**' . "\n"
 			. '- Structure: 1-2 sentences. Maximum **' . $target_length . ' words**.' . "\n"
 			. '- IMPORTANT: Complete the final sentence naturally. Do not end mid-sentence.' . "\n"
-			. '- Capture the essence: hook the reader, summarize the core angle.' . "\n"
+			. '- **Naturally include 1-2 key search terms** from the article that match what a reader would search for.' . "\n"
+			. '- Favor informational clarity — avoid filler adjectives, vague claims, promotional language.' . "\n"
+			. '- Do **not** start with narrative openings like "I realized", "Our journey began", "Discover how", "Learn why", "Have you ever", or similar hooks.' . "\n"
+			. '- Do **not** start with filler like "An article about", "This post discusses", "In this post".' . "\n"
+			. '- Do **not** use cliffhangers like "read more", "find out how", "discover what happens".' . "\n"
 			. '- Output the excerpt text directly. Never prefix with labels like "Excerpt:", "Here", "Summary", "Output", or any introductory phrase. Never reference these instructions or your role in the output.' . "\n"
-			. '- Do not start with filler like `An article about` or `This post discusses`.' . "\n";
+			. '- Tone: professional, informative, and supportive. No promotional or sales language. Keep first-person only if the article itself is first-person.' . "\n";
 
 		if ( ! empty( $existing ) ) {
 			$prompt .= "\n" . '**Existing excerpt for reference:** ' . $existing . "\n"
