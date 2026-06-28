@@ -30,11 +30,16 @@ class Versi_Processor {
 	/**
 	 * Get text model preference as an array.
 	 *
-	 * @param string $workload 'alt' or 'excerpt'.
+	 * @param string $workload 'alt', 'excerpt', or 'seo'.
 	 * @return string[]
 	 */
 	public function get_text_model_preference( $workload ) {
-		$option_name = 'alt' === $workload ? 'versi_alt_text_model' : 'versi_excerpt_text_model';
+		$option_map = array(
+			'alt'     => 'versi_alt_text_model',
+			'excerpt' => 'versi_excerpt_text_model',
+			'seo'     => 'versi_seo_text_model',
+		);
+		$option_name = $option_map[ $workload ] ?? 'versi_alt_text_model';
 		$models      = get_option( $option_name, '' );
 		if ( '' === trim( $models ) ) {
 			return array();

@@ -207,6 +207,15 @@ class Versi_Extensions {
 	 * @return void
 	 */
 	public function register_settings(): void {
+		register_setting(
+			'versi_settings',
+			'versi_seo_text_model',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( Versi_Admin::init(), 'sanitize_model_preference' ),
+				'default'           => '',
+			)
+		);
 		foreach ( $this->integrations as $plugin ) {
 			foreach ( $plugin['toggles'] as $toggle ) {
 				register_setting(
@@ -228,6 +237,26 @@ class Versi_Extensions {
 	 * @return void
 	 */
 	public function render_tab(): void {
+		?>
+		<table class="form-table">
+			<tr>
+				<th scope="row">
+					<label for="versi_seo_text_model"><?php esc_html_e( 'SEO Keywords Model', 'versi-content-tools' ); ?></label>
+				</th>
+				<td>
+					<select id="versi_seo_text_model" name="versi_seo_text_model" class="regular-text versi-model-select" style="max-width:400px;">
+						<option value=""><?php esc_html_e( '- Default -', 'versi-content-tools' ); ?></option>
+						<?php
+						$saved = get_option( 'versi_seo_text_model', '' );
+						if ( '' !== $saved ) {
+							echo '<option value="' . esc_attr( $saved ) . '" selected>' . esc_html( $saved ) . '</option>';
+						}
+						?>
+					</select>
+				</td>
+			</tr>
+		</table>
+		<?php
 		if ( empty( $this->integrations ) ) {
 			echo '<div class="notice notice-info" style="margin-top:20px;"><p>';
 			esc_html_e( 'No supported third-party plugins detected. Install Yoast SEO, Rank Math, SEOPress, SmartCrawl, or WooCommerce to enable integrations.', 'versi-content-tools' );
@@ -344,12 +373,12 @@ class Versi_Extensions {
 			return;
 		}
 
-		$system = 'You are an SEO keyword researcher. Given article content, generate 2-5 comma-separated focus keyphrases that best describe the main topics. Only output the keyphrases, nothing else.';
+		$system = 'You are an SEO keyword researcher. Given article content, generate up to 3 focus keyphrases that best describe the main topics. Return them as a comma-separated list. Only output the keyphrases, nothing else.';
 		$prompt = $post->post_title . "\n\n" . $content;
 
 		$builder = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
-		$builder = Versi_Processor::init()->apply_text_preference( $builder, 'alt' );
+		$builder = Versi_Processor::init()->apply_text_preference( $builder, 'seo' );
 
 		$generated = $builder->generate_text();
 
