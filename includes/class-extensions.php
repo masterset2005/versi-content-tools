@@ -409,12 +409,13 @@ class Versi_Extensions {
 				. '- Short: 2 to 4 words each. One concept per phrase. No filler.' . "\n"
 				. '- Same intent: All three keywords must match the article\'s core topic — do not mix unrelated concepts' . "\n"
 				. '- Natural: Write what a real person would type into Google' . "\n"
-				. '- Tight: No stacked concepts, no clunky chains of nouns' . "\n\n"
-				. 'BAD keyword (stacked): "how to travel with disabled children tips guides"' . "\n"
-				. 'GOOD keyword (tight): "travel tips for disabled children"' . "\n\n"
+				. '- Tight: No stacked concepts, no clunky chains of nouns' . "\n"
+				. '- No stop words: Avoid "a", "an", "the", "for", "to", "of", "in", "with", "and", "or", "is", "are", "was", "on", "at", "by", "from", "as", "that", "it", "its", "your", "our", "their"' . "\n\n"
+				. 'BAD keyword (stacked, stop words): "how to travel with disabled children tips guides"' . "\n"
+				. 'GOOD keyword (tight, no stop words): "disabled children travel tips"' . "\n\n"
 				. 'BAD cluster (mixed topics): "vacation planning, GFCF diet, hydrocephalus treatment"' . "\n"
-				. 'GOOD cluster (same intent): "GFCF diet benefits, gluten free casein free recipes, GFCF meal planning"' . "\n\n"
-				. 'Output ONE keyphrase per line in order: primary, secondary, support. NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
+				. 'GOOD cluster (same intent, no stop words): "GFCF diet benefits, gluten free casein free recipes, GFCF meal planning"' . "\n\n"
+				. 'Output ONE keyphrase per line. NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
 		}
 
 		$prompt = 'Title: ' . $post->post_title . "\n\nContent:\n" . $content;
