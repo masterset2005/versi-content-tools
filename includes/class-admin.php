@@ -1625,6 +1625,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		}
 
 		$ext       = Versi_Extensions::init();
+		$previous  = $ext->get_focus_keywords( $id );
 		$generated = $ext->generate_focus_keywords( $id );
 		$status    = ! empty( $generated );
 
@@ -1632,7 +1633,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$id,
 			$post->post_title,
 			$status ? 'success' : 'error',
-			'',
+			$previous,
 			$status ? null : __( 'AI generation failed.', 'versi-content-tools' ),
 			null,
 			$generated,
