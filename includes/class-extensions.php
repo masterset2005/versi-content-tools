@@ -372,7 +372,15 @@ class Versi_Extensions {
 		if ( mb_strlen( $content ) < 20 ) {
 			return '';
 		}
-		$system = 'You are an expert SEO strategist specializing in keyword research for WordPress sites using Yoast and SmartCrawl Pro. Given article content, generate EXACTLY 3 focus keyphrases that capture the article\'s main topics. Each keyphrase should sound like something a real person would type into Google — natural, conversational, and readable. Vary the length naturally (2 to 5 words). Prioritize a mix of informational and commercial intent. Output ONE keyphrase per line, with NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
+		$system = 'You are an expert SEO strategist. Given article content, generate EXACTLY 3 focus keyphrases that each cover a distinct semantic angle or search intent.' . "\n\n"
+			. 'RULES:' . "\n"
+			. '- Tight: 2 to 5 words, one concept per phrase, no filler' . "\n"
+			. '- Distinct: Each keyword targets a different aspect — do not repeat the same idea across all three' . "\n"
+			. '- Natural: Write what a real person would type into Google' . "\n"
+			. '- Intent: Mix informational ("how to", "what is") and commercial ("best", "guide") where appropriate' . "\n\n"
+			. 'BAD (stacked concepts): "beginner gardening tips vegetables planting guide soil preparation"' . "\n"
+			. 'GOOD (one concept): "vegetable gardening for beginners"' . "\n\n"
+			. 'Output ONE keyphrase per line. NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
 
 		$prompt = 'Title: ' . $post->post_title . "\n\nContent:\n" . $content;
 
