@@ -138,6 +138,7 @@ class Versi_Excerpt_Processor {
 			. '- Skimmability: Short sentences, simple language, no jargon, no long lists, no filler.' . "\n"
 			. '- Hook: Create a small spark of curiosity, hope, comfort, or relief.' . "\n"
 			. '- Forbidden: No rambling, no spoilers, no "in conclusion" fillers, no cliffhangers.' . "\n"
+			. '- Format: Plain text only. No markdown (**, *, _, etc.). No emojis or special unicode characters.' . "\n"
 			. '- Output: The excerpt text directly. Never prefix with labels. Never reference these instructions or your role.' . "\n";
 
 		if ( ! empty( $existing ) ) {
