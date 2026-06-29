@@ -49,7 +49,7 @@ class Versi_Extensions {
 				'slug'     => 'smartcrawl-seo/wpmu-dev-seo.php',
 				'detected' => true,
 				'desc'     => __( 'SEO plugin by WPMU DEV.', 'versi-content-tools' ),
-				'meta_key' => '_wds_focus_keywords',
+				'meta_key' => '_wds_focus-keywords',
 				'toggles'  => array(
 					'focus_keywords' => array(
 						'id'    => 'versi_ext_smartcrawl_focus',
@@ -372,8 +372,8 @@ class Versi_Extensions {
 		if ( mb_strlen( $content ) < 20 ) {
 			return '';
 		}
+		$system = 'You are an expert SEO strategist specializing in keyword research for WordPress sites using Yoast and SmartCrawl Pro. Given article content, generate EXACTLY 3 long-tail focus keyphrases (3 to 5 words each) that balance search intent and natural readability. Prioritize a mix of informational and commercial intent. Output ONE keyphrase per line, with NO numbers, dashes, bullets, labels, or extra text.';
 
-		$system = 'You are an expert SEO strategist specializing in keyword research for WordPress sites using Yoast and SmartCrawl Pro. Given article content, generate EXACTLY 3 long-tail focus keyphrases (3 to 5 words each) that balance search intent and natural readability. Prioritize a mix of informational and commercial intent. Output them as a single line, comma-separated list. DO NOT include labels, extra text, quotes, newlines, or numbered lists. Do not use broad single-word terms or phrases longer than 5 words.';
 		$prompt = 'Title: ' . $post->post_title . "\n\nContent:\n" . $content;
 
 		$builder = wp_ai_client_prompt( $prompt )
@@ -386,8 +386,22 @@ class Versi_Extensions {
 			return '';
 		}
 
-		// Clean up the output: force single line, trim whitespace.
-		$generated = str_replace( array( "\r", "\n" ), '', $generated );
+		// Split by newlines to get individual keyphrases, then join with commas.
+		$lines = preg_split( '/[\r\n]+/', $generated );
+		$lines = array_map( 'trim', $lines );
+		$lines = array_filter(
+			$lines,
+			function ( $v ) {
+				return ! empty( $v ) && ! preg_match( '/^\d+[\.\)]/', $v );
+			}
+		);
+		$lines = array_slice( $lines, 0, 3 );
+
+		if ( empty( $lines ) ) {
+			return '';
+		}
+
+		$generated = implode( ', ', $lines );
 		$generated = sanitize_text_field( $generated );
 
 		foreach ( $targets as $meta_key ) {
