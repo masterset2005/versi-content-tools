@@ -367,14 +367,14 @@ class Versi_Extensions {
 		}
 
 		$content = wp_strip_all_tags( $post->post_content );
-		$content = mb_substr( $content, 0, 500 );
+		$content = mb_substr( $content, 0, 1500 );
 
 		if ( mb_strlen( $content ) < 20 ) {
 			return '';
 		}
 
-		$system = 'You are an SEO keyword researcher. Given article content, generate EXACTLY 3 focus keyphrases that best describe the main topics. Output them as a single line, comma-separated list. DO NOT include any labels, extra text, quotes, or newlines.';
-		$prompt = $post->post_title . "\n\n" . $content;
+		$system = 'You are an expert SEO strategist specializing in keyword research for WordPress sites using Yoast and SmartCrawl Pro. Given article content, generate EXACTLY 3 long-tail focus keyphrases (3 to 5 words each) that balance search intent and natural readability. Prioritize a mix of informational and commercial intent. Output them as a single line, comma-separated list. DO NOT include labels, extra text, quotes, newlines, or numbered lists. Do not use broad single-word terms or phrases longer than 5 words.';
+		$prompt = 'Title: ' . $post->post_title . "\n\nContent:\n" . $content;
 
 		$builder = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
