@@ -163,6 +163,11 @@ class Versi_Excerpt_Processor {
 		$raw = preg_replace( '/^(?:\*{1,2}Excerpt\s*Generating\s*AI\*{0,2}:?\s*)/i', '', $raw );
 		$raw = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $raw );
 		$raw = preg_replace( '/\[\[.*?\]\]/s', '', $raw );
+		// Strip markdown bold/italic.
+		$raw = preg_replace( '/\*{1,2}(.*?)\*{1,2}/', '$1', $raw );
+		$raw = preg_replace( '/_{1,2}(.*?)_{1,2}/', '$1', $raw );
+		// Strip emojis.
+		$raw = preg_replace( '/[\x{1F300}-\x{1F9FF}\x{2600}-\x{27BF}\x{2700}-\x{27BF}\x{FE00}-\x{FE0F}\x{1F600}-\x{1F64F}\x{1F680}-\x{1F6FF}\x{1F900}-\x{1F9FF}\x{200D}\x{23CF}\x{23E9}-\x{23F3}\x{23F8}-\x{23FA}\x{231A}-\x{231B}\x{2328}\x{25AA}-\x{25AB}\x{25B6}\x{25C0}\x{25FB}-\x{25FE}]/u', '', $raw );
 		$raw = trim( $raw );
 
 		$words = str_word_count( $raw, 0, '0123456789' );
