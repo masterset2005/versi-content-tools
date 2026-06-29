@@ -325,25 +325,31 @@ class Versi_Processor {
 		);
 
 		if ( 'missing' === $mode ) {
-			$args['meta_query'] = array(
-				'relation' => 'OR',
-				array(
-					'key'     => 'versi_excerpt_generated',
-					'compare' => 'NOT EXISTS',
-				),
-				array(
-					'key'     => 'versi_excerpt_generated',
-					'value'   => '',
-					'compare' => '=',
-				),
-			);
+			add_action( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
 		}
 
 		$query = new WP_Query( $args );
+
+		if ( 'missing' === $mode ) {
+			remove_action( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
+		}
+
 		return array(
 			'ids'   => $query->posts,
 			'total' => (int) $query->found_posts,
 		);
+	}
+
+	/**
+	 * Filter posts_where to only include posts with empty post_excerpt.
+	 *
+	 * @param string $where The WHERE clause.
+	 * @return string
+	 */
+	public function filter_missing_excerpt( $where ) {
+		global $wpdb;
+		$where .= " AND {$wpdb->posts}.post_excerpt = ''";
+		return $where;
 	}
 
 	/**
