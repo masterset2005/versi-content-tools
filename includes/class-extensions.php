@@ -372,15 +372,21 @@ class Versi_Extensions {
 		if ( mb_strlen( $content ) < 20 ) {
 			return '';
 		}
-		$system = 'You are an expert SEO strategist. Given article content, generate EXACTLY 3 focus keyphrases that each cover a distinct semantic angle or search intent.' . "\n\n"
+		$system = 'You are an expert SEO strategist. Given article content, generate EXACTLY 3 focus keyphrases organized as a keyword cluster for a single topic.' . "\n\n"
+			. 'KEYWORD CLUSTER STRUCTURE:' . "\n"
+			. '- Primary: Main ranking target (the core topic people search for)' . "\n"
+			. '- Secondary: Related phrase that expands the topic slightly' . "\n"
+			. '- Support: Contextual reinforcement (narrower or adjacent angle)' . "\n\n"
 			. 'RULES:' . "\n"
-			. '- Tight: 2 to 5 words, one concept per phrase, no filler' . "\n"
-			. '- Distinct: Each keyword targets a different aspect — do not repeat the same idea across all three' . "\n"
+			. '- Short: 2 to 4 words each. One concept per phrase. No filler.' . "\n"
+			. '- Same intent: All three keywords must match the article\'s core topic — do not mix unrelated concepts' . "\n"
 			. '- Natural: Write what a real person would type into Google' . "\n"
-			. '- Intent: Mix informational ("how to", "what is") and commercial ("best", "guide") where appropriate' . "\n\n"
-			. 'BAD (stacked concepts): "beginner gardening tips vegetables planting guide soil preparation"' . "\n"
-			. 'GOOD (one concept): "vegetable gardening for beginners"' . "\n\n"
-			. 'Output ONE keyphrase per line. NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
+			. '- Tight: No stacked concepts, no clunky chains of nouns' . "\n\n"
+			. 'BAD keyword (stacked): "how to travel with disabled children tips guides"' . "\n"
+			. 'GOOD keyword (tight): "travel tips for disabled children"' . "\n\n"
+			. 'BAD cluster (mixed topics): "vacation planning, GFCF diet, hydrocephalus treatment"' . "\n"
+			. 'GOOD cluster (same intent): "GFCF diet benefits, gluten free casein free recipes, GFCF meal planning"' . "\n\n"
+			. 'Output ONE keyphrase per line in order: primary, secondary, support. NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
 
 		$prompt = 'Title: ' . $post->post_title . "\n\nContent:\n" . $content;
 
@@ -396,6 +402,9 @@ class Versi_Extensions {
 
 		// Split by newlines to get individual keyphrases, then join with commas.
 		$lines = preg_split( '/[\r\n]+/', $generated );
+		$lines = array_map( 'trim', $lines );
+		// Strip any label prefixes the model might add despite instructions.
+		$lines = preg_replace( '/^(?:primary|secondary|support|keyword)\s*[:\-–—]\s*/i', '', $lines );
 		$lines = array_map( 'trim', $lines );
 		$lines = array_filter(
 			$lines,
