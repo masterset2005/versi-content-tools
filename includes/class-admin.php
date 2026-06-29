@@ -1624,9 +1624,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			wp_send_json_error( 'Post not found' );
 		}
 
-		$ext    = Versi_Extensions::init();
-		$status = $ext->generate_focus_keywords( $id );
-		
+		$ext       = Versi_Extensions::init();
+		$generated = $ext->generate_focus_keywords( $id );
+		$status    = ! empty( $generated );
+
 		$result = Versi_Processor::init()->result(
 			$id,
 			$post->post_title,
@@ -1634,11 +1635,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			'',
 			$status ? null : __( 'AI generation failed.', 'versi-content-tools' ),
 			null,
-			'',
+			$generated,
 			$status
 		);
 		wp_send_json_success( $result );
-
 	}
 
 	/**

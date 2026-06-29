@@ -339,11 +339,11 @@ class Versi_Extensions {
 	 * Skips integrations that do not have the auto_focus toggle enabled.
 	 *
 	 * @param int $post_id Post ID to generate keywords for.
-	 * @return bool True on success, false on failure.
+	 * @return string The generated keywords on success, empty string on failure.
 	 */
-	public function generate_focus_keywords( int $post_id ): bool {
+	public function generate_focus_keywords( int $post_id ): string {
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			return false;
+			return '';
 		}
 
 		$targets = array();
@@ -358,19 +358,19 @@ class Versi_Extensions {
 		}
 
 		if ( empty( $targets ) ) {
-			return false;
+			return '';
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			return false;
+			return '';
 		}
 
 		$content = wp_strip_all_tags( $post->post_content );
 		$content = mb_substr( $content, 0, 500 );
 
 		if ( mb_strlen( $content ) < 20 ) {
-			return false;
+			return '';
 		}
 
 		$system = 'You are an SEO keyword researcher. Given article content, generate EXACTLY 3 focus keyphrases that best describe the main topics. Output them as a single line, comma-separated list. DO NOT include any labels, extra text, quotes, or newlines.';
@@ -383,19 +383,17 @@ class Versi_Extensions {
 		$generated = $builder->generate_text();
 
 		if ( is_wp_error( $generated ) || empty( trim( $generated ) ) ) {
-			return false;
+			return '';
 		}
 
-		// Clean up the output: force single line, remove extra characters
+		// Clean up the output: force single line, trim whitespace.
 		$generated = str_replace( array( "\r", "\n" ), '', $generated );
-		$generated = preg_replace( '/[^a-zA-Z0-9, ]/', '', $generated );
 		$generated = sanitize_text_field( $generated );
 
 		foreach ( $targets as $meta_key ) {
 			update_post_meta( $post_id, $meta_key, $generated );
 		}
-		
-		return true;
-	}
 
+		return $generated;
+	}
 }
