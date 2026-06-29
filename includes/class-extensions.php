@@ -216,6 +216,16 @@ class Versi_Extensions {
 				'default'           => '',
 			)
 		);
+
+		register_setting(
+			'versi_settings',
+			'versi_seo_prompt',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_textarea_field',
+				'default'           => '',
+			)
+		);
 		foreach ( $this->integrations as $plugin ) {
 			foreach ( $plugin['toggles'] as $toggle ) {
 				register_setting(
@@ -253,6 +263,19 @@ class Versi_Extensions {
 						}
 						?>
 					</select>
+				</td>
+			</tr>
+		</table>
+		<table class="form-table">
+			<tr>
+				<th scope="row">
+					<label for="versi_seo_prompt"><?php esc_html_e( 'Custom Prompt', 'versi-content-tools' ); ?></label>
+				</th>
+				<td>
+					<textarea id="versi_seo_prompt" name="versi_seo_prompt" rows="8" class="large-text code">
+					<?php echo esc_textarea( get_option( 'versi_seo_prompt', '' ) ); ?>
+					</textarea>
+					<p class="description"><?php esc_html_e( 'Custom system instruction for SEO keyword generation. Leave empty for the built-in default.', 'versi-content-tools' ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -372,21 +395,27 @@ class Versi_Extensions {
 		if ( mb_strlen( $content ) < 20 ) {
 			return '';
 		}
-		$system = 'You are an expert SEO strategist. Given article content, generate EXACTLY 3 focus keyphrases organized as a keyword cluster for a single topic.' . "\n\n"
-			. 'KEYWORD CLUSTER STRUCTURE:' . "\n"
-			. '- Primary: Main ranking target (the core topic people search for)' . "\n"
-			. '- Secondary: Related phrase that expands the topic slightly' . "\n"
-			. '- Support: Contextual reinforcement (narrower or adjacent angle)' . "\n\n"
-			. 'RULES:' . "\n"
-			. '- Short: 2 to 4 words each. One concept per phrase. No filler.' . "\n"
-			. '- Same intent: All three keywords must match the article\'s core topic — do not mix unrelated concepts' . "\n"
-			. '- Natural: Write what a real person would type into Google' . "\n"
-			. '- Tight: No stacked concepts, no clunky chains of nouns' . "\n\n"
-			. 'BAD keyword (stacked): "how to travel with disabled children tips guides"' . "\n"
-			. 'GOOD keyword (tight): "travel tips for disabled children"' . "\n\n"
-			. 'BAD cluster (mixed topics): "vacation planning, GFCF diet, hydrocephalus treatment"' . "\n"
-			. 'GOOD cluster (same intent): "GFCF diet benefits, gluten free casein free recipes, GFCF meal planning"' . "\n\n"
-			. 'Output ONE keyphrase per line in order: primary, secondary, support. NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
+
+		$custom = get_option( 'versi_seo_prompt', '' );
+		if ( ! empty( trim( $custom ) ) ) {
+			$system = $custom;
+		} else {
+			$system = 'You are an expert SEO strategist. Given article content, generate EXACTLY 3 focus keyphrases organized as a keyword cluster for a single topic.' . "\n\n"
+				. 'KEYWORD CLUSTER STRUCTURE:' . "\n"
+				. '- Primary: Main ranking target (the core topic people search for)' . "\n"
+				. '- Secondary: Related phrase that expands the topic slightly' . "\n"
+				. '- Support: Contextual reinforcement (narrower or adjacent angle)' . "\n\n"
+				. 'RULES:' . "\n"
+				. '- Short: 2 to 4 words each. One concept per phrase. No filler.' . "\n"
+				. '- Same intent: All three keywords must match the article\'s core topic — do not mix unrelated concepts' . "\n"
+				. '- Natural: Write what a real person would type into Google' . "\n"
+				. '- Tight: No stacked concepts, no clunky chains of nouns' . "\n\n"
+				. 'BAD keyword (stacked): "how to travel with disabled children tips guides"' . "\n"
+				. 'GOOD keyword (tight): "travel tips for disabled children"' . "\n\n"
+				. 'BAD cluster (mixed topics): "vacation planning, GFCF diet, hydrocephalus treatment"' . "\n"
+				. 'GOOD cluster (same intent): "GFCF diet benefits, gluten free casein free recipes, GFCF meal planning"' . "\n\n"
+				. 'Output ONE keyphrase per line in order: primary, secondary, support. NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
+		}
 
 		$prompt = 'Title: ' . $post->post_title . "\n\nContent:\n" . $content;
 
