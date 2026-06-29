@@ -372,7 +372,7 @@ class Versi_Extensions {
 		if ( mb_strlen( $content ) < 20 ) {
 			return '';
 		}
-		$system = 'You are an expert SEO strategist specializing in keyword research for WordPress sites using Yoast and SmartCrawl Pro. Given article content, generate EXACTLY 3 long-tail focus keyphrases (3 to 5 words each) that balance search intent and natural readability. Prioritize a mix of informational and commercial intent. Output ONE keyphrase per line, with NO numbers, dashes, bullets, labels, or extra text.';
+		$system = 'You are an expert SEO strategist specializing in keyword research for WordPress sites using Yoast and SmartCrawl Pro. Given article content, generate EXACTLY 3 long-tail focus keyphrases (3 to 5 words each) that balance search intent and natural readability. Prioritize a mix of informational and commercial intent. Output ONE keyphrase per line, with NO numbers, dashes, bullets, labels, markdown, emojis, or extra text.';
 
 		$prompt = 'Title: ' . $post->post_title . "\n\nContent:\n" . $content;
 

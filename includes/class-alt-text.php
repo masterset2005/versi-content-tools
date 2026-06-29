@@ -174,7 +174,8 @@ class Versi_Alt_Text_Processor {
 				. '- Subjects, objects, actions, setting, text, and details' . "\n"
 				. '- Do not infer purpose, meaning, emotions, or context' . "\n"
 				. '- Do not shorten for accessibility' . "\n"
-				. '- Be factual and concise';
+				. '- Be factual and concise' . "\n"
+				. '- Plain text only. No markdown, no emojis, no special unicode characters';
 			$prompt = 'Describe everything visible in this image.';
 		}
 
@@ -261,7 +262,8 @@ class Versi_Alt_Text_Processor {
 			. '- List subjects, objects, actions, setting, text, and details.' . "\n"
 			. '- Do not infer purpose, meaning, emotions, or context.' . "\n"
 			. '- Do not shorten for accessibility or style.' . "\n"
-			. '- Be factual, neutral, and concise.';
+			. '- Be factual, neutral, and concise.' . "\n"
+			. '- Plain text only. No markdown, no emojis, no special unicode characters.';
 	}
 
 	/**
@@ -292,7 +294,7 @@ class Versi_Alt_Text_Processor {
 			. '**Content:** {article_content}' . "\n"
 			. '**Current alt:** {existing_alt}' . "\n"
 			. '**Author style:** {author_style}' . "\n\n"
-			. 'Output a single clean string. When uncertain, use `[[DECORATIVE_ALT]]`.';
+			. 'Output a single clean string. No markdown, no emojis. When uncertain, use `[[DECORATIVE_ALT]]`.';
 	}
 
 	/**
@@ -312,7 +314,7 @@ class Versi_Alt_Text_Processor {
 			. '- **Forbidden labels:** `Informative:`, `Output:`, `Functional:`, `Alt:`' . "\n"
 			. '- **Forbidden starts:** `Image of`, `Photo of`, `Picture of`, `An image shows`, `The image features`' . "\n"
 			. '- Max **125 characters** — no quotes, no preamble, no explanations' . "\n\n"
-			. 'Output a single clean string. When uncertain, use `[[DECORATIVE_ALT]]`.';
+			. 'Output a single clean string. No markdown, no emojis. When uncertain, use `[[DECORATIVE_ALT]]`.';
 	}
 
 	/**
