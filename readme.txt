@@ -88,6 +88,13 @@ targets all excerpts.
 
 == Changelog ==
 
+= 1.3.2 =
+* Fix: Properly unschedule cron events on plugin deactivation (per WP docs)
+* Fix: Guard duplicate cron scheduling with wp_next_scheduled() check
+* Fix: Remove overly-aggressive DISABLE_WP_CRON synchronous drain
+* Fix: Detect stalled background jobs and show user-facing error with guidance
+* Fix: Add cron scheduling fallback when wp_schedule_single_event() fails to store
+
 = 1.3.1 =
 * Add support for SEO plugin Extensions system (SmartCrawl, Yoast, Rank Math, SEOPress)
 * Add support for AI-generated focus keyword writing to SEO plugin metadata
