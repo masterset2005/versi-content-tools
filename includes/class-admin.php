@@ -1950,48 +1950,51 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$alt_proc = Versi_Alt_Text_Processor::init();
 		$exc_proc = Versi_Excerpt_Processor::init();
 
-		$batch    = absint( get_option( 'versi_batch_size', 5 ) );
-		$workload = $job['workload'];
-		$mode     = $job['mode'];
+		$batch     = absint( get_option( 'versi_batch_size', 5 ) );
+		$workload  = $job['workload'];
+		$mode      = $job['mode'];
+		$max_loops = 10;
 
-		$ids_result = array( 'ids' => array() );
+		for ( $loop = 0; $loop < $max_loops && $job['is_running']; ++$loop ) {
+			$ids_result = array( 'ids' => array() );
 
-		if ( 'alt' === $workload ) {
-			$ids_result = $shared->get_image_ids( $mode, $job['offset'], $batch, $job['cat_id'] );
-		} else {
-			$ids_result = $shared->get_excerpt_ids( $mode, $job['offset'], $batch );
-		}
-
-		if ( empty( $ids_result['ids'] ) ) {
-			$job['is_running'] = false;
-			$job['completed']  = true;
-			$job['updated_at'] = time();
-			update_option( 'versi_job_status', $job, false );
-			return;
-		}
-
-		foreach ( $ids_result['ids'] as $id ) {
 			if ( 'alt' === $workload ) {
-				$result = $alt_proc->process_single( $id );
+				$ids_result = $shared->get_image_ids( $mode, $job['offset'], $batch, $job['cat_id'] );
 			} else {
-				$result = $exc_proc->process_single( $id );
+				$ids_result = $shared->get_excerpt_ids( $mode, $job['offset'], $batch );
 			}
-			++$job['processed'];
 
-			if ( 'error' === $result['status'] ) {
-				++$job['failed'];
+			if ( empty( $ids_result['ids'] ) ) {
+				$job['is_running'] = false;
+				$job['completed']  = true;
+				$job['updated_at'] = time();
+				update_option( 'versi_job_status', $job, false );
+				return;
 			}
+
+			foreach ( $ids_result['ids'] as $id ) {
+				if ( 'alt' === $workload ) {
+					$result = $alt_proc->process_single( $id );
+				} else {
+					$result = $exc_proc->process_single( $id );
+				}
+				++$job['processed'];
+
+				if ( 'error' === $result['status'] ) {
+					++$job['failed'];
+				}
+			}
+
+			$job['offset']     = $job['offset'] + count( $ids_result['ids'] );
+			$job['updated_at'] = time();
+
+			if ( $job['processed'] >= $job['total'] ) {
+				$job['is_running'] = false;
+				$job['completed']  = true;
+			}
+
+			update_option( 'versi_job_status', $job, false );
 		}
-
-		$job['offset']     = $job['offset'] + count( $ids_result['ids'] );
-		$job['updated_at'] = time();
-
-		if ( $job['processed'] >= $job['total'] ) {
-			$job['is_running'] = false;
-			$job['completed']  = true;
-		}
-
-		update_option( 'versi_job_status', $job, false );
 
 		if ( $job['is_running'] ) {
 			wp_schedule_single_event( time() + 5, 'versi_process_batch' );
