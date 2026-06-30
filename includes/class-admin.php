@@ -806,6 +806,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						&mdash;
 						<?php echo esc_html( $job['workload'] ); ?> / <?php echo esc_html( $job['mode'] ); ?>
 					</p>
+					<p id="versi-bg-stall-warn" style="color:#b32d2e;display:none;margin:8px 0 0;">
+						<?php esc_html_e( 'This job appears stalled. WP-Cron events may not be firing. If you have set DISABLE_WP_CRON, make sure your system cron is calling wp-cron.php regularly. Otherwise, remove that constant from wp-config.php.', 'versi-content-tools' ); ?>
+					</p>
 					<button id="versi-bg-cancel" class="button"><?php esc_html_e( 'Cancel Job', 'versi-content-tools' ); ?></button>
 				</div>
 				<script>
@@ -822,11 +825,14 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							action: 'versi_job_status',
 							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
 						}, r => {
-							if (r.success && r.data.is_running) {
-								$('#versi-bg-progress').text(r.data.processed + ' / ' + r.data.total);
-								setTimeout(poll, 3000);
-							} else {
-								location.reload();
+							if (r.success && r.data) {
+								if (r.data.is_running) {
+									$('#versi-bg-progress').text(r.data.processed + ' / ' + r.data.total);
+									$('#versi-bg-stall-warn').toggle(r.data.stalled === true);
+									setTimeout(poll, 3000);
+								} else {
+									location.reload();
+								}
 							}
 						});
 					}
@@ -1462,6 +1468,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						&mdash;
 						<?php echo esc_html( $job['workload'] ); ?> / <?php echo esc_html( $job['mode'] ); ?>
 					</p>
+					<p id="versi-bg-stall-warn" style="color:#b32d2e;display:none;margin:8px 0 0;">
+						<?php esc_html_e( 'This job appears stalled. WP-Cron events may not be firing. If you have set DISABLE_WP_CRON, make sure your system cron is calling wp-cron.php regularly. Otherwise, remove that constant from wp-config.php.', 'versi-content-tools' ); ?>
+					</p>
 					<button id="versi-bg-cancel" class="button"><?php esc_html_e( 'Cancel Job', 'versi-content-tools' ); ?></button>
 				</div>
 				<script>
@@ -1473,6 +1482,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						}, resp => {
 							if (resp.success && resp.data) {
 								$('#versi-bg-progress').text(resp.data.processed + ' / ' + resp.data.total);
+								$('#versi-bg-stall-warn').toggle(resp.data.stalled === true);
 								if (resp.data.is_running) {
 									setTimeout(poll, 3000);
 								} else {
@@ -1841,7 +1851,15 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			wp_send_json_error( 'No job found' );
 		}
 
-		wp_send_json_success( $job );
+		$response                  = $job;
+		$response['cron_disabled'] = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
+
+		// Report stalled if updated_at hasn't moved in 30+ seconds.
+		if ( ! empty( $job['is_running'] ) && ! empty( $job['updated_at'] ) ) {
+			$response['stalled'] = ( time() - (int) $job['updated_at'] ) > 30;
+		}
+
+		wp_send_json_success( $response );
 	}
 
 	/**
@@ -1946,59 +1964,83 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return;
 		}
 
+		$max_loops = 10;
+
+		for ( $loop = 0; $loop < $max_loops && $job['is_running']; ++$loop ) {
+			$this->process_single_batch( $job );
+		}
+
+		if ( $job['is_running'] ) {
+			// Guard against duplicate scheduling.
+			if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
+				wp_schedule_single_event( time() + 5, 'versi_process_batch' );
+			}
+
+			// If the event wasn't stored (e.g. filter blocked it, cron option
+			// locked), process synchronously as a last-resort fallback.
+			if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
+				for ( $fb = 0; $fb < 10 && $job['is_running']; ++$fb ) {
+					$this->process_single_batch( $job );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Process a single batch of items and update the job status.
+	 *
+	 * @param array $job Job status (passed by reference).
+	 * @return bool True if more items remain, false if done.
+	 */
+	private function process_single_batch( array &$job ): bool {
 		$shared   = Versi_Processor::init();
 		$alt_proc = Versi_Alt_Text_Processor::init();
 		$exc_proc = Versi_Excerpt_Processor::init();
 
-		$batch     = absint( get_option( 'versi_batch_size', 5 ) );
-		$workload  = $job['workload'];
-		$mode      = $job['mode'];
-		$max_loops = 10;
+		$batch    = absint( get_option( 'versi_batch_size', 5 ) );
+		$workload = $job['workload'];
+		$mode     = $job['mode'];
 
-		for ( $loop = 0; $loop < $max_loops && $job['is_running']; ++$loop ) {
-			$ids_result = array( 'ids' => array() );
+		$ids_result = array( 'ids' => array() );
 
-			if ( 'alt' === $workload ) {
-				$ids_result = $shared->get_image_ids( $mode, $job['offset'], $batch, $job['cat_id'] );
-			} else {
-				$ids_result = $shared->get_excerpt_ids( $mode, $job['offset'], $batch );
-			}
+		if ( 'alt' === $workload ) {
+			$ids_result = $shared->get_image_ids( $mode, $job['offset'], $batch, $job['cat_id'] );
+		} else {
+			$ids_result = $shared->get_excerpt_ids( $mode, $job['offset'], $batch );
+		}
 
-			if ( empty( $ids_result['ids'] ) ) {
-				$job['is_running'] = false;
-				$job['completed']  = true;
-				$job['updated_at'] = time();
-				update_option( 'versi_job_status', $job, false );
-				return;
-			}
-
-			foreach ( $ids_result['ids'] as $id ) {
-				if ( 'alt' === $workload ) {
-					$result = $alt_proc->process_single( $id );
-				} else {
-					$result = $exc_proc->process_single( $id );
-				}
-				++$job['processed'];
-
-				if ( 'error' === $result['status'] ) {
-					++$job['failed'];
-				}
-			}
-
-			$job['offset']     = $job['offset'] + count( $ids_result['ids'] );
+		if ( empty( $ids_result['ids'] ) ) {
+			$job['is_running'] = false;
+			$job['completed']  = true;
 			$job['updated_at'] = time();
-
-			if ( $job['processed'] >= $job['total'] ) {
-				$job['is_running'] = false;
-				$job['completed']  = true;
-			}
-
 			update_option( 'versi_job_status', $job, false );
+			return false;
 		}
 
-		if ( $job['is_running'] ) {
-			wp_schedule_single_event( time() + 5, 'versi_process_batch' );
+		foreach ( $ids_result['ids'] as $id ) {
+			if ( 'alt' === $workload ) {
+				$result = $alt_proc->process_single( $id );
+			} else {
+				$result = $exc_proc->process_single( $id );
+			}
+			++$job['processed'];
+
+			if ( 'error' === $result['status'] ) {
+				++$job['failed'];
+			}
 		}
+
+		$job['offset']     = $job['offset'] + count( $ids_result['ids'] );
+		$job['updated_at'] = time();
+
+		if ( $job['processed'] >= $job['total'] ) {
+			$job['is_running'] = false;
+			$job['completed']  = true;
+		}
+
+		update_option( 'versi_job_status', $job, false );
+
+		return $job['is_running'];
 	}
 
 	// -------------------------------------------------------------------------

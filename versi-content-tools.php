@@ -3,7 +3,7 @@
  * Plugin Name: Versi Content Tools
  * Plugin URI:  https://versihosting.com/
  * Description: AI-powered alt-text generation and excerpt management. Uses the WP AI Client (WordPress 7.0+).
- * Version:     1.3.1
+ * Version:     1.3.2
  * Author:      Sean Thompson
  * Author URI:  https://stprojects.net/
  * License:     GPL v2 or later
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'VERSI_VERSION', '1.3.1' );
+define( 'VERSI_VERSION', '1.3.2' );
 define( 'VERSI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -32,6 +32,17 @@ require_once VERSI_PLUGIN_DIR . 'includes/class-extensions.php';
 require_once VERSI_PLUGIN_DIR . 'includes/class-abilities.php';
 require_once VERSI_PLUGIN_DIR . 'includes/class-admin.php';
 require_once VERSI_PLUGIN_DIR . 'includes/class-cli.php';
+
+/**
+ * Deactivation: clean up any pending cron events.
+ */
+function versi_deactivate() {
+	$timestamp = wp_next_scheduled( 'versi_process_batch' );
+	if ( $timestamp ) {
+		wp_unschedule_event( $timestamp, 'versi_process_batch' );
+	}
+}
+register_deactivation_hook( __FILE__, 'versi_deactivate' );
 
 /**
  * Initialize plugin.
