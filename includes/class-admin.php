@@ -1827,8 +1827,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			false
 		);
 
-		// Process first batch immediately so the job starts right away.
-		$this->process_background_batch();
+		// Schedule the first cron event; don't process synchronously — let
+		// background processing advance at its own pace.
+		if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
+			wp_schedule_single_event( time() + 10, 'versi_process_batch' );
+		}
 
 		wp_send_json_success(
 			array(
@@ -1964,23 +1967,21 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return;
 		}
 
-		$max_loops = 10;
-
-		for ( $loop = 0; $loop < $max_loops && $job['is_running']; ++$loop ) {
-			$this->process_single_batch( $job );
-		}
+		// One batch (default 5 items) per cron fire — steady, not fast.
+		$this->process_single_batch( $job );
 
 		if ( $job['is_running'] ) {
 			// Guard against duplicate scheduling.
 			if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
-				wp_schedule_single_event( time() + 5, 'versi_process_batch' );
+				wp_schedule_single_event( time() + 30, 'versi_process_batch' );
 			}
 
 			// If the event wasn't stored (e.g. filter blocked it, cron option
-			// locked), process synchronously as a last-resort fallback.
+			// locked), try once more synchronously as a last-resort fallback.
 			if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
-				for ( $fb = 0; $fb < 10 && $job['is_running']; ++$fb ) {
-					$this->process_single_batch( $job );
+				$this->process_single_batch( $job );
+				if ( $job['is_running'] ) {
+					wp_schedule_single_event( time() + 30, 'versi_process_batch' );
 				}
 			}
 		}
