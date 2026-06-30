@@ -107,10 +107,6 @@ class Versi_Excerpt_Processor {
 
 		update_post_meta( $post_id, 'versi_excerpt_generated', '1' );
 
-		if ( class_exists( 'Versi_Extensions' ) ) {
-			Versi_Extensions::init()->generate_focus_keywords( $post_id );
-		}
-
 		return $shared->result( $post_id, $post->post_title, 'success', $existing_excerpt, null, null, $generated, $changed );
 	}
 

@@ -125,10 +125,6 @@ class Versi_Alt_Text_Processor {
 		$changed = $alt_text !== $context['existing_alt'];
 		update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
 
-		if ( class_exists( 'Versi_Extensions' ) ) {
-			Versi_Extensions::init()->generate_focus_keywords( $kw_post_id );
-		}
-
 		return $shared->result( $attachment_id, $title, 'success', $context['existing_alt'], null, null, $alt_text, $changed, $shared->thumbnail_url( $attachment_id ) );
 	}
 
