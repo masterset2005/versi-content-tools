@@ -1817,7 +1817,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			false
 		);
 
-		wp_schedule_single_event( time() + 5, 'versi_process_batch' );
+		// Process first batch immediately so the job starts right away.
+		$this->process_background_batch();
 
 		wp_send_json_success(
 			array(
