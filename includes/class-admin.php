@@ -29,6 +29,11 @@ class Versi_Admin {
 		add_action( 'add_attachment', array( $this, 'alt_auto_generate_on_upload' ) );
 		add_action( 'transition_post_status', array( $this, 'excerpt_auto_generate_on_publish' ), 10, 3 );
 
+		// Content filter: update alt attributes in embedded images on the fly.
+		if ( '1' === get_option( 'versi_alt_update_content', '0' ) ) {
+			add_filter( 'the_content', array( $this, 'filter_content_alt_attributes' ) );
+		}
+
 		// AJAX: alt-text.
 		add_action( 'wp_ajax_versi_alt_process_single', array( $this, 'ajax_alt_process_single' ) );
 		add_action( 'wp_ajax_versi_alt_get_ids', array( $this, 'ajax_alt_get_ids' ) );
@@ -215,6 +220,16 @@ class Versi_Admin {
 		register_setting(
 			'versi_settings',
 			'versi_alt_show_generated',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '0',
+			)
+		);
+
+		register_setting(
+			'versi_settings',
+			'versi_alt_update_content',
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
@@ -447,6 +462,20 @@ class Versi_Admin {
 									<input type="checkbox" id="versi_alt_show_generated" name="versi_alt_show_generated" value="1" <?php checked( get_option( 'versi_alt_show_generated', '0' ), '1' ); ?>>
 									<?php esc_html_e( 'Display a notice on the Media Library after alt text is generated.', 'versi-content-tools' ); ?>
 								</label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="versi_alt_update_content"><?php esc_html_e( 'Update Content Alt', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<label>
+									<input type="checkbox" id="versi_alt_update_content" name="versi_alt_update_content" value="1" <?php checked( get_option( 'versi_alt_update_content', '0' ), '1' ); ?>>
+									<?php esc_html_e( 'Dynamically update alt attributes in post/page content to match the current attachment alt text.', 'versi-content-tools' ); ?>
+								</label>
+								<p class="description" style="margin-top:4px;">
+									<?php esc_html_e( 'When enabled, embedded images in posts and pages will display the latest alt text. This is non-destructive — nothing is saved to the database.', 'versi-content-tools' ); ?>
+								</p>
 							</td>
 						</tr>
 						<tr>
@@ -2047,6 +2076,48 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	// -------------------------------------------------------------------------
 	// Auto-generate on upload / save
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Dynamically update alt attributes in post content to match current
+	 * attachment meta. Hooked into the_content when the option is enabled.
+	 *
+	 * @param string $content Post content.
+	 * @return string Updated content.
+	 */
+	public function filter_content_alt_attributes( $content ) {
+		if ( empty( $content ) ) {
+			return $content;
+		}
+
+		return preg_replace_callback(
+			'/<img[^>]+wp-image-(\d+)[^>]*>/i',
+			function ( $matches ) {
+				$attachment_id = (int) $matches[1];
+				if ( ! $attachment_id ) {
+					return $matches[0];
+				}
+
+				$alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+				if ( ! is_string( $alt ) || '' === trim( $alt ) ) {
+					return $matches[0];
+				}
+
+				$alt_esc = esc_attr( trim( $alt ) );
+
+				// Replace existing alt attribute or add one.
+				if ( preg_match( '/\salt=(["\'])(.*?)\1/i', $matches[0] ) ) {
+					return preg_replace(
+						'/\salt=(["\'])(.*?)\1/i',
+						'alt=$1' . $alt_esc . '$1',
+						$matches[0]
+					);
+				}
+
+				return str_replace( '<img', '<img alt="' . $alt_esc . '"', $matches[0] );
+			},
+			$content
+		);
+	}
 
 	/**
 	 * Auto-generate alt text on image upload.
