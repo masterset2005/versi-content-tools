@@ -56,22 +56,12 @@ class Versi_Alt_Text_Processor {
 
 		$mode = get_option( 'versi_alt_processing_mode', 'two-pass' );
 
-		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
-			error_log( '--- VERSI MODE DEBUG --- Alt-text processing mode: ' . $mode . ' for attachment #' . $attachment_id );
-		}
-
 		if ( 'single-pass' === $mode ) {
 			list( $system, $prompt ) = $this->build_single_prompt( $context );
 			$builder                 = wp_ai_client_prompt( $prompt )
 				->using_system_instruction( $system )
 				->with_file( $file, $mime );
 			$builder                 = $shared->apply_vision_preference( $builder );
-
-			if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
-				error_log( '--- VERSI PROMPT DEBUG (single-pass) ---' );
-				error_log( 'SYSTEM: ' . $system );
-				error_log( 'PROMPT: ' . $prompt );
-			}
 
 			$alt_text = $builder->generate_text();
 
@@ -94,12 +84,6 @@ class Versi_Alt_Text_Processor {
 				->using_system_instruction( $system )
 				->with_file( $file, $mime );
 			$builder                 = $shared->apply_vision_preference( $builder );
-
-			if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
-				error_log( '--- VERSI PROMPT DEBUG (two-pass vision) ---' );
-				error_log( 'SYSTEM: ' . $system );
-				error_log( 'PROMPT: ' . $prompt );
-			}
 
 			$alt_text = $builder->generate_text();
 
@@ -227,12 +211,6 @@ class Versi_Alt_Text_Processor {
 			. '**Content:** ' . $context['article_content'] . "\n"
 			. '**Current alt:** ' . $context['existing_alt'] . "\n\n"
 			. '**Vision:** ' . $new_alt;
-
-		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
-			error_log( '--- VERSI PROMPT DEBUG (synthesizer) ---' );
-			error_log( 'SYSTEM: ' . $system );
-			error_log( 'PROMPT: ' . $prompt );
-		}
 
 		$builder = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );

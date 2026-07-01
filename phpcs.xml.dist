@@ -5,10 +5,12 @@
 	<rule ref="WordPress">
 		<!-- Short descriptive filenames (class-admin.php etc.) are intentional -->
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+		<!-- Plugin slug on wp.org is 'versi-content-tools'; folder name may differ -->
+		<exclude name="WordPress.WP.I18n.TextDomainMismatch" />
 	</rule>
 
 	<config name="minimum_wp_version" value="7.0" />
-	<config name="text_domain" value="versi-content-tools" />
+	<config name="text_domain" value="versi-content-tools,default" />
 
 	<arg name="extensions" value="php" />
 
@@ -16,10 +18,6 @@
 
 	<exclude-pattern>*/vendor/*</exclude-pattern>
 	<exclude-pattern>*/.git/*</exclude-pattern>
-
-	<rule ref="WordPress.PHP.DevelopmentFunctions">
-		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log_error_log" />
-	</rule>
 
 	<rule ref="WordPress.DB.SlowDBQuery">
 		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_key" />

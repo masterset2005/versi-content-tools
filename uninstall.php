@@ -7,7 +7,7 @@
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
-$options = array(
+$versi_options = array(
 	// Alt-text options.
 	'versi_alt_system_prompt',
 	'versi_alt_compare_prompt',
@@ -47,12 +47,12 @@ $options = array(
 	'versi_ext_seopress_auto_focus',
 );
 
-foreach ( $options as $opt ) {
-	delete_option( $opt );
+foreach ( $versi_options as $versi_opt ) {
+	delete_option( $versi_opt );
 }
 
 // Delete user meta for generated notices.
-$users = get_users( array( 'fields' => 'ID' ) );
-foreach ( $users as $user_id ) {
-	delete_user_meta( $user_id, 'versi_last_generated_alt' );
+$versi_users = get_users( array( 'fields' => 'ID' ) );
+foreach ( $versi_users as $versi_user_id ) {
+	delete_user_meta( $versi_user_id, 'versi_last_generated_alt' );
 }

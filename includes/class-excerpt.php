@@ -43,10 +43,6 @@ class Versi_Excerpt_Processor {
 			$target_length = 55;
 		}
 
-		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
-			error_log( '--- VERSI MODE DEBUG --- Excerpt processing for post #' . $post_id );
-		}
-
 		$system = $this->build_prompt( $existing_excerpt, $target_length );
 		$prompt = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
 
@@ -62,12 +58,6 @@ class Versi_Excerpt_Processor {
 			if ( $keywords ) {
 				$system .= "\n\n**SEO focus keyphrases:** {$keywords}\nNaturally incorporate these keyphrases into the excerpt where relevant.";
 			}
-		}
-
-		if ( '1' === get_option( 'versi_debug_mode', '0' ) ) {
-			error_log( '--- VERSI PROMPT DEBUG (excerpt) ---' );
-			error_log( 'SYSTEM: ' . $system );
-			error_log( 'CONTENT: ' . mb_substr( $prompt, 0, 300 ) );
 		}
 
 		$builder = wp_ai_client_prompt( $prompt )
