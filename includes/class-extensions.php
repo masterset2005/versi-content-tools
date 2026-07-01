@@ -242,6 +242,44 @@ class Versi_Extensions {
 	}
 
 	/**
+	 * Return the built-in default SEO prompt.
+	 *
+	 * @return string
+	 */
+	public static function default_prompt(): string {
+		return 'You are an SEO keyword optimizer. Your job is to convert legacy article titles and content into modern, rankable keyword clusters. Each cluster must contain exactly three keyphrases:'
+			. "\n\n" . 'primary'
+			. "\n" . 'secondary'
+			. "\n" . 'support'
+			. "\n\n" . 'RULES:'
+			. "\n" . '- Short: 2 to 5 words each.'
+			. "\n" . '- One intent per cluster: all three keyphrases must match the article\'s core topic.'
+			. "\n" . '- Natural: write keyphrases exactly how real people search on Google.'
+			. "\n" . '- Tight: no clunky chains, no stacked concepts, no multi-topic phrases.'
+			. "\n" . '- Avoid filler words ("very", "really", "helpful", etc.).'
+			. "\n" . '- Avoid weak stop words: do not use "a", "an", "the", "and", "or".'
+			. "\n" . '- Allowed stop words ONLY when needed for natural search phrasing: "for", "to", "in", "with", "on", "by".'
+			. "\n\n" . 'BAD keyword (stacked):'
+			. "\n" . 'how to travel with disabled children tips guides'
+			. "\n\n" . 'GOOD keyword (tight):'
+			. "\n" . 'travel tips for disabled children'
+			. "\n\n" . 'BAD cluster (mixed topics):'
+			. "\n" . 'vacation planning'
+			. "\n" . 'GFCF diet'
+			. "\n" . 'hydrocephalus treatment'
+			. "\n\n" . 'GOOD cluster (same intent):'
+			. "\n" . 'GFCF diet benefits'
+			. "\n" . 'casein free recipes'
+			. "\n" . 'GFCF meal planning'
+			. "\n\n" . 'OUTPUT FORMAT:'
+			. "\n" . 'Write ONE keyphrase per line in this exact order:'
+			. "\n" . 'primary'
+			. "\n" . 'secondary'
+			. "\n" . 'support'
+			. "\n\n" . 'No numbers, no bullets, no labels, no emojis, no commentary, no extra text.';
+	}
+
+	/**
 	 * Render the Extensions settings tab.
 	 *
 	 * @return void
@@ -276,6 +314,19 @@ class Versi_Extensions {
 					<?php echo esc_textarea( get_option( 'versi_seo_prompt', '' ) ); ?>
 					</textarea>
 					<p class="description"><?php esc_html_e( 'Custom system instruction for SEO keyword generation. Leave empty for the built-in default.', 'versi-content-tools' ); ?></p>
+					<details style="margin-top:8px;">
+						<summary><?php esc_html_e( 'Available variables', 'versi-content-tools' ); ?></summary>
+						<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;color:#666;">
+{title}           - Post / page title
+{content}         - Post / page body content (first 3000 chars)
+						</pre>
+					</details>
+					<details style="margin-top:8px;">
+						<summary><?php esc_html_e( 'Default prompt (click to expand)', 'versi-content-tools' ); ?></summary>
+						<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
+							<?php echo esc_textarea( self::default_prompt() ); ?>
+						</pre>
+					</details>
 				</td>
 			</tr>
 		</table>
@@ -400,36 +451,7 @@ class Versi_Extensions {
 		if ( ! empty( trim( $custom ) ) ) {
 			$system = $custom;
 		} else {
-			$system = 'You are an SEO keyword optimizer. Your job is to convert legacy article titles and content into modern, rankable keyword clusters. Each cluster must contain exactly three keyphrases:' . "\n\n"
-				. 'primary' . "\n"
-				. 'secondary' . "\n"
-				. 'support' . "\n\n"
-				. 'RULES:' . "\n"
-				. '- Short: 2 to 5 words each.' . "\n"
-				. '- One intent per cluster: all three keyphrases must match the article\'s core topic.' . "\n"
-				. '- Natural: write keyphrases exactly how real people search on Google.' . "\n"
-				. '- Tight: no clunky chains, no stacked concepts, no multi-topic phrases.' . "\n"
-				. '- Avoid filler words ("very", "really", "helpful", etc.).' . "\n"
-				. '- Avoid weak stop words: do not use "a", "an", "the", "and", "or".' . "\n"
-				. '- Allowed stop words ONLY when needed for natural search phrasing: "for", "to", "in", "with", "on", "by".' . "\n\n"
-				. 'BAD keyword (stacked):' . "\n"
-				. 'how to travel with disabled children tips guides' . "\n\n"
-				. 'GOOD keyword (tight):' . "\n"
-				. 'travel tips for disabled children' . "\n\n"
-				. 'BAD cluster (mixed topics):' . "\n"
-				. 'vacation planning' . "\n"
-				. 'GFCF diet' . "\n"
-				. 'hydrocephalus treatment' . "\n\n"
-				. 'GOOD cluster (same intent):' . "\n"
-				. 'GFCF diet benefits' . "\n"
-				. 'casein free recipes' . "\n"
-				. 'GFCF meal planning' . "\n\n"
-				. 'OUTPUT FORMAT:' . "\n"
-				. 'Write ONE keyphrase per line in this exact order:' . "\n"
-				. 'primary' . "\n"
-				. 'secondary' . "\n"
-				. 'support' . "\n\n"
-				. 'No numbers, no bullets, no labels, no emojis, no commentary, no extra text.';
+			$system = self::default_prompt();
 		}
 
 		$prompt = 'Title: ' . $post->post_title . "\n\nContent:\n" . $content;
