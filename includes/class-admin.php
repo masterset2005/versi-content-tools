@@ -158,6 +158,16 @@ class Versi_Admin {
 
 		register_setting(
 			'versi_settings',
+			'versi_excerpt_min_length',
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => 'absint',
+				'default'           => 50,
+			)
+		);
+
+		register_setting(
+			'versi_settings',
 			'versi_content_limit',
 			array(
 				'type'              => 'integer',
@@ -669,6 +679,15 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						</tr>
 						<tr>
 							<th scope="row">
+								<label for="versi_excerpt_min_length"><?php esc_html_e( 'Min Excerpt Length', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<input type="number" id="versi_excerpt_min_length" name="versi_excerpt_min_length" value="<?php echo esc_attr( get_option( 'versi_excerpt_min_length', 50 ) ); ?>" min="10" max="500" step="5" style="width:80px;">
+								<p class="description"><?php esc_html_e( 'Minimum character count for excerpts. Excerpts below this length are considered "short" and will be targeted by the Fix Short Excerpts mode.', 'versi-content-tools' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
 								<label for="versi_excerpt_text_model"><?php esc_html_e( 'Text Model', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
@@ -927,6 +946,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						<strong><?php echo esc_html( $exc_stats['has_excerpt'] ); ?></strong>
 						<?php esc_html_e( 'have excerpts', 'versi-content-tools' ); ?>
 					</div>
+					<div class="versi-stat" style="background:#fef8ee;padding:6px 14px;border-radius:4px;">
+						<strong><?php echo esc_html( $exc_stats['short'] ); ?></strong>
+						<?php esc_html_e( 'short excerpts', 'versi-content-tools' ); ?>
+					</div>
 				<?php endif; ?>
 				<a href="<?php echo esc_url( $refresh_url ); ?>" class="button" style="margin-left:auto;">
 					<?php esc_html_e( 'Refresh', 'versi-content-tools' ); ?>
@@ -967,10 +990,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$dest_label = __( 'Regenerate All Alt Text', 'versi-content-tools' );
 			$dest_mode  = 'regenerate';
 		} elseif ( 'excerpt' === $workload ) {
-			$safe_label = __( 'Generate Missing Excerpts', 'versi-content-tools' );
-			$safe_mode  = 'missing';
-			$dest_label = __( 'Improve All Excerpts', 'versi-content-tools' );
-			$dest_mode  = 'improve';
+			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-tools' );
+			$safe_mode   = 'missing';
+			$short_label = __( 'Fix Short Excerpts', 'versi-content-tools' );
+			$short_mode  = 'short';
+			$dest_label  = __( 'Improve All Excerpts', 'versi-content-tools' );
+			$dest_mode   = 'improve';
 		} else {
 			$safe_label = __( 'Generate Missing Keywords', 'versi-content-tools' );
 			$safe_mode  = 'missing';
@@ -983,6 +1008,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<button type="button" class="button button-primary versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
 					<?php echo esc_html( $safe_label ); ?>
 				</button>
+				<?php if ( 'excerpt' === $workload ) : ?>
+					<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+						<?php echo esc_html( $short_label ); ?>
+					</button>
+				<?php endif; ?>
 				<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>" data-destructive="1">
 					<?php echo esc_html( $dest_label ); ?>
 				</button>
@@ -1488,10 +1518,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$dest_label = __( 'Regenerate All Alt Text', 'versi-content-tools' );
 			$dest_mode  = 'regenerate';
 		} else {
-			$safe_label = __( 'Generate Missing Excerpts', 'versi-content-tools' );
-			$safe_mode  = 'missing';
-			$dest_label = __( 'Improve All Excerpts', 'versi-content-tools' );
-			$dest_mode  = 'improve';
+			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-tools' );
+			$safe_mode   = 'missing';
+			$short_label = __( 'Fix Short Excerpts', 'versi-content-tools' );
+			$short_mode  = 'short';
+			$dest_label  = __( 'Improve All Excerpts', 'versi-content-tools' );
+			$dest_mode   = 'improve';
 		}
 		?>
 		<div id="versi-bg-tab">
@@ -1544,6 +1576,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					<button type="button" class="button button-primary versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
 						<?php echo esc_html( $safe_label ); ?>
 					</button>
+					<?php if ( 'excerpt' === $workload ) : ?>
+						<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+							<?php echo esc_html( $short_label ); ?>
+						</button>
+					<?php endif; ?>
 					<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>">
 						<?php echo esc_html( $dest_label ); ?>
 					</button>

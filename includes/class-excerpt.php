@@ -203,6 +203,14 @@ class Versi_Excerpt_Processor {
 
 		$has_excerpt = $total - $missing;
 
-		return compact( 'total', 'missing', 'has_excerpt' );
+		$min   = absint( get_option( 'versi_excerpt_min_length', 50 ) );
+		$short = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND post_excerpt != '' AND CHAR_LENGTH(post_excerpt) < %d",
+				$min
+			)
+		);
+
+		return compact( 'total', 'missing', 'has_excerpt', 'short' );
 	}
 }

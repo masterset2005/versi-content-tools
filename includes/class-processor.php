@@ -326,12 +326,16 @@ class Versi_Processor {
 
 		if ( 'missing' === $mode ) {
 			add_action( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
+		} elseif ( 'short' === $mode ) {
+			add_action( 'posts_where', array( $this, 'filter_short_excerpt' ) );
 		}
 
 		$query = new WP_Query( $args );
 
 		if ( 'missing' === $mode ) {
 			remove_action( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
+		} elseif ( 'short' === $mode ) {
+			remove_action( 'posts_where', array( $this, 'filter_short_excerpt' ) );
 		}
 
 		return array(
@@ -349,6 +353,23 @@ class Versi_Processor {
 	public function filter_missing_excerpt( $where ) {
 		global $wpdb;
 		$where .= " AND {$wpdb->posts}.post_excerpt = ''";
+		return $where;
+	}
+
+	/**
+	 * Filter posts_where to only include posts with a non-empty but very
+	 * short excerpt (below versi_excerpt_min_length).
+	 *
+	 * @param string $where The WHERE clause.
+	 * @return string
+	 */
+	public function filter_short_excerpt( $where ) {
+		global $wpdb;
+		$min    = absint( get_option( 'versi_excerpt_min_length', 50 ) );
+		$where .= $wpdb->prepare(
+			" AND {$wpdb->posts}.post_excerpt != '' AND CHAR_LENGTH({$wpdb->posts}.post_excerpt) < %d",
+			$min
+		);
 		return $where;
 	}
 
