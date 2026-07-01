@@ -905,14 +905,14 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					$('#versi-bg-cancel').on('click', () => {
 						$.post(ajaxurl, {
 							action: 'versi_cancel_job',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_cancel_job' ) ); ?>',
 						}).always(() => location.reload());
 					});
 
 					function poll() {
 						$.post(ajaxurl, {
 							action: 'versi_job_status',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_job_status' ) ); ?>',
 						}, r => {
 							if (r.success && r.data) {
 								if (r.data.is_running) {
@@ -1303,7 +1303,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				if (workload === 'alt') {
 					const thumbUrl = r.thumbnail || '';
 					if (thumbUrl) {
-						$entry.append('<img src="' + thumbUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:2px;flex-shrink:0;margin-top:2px;">');
+						const $img = $('<span style="width:40px;height:40px;flex-shrink:0;border-radius:2px;display:inline-block;overflow:hidden;">').append(
+							$('<img>').css({ width: '40px', height: '40px', objectFit: 'cover' }).prop('src', thumbUrl)
+						);
+						$entry.append($img);
 					} else {
 						$entry.append('<span style="width:40px;height:40px;flex-shrink:0;background:#f0f0f1;border-radius:2px;display:inline-block;"></span>');
 					}
@@ -2678,7 +2681,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		<div class="notice notice-success is-dismissible">
 			<p style="display:flex;align-items:center;gap:12px;margin:8px 0;">
 				<?php if ( $thumbnail ) : ?>
-					<?php echo $thumbnail; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php echo wp_kses_post( $thumbnail ); ?>
 				<?php endif; ?>
 				<span>
 					<strong><?php esc_html_e( 'Alt Text Generated:', 'versi-content-tools' ); ?></strong>
