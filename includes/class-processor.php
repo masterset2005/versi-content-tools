@@ -283,6 +283,33 @@ class Versi_Processor {
 	 * @param int $batch  Batch size.
 	 * @return array{ids: int[], total: int}
 	 */
+	public function get_post_ids( $offset, $batch ) {
+		$args = array(
+			'post_type'        => 'post',
+			'post_status'      => 'publish',
+			'posts_per_page'   => $batch,
+			'offset'           => $offset,
+			'orderby'          => 'ID',
+			'order'            => 'ASC',
+			'fields'           => 'ids',
+			'no_found_rows'    => false,
+			'suppress_filters' => true,
+		);
+
+		$query = new WP_Query( $args );
+		return array(
+			'ids'   => $query->posts,
+			'total' => (int) $query->found_posts,
+		);
+	}
+
+	/**
+	 * Get post IDs for SEO processing.
+	 *
+	 * @param int $offset Pagination offset.
+	 * @param int $batch  Batch size.
+	 * @return array{ids: int[], total: int}
+	 */
 	public function get_seo_ids( $offset, $batch ) {
 		$args = array(
 			'post_type'        => 'post',

@@ -53,6 +53,10 @@ class Versi_Admin {
 		add_action( 'wp_ajax_versi_seo_process_single', array( $this, 'ajax_seo_process_single' ) );
 		add_action( 'wp_ajax_versi_seo_get_ids', array( $this, 'ajax_seo_get_ids' ) );
 
+		// AJAX: Content Cleanup.
+		add_action( 'wp_ajax_versi_content_process_single', array( $this, 'ajax_content_process_single' ) );
+		add_action( 'wp_ajax_versi_content_get_ids', array( $this, 'ajax_content_get_ids' ) );
+
 		// AJAX: shared.
 		add_action( 'wp_ajax_versi_get_models', array( $this, 'ajax_get_models' ) );
 		add_action( 'wp_ajax_versi_create_job', array( $this, 'ajax_create_job' ) );
@@ -872,9 +876,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$alt_url     = add_query_arg( 'versi_workload', 'alt', $base_url );
 		$exc_url     = add_query_arg( 'versi_workload', 'excerpt', $base_url );
 		$seo_url     = add_query_arg( 'versi_workload', 'seo', $base_url );
+		$content_url = add_query_arg( 'versi_workload', 'content', $base_url );
 		$live_url    = add_query_arg( 'versi_mode_tab', 'live', $base_url );
 		$bg_url      = add_query_arg( 'versi_mode_tab', 'bg', $base_url );
-		$refresh_url = 'alt' === $workload ? $alt_url : ( 'seo' === $workload ? $seo_url : $exc_url );
+		$refresh_url = 'alt' === $workload ? $alt_url : ( 'seo' === $workload ? $seo_url : ( 'content' === $workload ? $content_url : $exc_url ) );
 
 		$job = get_option( 'versi_job_status' );
 		?>
@@ -936,6 +941,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<a href="<?php echo esc_url( $seo_url ); ?>" class="nav-tab <?php echo 'seo' === $workload ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'SEO Keywords', 'versi-content-tools' ); ?>
 				</a>
+				<a href="<?php echo esc_url( $content_url ); ?>" class="nav-tab <?php echo 'content' === $workload ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Content Cleanup', 'versi-content-tools' ); ?>
+				</a>
 			</h2>
 
 			<!-- Stats bar -->
@@ -957,11 +965,20 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						<strong><?php echo esc_html( $alt_stats['too_short'] ); ?></strong>
 						<?php esc_html_e( 'under 15 chars', 'versi-content-tools' ); ?>
 					</div>
-				<?php elseif ( 'seo' === $workload ) : ?>
-					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
-						<strong><?php esc_html_e( 'SEO', 'versi-content-tools' ); ?></strong>
-						<?php esc_html_e( 'bulk generation', 'versi-content-tools' ); ?>
-					</div>
+			<?php elseif ( 'seo' === $workload ) : ?>
+				<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
+					<strong><?php esc_html_e( 'SEO', 'versi-content-tools' ); ?></strong>
+					<?php esc_html_e( 'bulk generation', 'versi-content-tools' ); ?>
+				</div>
+			<?php elseif ( 'content' === $workload ) : ?>
+				<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
+					<strong><?php esc_html_e( 'Database', 'versi-content-tools' ); ?></strong>
+					<?php esc_html_e( 'bulk post content edit', 'versi-content-tools' ); ?>
+				</div>
+				<div class="versi-stat" style="background:#fcf0f1;padding:6px 14px;border-radius:4px;">
+					<strong><?php esc_html_e( 'WARNING', 'versi-content-tools' ); ?></strong>
+					<?php esc_html_e( 'permanently modifies posts', 'versi-content-tools' ); ?>
+				</div>
 				<?php else : ?>
 					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
 						<strong><?php echo esc_html( $exc_stats['total'] ); ?></strong>
@@ -1018,6 +1035,13 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$safe_mode  = 'missing';
 			$dest_label = __( 'Regenerate All Alt Text', 'versi-content-tools' );
 			$dest_mode  = 'regenerate';
+		} elseif ( 'content' === $workload ) {
+			$safe_label  = __( 'Update Alt Attributes in Content', 'versi-content-tools' );
+			$safe_mode   = 'update_alt';
+			$short_label = __( 'Strip Self-Linking Image Wrappers', 'versi-content-tools' );
+			$short_mode  = 'strip_links';
+			$dest_label  = __( 'Apply Both (Alt + Strip Links)', 'versi-content-tools' );
+			$dest_mode   = 'both';
 		} elseif ( 'excerpt' === $workload ) {
 			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-tools' );
 			$safe_mode   = 'missing';
@@ -1038,6 +1062,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					<?php echo esc_html( $safe_label ); ?>
 				</button>
 				<?php if ( 'excerpt' === $workload ) : ?>
+					<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+						<?php echo esc_html( $short_label ); ?>
+					</button>
+				<?php elseif ( 'content' === $workload ) : ?>
 					<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
 						<?php echo esc_html( $short_label ); ?>
 					</button>
@@ -1241,6 +1269,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			function getActionName(prefix) {
 				if (workload === 'alt') return 'versi_alt_' + prefix;
 				if (workload === 'excerpt') return 'versi_excerpt_' + prefix;
+				if (workload === 'content') return 'versi_content_' + prefix;
 				return 'versi_seo_' + prefix;
 			}
 
@@ -1546,6 +1575,13 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$safe_mode  = 'missing';
 			$dest_label = __( 'Regenerate All Alt Text', 'versi-content-tools' );
 			$dest_mode  = 'regenerate';
+		} elseif ( 'content' === $workload ) {
+			$safe_label  = __( 'Update Alt Attributes in Content', 'versi-content-tools' );
+			$safe_mode   = 'update_alt';
+			$short_label = __( 'Strip Self-Linking Image Wrappers', 'versi-content-tools' );
+			$short_mode  = 'strip_links';
+			$dest_label  = __( 'Apply Both (Alt + Strip Links)', 'versi-content-tools' );
+			$dest_mode   = 'both';
 		} else {
 			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-tools' );
 			$safe_mode   = 'missing';
@@ -1605,11 +1641,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					<button type="button" class="button button-primary versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
 						<?php echo esc_html( $safe_label ); ?>
 					</button>
-					<?php if ( 'excerpt' === $workload ) : ?>
-						<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
-							<?php echo esc_html( $short_label ); ?>
-						</button>
-					<?php endif; ?>
+				<?php if ( 'content' === $workload || 'excerpt' === $workload ) : ?>
+					<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+						<?php echo esc_html( $short_label ); ?>
+					</button>
+				<?php endif; ?>
 					<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>">
 						<?php echo esc_html( $dest_label ); ?>
 					</button>
@@ -1770,6 +1806,92 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	}
 
 	/**
+	 * AJAX: get post IDs for content cleanup processing.
+	 *
+	 * @return void
+	 */
+	public function ajax_content_get_ids() {
+		$this->ajax_check();
+
+		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
+		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
+
+		$result = Versi_Processor::init()->get_post_ids( $offset, $batch );
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: process a single post for content cleanup.
+	 *
+	 * @return void
+	 */
+	public function ajax_content_process_single() {
+		$this->ajax_check();
+
+		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$mode = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'update_alt';
+
+		if ( ! $id ) {
+			wp_send_json_error( 'No ID provided' );
+		}
+
+		$post = get_post( $id );
+		if ( ! $post ) {
+			$result = Versi_Processor::init()->result( $id, '', 'error', null, __( 'Post not found.', 'versi-content-tools' ) );
+			wp_send_json_success( $result );
+		}
+
+		$content     = $post->post_content;
+		$changed     = false;
+		$new_content = $content;
+
+		if ( 'update_alt' === $mode || 'both' === $mode ) {
+			$new_content = $this->process_content_update_alt( $new_content, $changed );
+		}
+
+		if ( 'strip_links' === $mode || 'both' === $mode ) {
+			$new_content = $this->process_content_strip_links( $new_content, $changed );
+		}
+
+		$status = 'skipped';
+		$reason = null;
+
+		if ( $changed ) {
+			global $wpdb;
+			$updated = $wpdb->update(
+				$wpdb->posts,
+				array( 'post_content' => $new_content ),
+				array( 'ID' => $id ),
+				array( '%s' ),
+				array( '%d' )
+			);
+			if ( false !== $updated ) {
+				clean_post_cache( $id );
+				$status = 'success';
+			} else {
+				$status = 'error';
+				$reason = __( 'Database update failed.', 'versi-content-tools' );
+			}
+		} elseif ( ! $changed && 'both' === $mode ) {
+			$reason = __( 'No changes needed.', 'versi-content-tools' );
+		} elseif ( ! $changed ) {
+			$reason = __( 'No changes needed.', 'versi-content-tools' );
+		}
+
+		$result = Versi_Processor::init()->result(
+			$id,
+			$post->post_title,
+			$status,
+			null,
+			'error' === $status && ! $reason ? __( 'Processing failed.', 'versi-content-tools' ) : null,
+			$reason,
+			null,
+			$changed
+		);
+		wp_send_json_success( $result );
+	}
+
+	/**
 	 * AJAX: process a single post for excerpt.
 	 *
 	 * @return void
@@ -1907,6 +2029,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$cat_id = absint( get_option( 'versi_alt_cat_filter', 0 ) );
 			$ids    = Versi_Processor::init()->get_image_ids( $mode, 0, 1, $cat_id );
 			$total  = $ids['total'];
+		} elseif ( 'seo' === $workload ) {
+			$ids   = Versi_Processor::init()->get_seo_ids( 0, 1 );
+			$total = $ids['total'];
+		} elseif ( 'content' === $workload ) {
+			$ids   = Versi_Processor::init()->get_post_ids( 0, 1 );
+			$total = $ids['total'];
 		} else {
 			$ids   = Versi_Processor::init()->get_excerpt_ids( $mode, 0, 1 );
 			$total = $ids['total'];
@@ -2108,6 +2236,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 		if ( 'alt' === $workload ) {
 			$ids_result = $shared->get_image_ids( $mode, $job['offset'], $batch, $job['cat_id'] );
+		} elseif ( 'seo' === $workload ) {
+			$ids_result = $shared->get_seo_ids( $job['offset'], $batch );
+		} elseif ( 'content' === $workload ) {
+			$ids_result = $shared->get_post_ids( $job['offset'], $batch );
 		} else {
 			$ids_result = $shared->get_excerpt_ids( $mode, $job['offset'], $batch );
 		}
@@ -2123,6 +2255,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		foreach ( $ids_result['ids'] as $id ) {
 			if ( 'alt' === $workload ) {
 				$result = $alt_proc->process_single( $id );
+			} elseif ( 'seo' === $workload ) {
+				$result = $this->process_seo_single( $id );
+			} elseif ( 'content' === $workload ) {
+				$result = $this->process_content_single( $id, $mode );
 			} else {
 				$result = $exc_proc->process_single( $id );
 			}
@@ -2144,6 +2280,193 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		update_option( 'versi_job_status', $job, false );
 
 		return $job['is_running'];
+	}
+
+	// -------------------------------------------------------------------------
+	// Content Cleanup Helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Process a single post for SEO (used by background job).
+	 *
+	 * @param int $id Post ID.
+	 * @return array Result array.
+	 */
+	private function process_seo_single( $id ) {
+		$post = get_post( $id );
+		if ( ! $post ) {
+			return Versi_Processor::init()->result( $id, '', 'error', null, __( 'Post not found.', 'versi-content-tools' ) );
+		}
+
+		$ext       = Versi_Extensions::init();
+		$previous  = $ext->get_focus_keywords( $id );
+		$generated = $ext->generate_focus_keywords( $id );
+		$status    = ! empty( $generated );
+
+		return Versi_Processor::init()->result(
+			$id,
+			$post->post_title,
+			$status ? 'success' : 'error',
+			$previous,
+			$status ? null : __( 'AI generation failed.', 'versi-content-tools' ),
+			null,
+			$generated,
+			$status
+		);
+	}
+
+	/**
+	 * Process a single post for content cleanup (used by background job).
+	 *
+	 * @param int    $id   Post ID.
+	 * @param string $mode 'update_alt', 'strip_links', or 'both'.
+	 * @return array Result array.
+	 */
+	private function process_content_single( $id, $mode ) {
+		$post = get_post( $id );
+		if ( ! $post ) {
+			return Versi_Processor::init()->result( $id, '', 'error', null, __( 'Post not found.', 'versi-content-tools' ) );
+		}
+
+		$content     = $post->post_content;
+		$changed     = false;
+		$new_content = $content;
+
+		if ( 'update_alt' === $mode || 'both' === $mode ) {
+			$new_content = $this->process_content_update_alt( $new_content, $changed );
+		}
+
+		if ( 'strip_links' === $mode || 'both' === $mode ) {
+			$new_content = $this->process_content_strip_links( $new_content, $changed );
+		}
+
+		if ( ! $changed ) {
+			return Versi_Processor::init()->result(
+				$id,
+				$post->post_title,
+				'skipped',
+				null,
+				null,
+				__( 'No changes needed.', 'versi-content-tools' )
+			);
+		}
+
+		global $wpdb;
+		$updated = $wpdb->update(
+			$wpdb->posts,
+			array( 'post_content' => $new_content ),
+			array( 'ID' => $id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		if ( false === $updated ) {
+			return Versi_Processor::init()->result(
+				$id,
+				$post->post_title,
+				'error',
+				null,
+				__( 'Database update failed.', 'versi-content-tools' )
+			);
+		}
+
+		clean_post_cache( $id );
+
+		return Versi_Processor::init()->result(
+			$id,
+			$post->post_title,
+			'success',
+			null,
+			null,
+			null,
+			null,
+			true
+		);
+	}
+
+	/**
+	 * Update alt attributes in post_content to match current attachment meta.
+	 * Modifies the content string in place via pass-by-reference $changed flag.
+	 *
+	 * @param string $content Post content (modified in place).
+	 * @param bool   $changed Set to true if any replacement was made.
+	 * @return string Updated content.
+	 */
+	private function process_content_update_alt( $content, &$changed ) {
+		$changed = false;
+
+		if ( empty( $content ) || false === stripos( $content, 'wp-image-' ) ) {
+			return $content;
+		}
+
+		$content = preg_replace_callback(
+			'/<img[^>]+wp-image-(\d+)[^>]*>/i',
+			function ( $matches ) use ( &$changed ) {
+				$img_tag = $matches[0];
+				$img_id  = (int) $matches[1];
+
+				if ( ! $img_id ) {
+					return $img_tag;
+				}
+
+				$alt_meta = get_post_meta( $img_id, '_wp_attachment_image_alt', true );
+				if ( '' === $alt_meta ) {
+					return $img_tag;
+				}
+
+				$alt_esc = esc_attr( $alt_meta );
+
+				// If alt attribute already exists with the same value, skip.
+				if ( preg_match( '/alt=(["\'])(.*?)\1/i', $img_tag, $alt_match ) ) {
+					if ( $alt_match[2] === $alt_esc ) {
+						return $img_tag;
+					}
+					// Replace existing alt value.
+					$replaced = preg_replace(
+						'/alt=(["\'])(.*?)\1/i',
+						'alt="' . $alt_esc . '"',
+						$img_tag
+					);
+					if ( $replaced !== $img_tag ) {
+						$changed = true;
+					}
+					return ( false !== $replaced ) ? $replaced : $img_tag;
+				}
+
+				// No alt attribute exists; add it before the closing >.
+				$changed = true;
+				$new_img = str_replace( '<img', '<img alt="' . $alt_esc . '"', $img_tag );
+				return $new_img;
+			},
+			$content
+		);
+
+		return $content;
+	}
+
+	/**
+	 * Strip <a> wrappers from images in post_content when the link points
+	 * to an image file. Modifies via pass-by-reference $changed flag.
+	 *
+	 * @param string $content Post content (modified in place).
+	 * @param bool   $changed Set to true if any replacement was made.
+	 * @return string Updated content.
+	 */
+	private function process_content_strip_links( $content, &$changed ) {
+		$changed = false;
+
+		if ( '' === $content || false === stripos( $content, '<a' ) || false === stripos( $content, '<img' ) ) {
+			return $content;
+		}
+
+		$pattern = '~<a\s[^>]*?href=["\']?[^"\'\s]+\.(?:jpg|jpeg|png|gif|webp)["\'\s>][^>]*>\s*(<img[^>]+>)\s*</a>~is';
+		$new     = preg_replace( $pattern, '$1', $content, -1, $count );
+
+		if ( $count > 0 ) {
+			$changed = true;
+		}
+
+		return false !== $new ? $new : $content;
 	}
 
 	// -------------------------------------------------------------------------
