@@ -56,7 +56,7 @@ class Versi_Excerpt_Processor {
 		if ( class_exists( 'Versi_Extensions' ) ) {
 			$keywords = Versi_Extensions::init()->get_focus_keywords( $post_id );
 			if ( $keywords ) {
-				$system .= "\n\n**SEO focus keyphrases:** {$keywords}\nNaturally incorporate these keyphrases into the excerpt where relevant.";
+				$system .= "\n\n**SEO focus keyphrases:** {$keywords}\nNaturally incorporate these keyphrases into the excerpt text. Do NOT list, label, or append them separately — never output \"Keywords:\" or \"Keyphrases:\" or any similar prefix.";
 			}
 		}
 
@@ -148,6 +148,8 @@ class Versi_Excerpt_Processor {
 		$raw = preg_replace( '/^(?:Here\'[sz]\s+.*?:\s*)/i', '', $raw );
 		$raw = preg_replace( '/^(?:Here\s+(?:is|are|was)\s+.*?:\s*)/i', '', $raw );
 		$raw = preg_replace( '/^(?:\*{1,2}Excerpt\s*Generating\s*AI\*{0,2}:?\s*)/i', '', $raw );
+		// Strip trailing "(Keywords: ...)" or "(Keyphrases: ...)" appendix.
+		$raw = preg_replace( '/\s*\(?(?:Keywords?|Keyphrases?)\s*:.*?\)?\s*$/i', '', $raw );
 		$raw = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $raw );
 		$raw = preg_replace( '/\[\[.*?\]\]/s', '', $raw );
 		// Strip markdown bold/italic.
