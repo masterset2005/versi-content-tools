@@ -34,6 +34,11 @@ class Versi_Admin {
 			add_filter( 'the_content', array( $this, 'filter_content_alt_attributes' ) );
 		}
 
+		// Content filter: strip self-linking image wrappers.
+		if ( '1' === get_option( 'versi_strip_self_links', '0' ) ) {
+			add_filter( 'the_content', array( $this, 'filter_strip_self_linking_images' ) );
+		}
+
 		// AJAX: alt-text.
 		add_action( 'wp_ajax_versi_alt_process_single', array( $this, 'ajax_alt_process_single' ) );
 		add_action( 'wp_ajax_versi_alt_get_ids', array( $this, 'ajax_alt_get_ids' ) );
@@ -240,6 +245,16 @@ class Versi_Admin {
 		register_setting(
 			'versi_settings',
 			'versi_alt_update_content',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '0',
+			)
+		);
+
+		register_setting(
+			'versi_settings',
+			'versi_strip_self_links',
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
@@ -485,6 +500,20 @@ class Versi_Admin {
 								</label>
 								<p class="description" style="margin-top:4px;">
 									<?php esc_html_e( 'When enabled, embedded images in posts and pages will display the latest alt text. This is non-destructive — nothing is saved to the database.', 'versi-content-tools' ); ?>
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="versi_strip_self_links"><?php esc_html_e( 'Strip Self-Linking Images', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<label>
+									<input type="checkbox" id="versi_strip_self_links" name="versi_strip_self_links" value="1" <?php checked( get_option( 'versi_strip_self_links', '0' ), '1' ); ?>>
+									<?php esc_html_e( 'Remove anchor tags wrapping images when the link points to the same image file.', 'versi-content-tools' ); ?>
+								</label>
+								<p class="description" style="margin-top:4px;">
+									<?php esc_html_e( 'Strips <a> wrappers from images in post content when the href ends in .jpg, .jpeg, .png, .gif, or .webp. The image and all its attributes are preserved. Useful for cleaning up legacy content or imported markup. Non-destructive — no database changes.', 'versi-content-tools' ); ?>
 								</p>
 							</td>
 						</tr>
@@ -2161,6 +2190,22 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			},
 			$content
 		);
+	}
+
+	/**
+	 * Strip <a> wrappers from images when the link points to the same image
+	 * file. Non-destructive — only affects rendered output.
+	 *
+	 * @param string $content Post content.
+	 * @return string Updated content.
+	 */
+	public function filter_strip_self_linking_images( $content ) {
+		if ( '' === $content || false === stripos( $content, '<a' ) || false === stripos( $content, '<img' ) ) {
+			return $content;
+		}
+
+		$pattern = '~<a\s[^>]*?href=["\']?[^"\'\s]+\.(?:jpg|jpeg|png|gif|webp)["\'\s>][^>]*>\s*(<img[^>]+>)\s*</a>~is';
+		return preg_replace( $pattern, '$1', $content );
 	}
 
 	/**

@@ -15,6 +15,8 @@ $versi_options = array(
 	'versi_alt_processing_mode',
 	'versi_alt_auto_generate',
 	'versi_alt_show_generated',
+	'versi_alt_update_content',
+	'versi_strip_self_links',
 	'versi_alt_cat_filter',
 	// Excerpt options.
 	'versi_excerpt_auto_generate',
