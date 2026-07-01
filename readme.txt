@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 License: GPL v2 or later
 
 AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
@@ -87,6 +87,13 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 1.3.3 =
+* New: Optional the_content filter dynamically updates alt attributes in embedded images to match current attachment meta
+* New: "Update Content Alt" toggle on Settings > Versi Content Tools > Alt Text tab
+* Fix: Remove error_log() debug calls from production code
+* Tweak: Reduce background job to 1 batch per cron fire with 30s gap for lower server load
+* Tweak: Prefixed variables in uninstall.php per WPCS standards
 
 = 1.3.2 =
 * Fix: Properly unschedule cron events on plugin deactivation (per WP docs)
