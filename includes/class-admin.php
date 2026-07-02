@@ -2217,8 +2217,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ) ); ?></div>');
 					}
 					$btn.prop('disabled', false);
-				}).fail(function() {
-					$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'Scan failed. Please try again.', 'versi-content-tools' ) ); ?></div>');
+				}).fail(function(jqXHR) {
+					var msg = '<?php echo esc_js( __( 'Scan failed. Please try again.', 'versi-content-tools' ) ); ?>';
+					if (jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.message) {
+						msg = jqXHR.responseJSON.data.message;
+					}
+					$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">' + msg + '</div>');
 					$btn.prop('disabled', false);
 				});
 			});
@@ -2944,9 +2948,14 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	public function ajax_run_audit() {
 		check_ajax_referer( 'versi_run_audit' );
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error();
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 		}
-		wp_send_json_success( Versi_Auditor::init()->find_unlinked_images() );
+		try {
+			$results = Versi_Auditor::init()->find_unlinked_images();
+			wp_send_json_success( $results );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
 	}
 
 	/**
@@ -2955,14 +2964,19 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	public function ajax_link_attachment() {
 		check_ajax_referer( 'versi_link_attachment' );
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error();
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 		}
 		$att_id  = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
 		$post_id = isset( $_POST['post_id'] ) ? (int) $_POST['post_id'] : 0;
 		if ( ! $att_id || ! $post_id ) {
-			wp_send_json_error();
+			wp_send_json_error( array( 'message' => 'Invalid attachment or post ID.' ) );
 		}
-		wp_send_json_success( Versi_Auditor::init()->link_attachment( $att_id, $post_id ) );
+		try {
+			$result = Versi_Auditor::init()->link_attachment( $att_id, $post_id );
+			wp_send_json_success( $result );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
 	}
 
 	// -------------------------------------------------------------------------
