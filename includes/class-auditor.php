@@ -87,21 +87,29 @@ class Versi_Auditor {
 
 			if ( isset( $used_filenames[ $filename ] ) ) {
 				// We found the filename in our used-images index.
-				// Now find which post(s) it is in.
+				// Now find which post(s) it is in, and verify the filename is an exact match.
 				$found_in = $wpdb->get_results(
 					$wpdb->prepare(
-						"SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND post_content LIKE %s",
+						"SELECT ID, post_title, post_content FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND post_content LIKE %s",
 						'%' . $wpdb->esc_like( basename( $attachment->guid ) ) . '%'
 					)
 				);
 
+				// PHP regex for exact filename match (word-boundary aware).
+				$pattern = '/(?<![\w-])' . preg_quote( basename( $attachment->guid ), '/' ) . '(?![A-Za-z0-9_-])(?=\.jpg|\.jpeg|\.png|\.gif|\.webp|\.svg)/i';
+
 				foreach ( $found_in as $post ) {
-					$potential_links[] = array(
-						'attachment_id'  => $attachment->ID,
-						'attachment_url' => $attachment->guid,
-						'post_id'        => $post->ID,
-						'post_title'     => $post->post_title,
-					);
+					if ( preg_match( $pattern, $post->post_content ) ) {
+						$potential_links[] = array(
+							'attachment_id'  => $attachment->ID,
+							'attachment_url' => $attachment->guid,
+							'att_edit_link'  => get_edit_post_link( $attachment->ID ),
+							'att_path'       => preg_replace( '/^.*\/wp-content\/uploads\//', '', $attachment->guid ),
+							'post_id'        => $post->ID,
+							'post_title'     => $post->post_title,
+							'post_edit_link' => get_edit_post_link( $post->ID ),
+						);
+					}
 				}
 			}
 		}
