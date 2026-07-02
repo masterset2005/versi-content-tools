@@ -449,7 +449,6 @@ class Versi_Admin {
 					<a class="nav-tab" href="#versi-tab-excerpt"><?php esc_html_e( 'Excerpts', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-extensions"><?php esc_html_e( 'Extensions', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-about"><?php esc_html_e( 'About', 'versi-content-tools' ); ?></a>
-					<a class="nav-tab" href="#versi-auditor-tab"><?php esc_html_e( 'Auditor', 'versi-content-tools' ); ?></a>
 				</h2>
 
 				<div id="versi-tab-general" class="versi-tab">
@@ -1078,9 +1077,14 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'bg', $refresh_url ) ); ?>" class="nav-tab <?php echo 'bg' === $mode_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Background Jobs', 'versi-content-tools' ); ?>
 				</a>
+				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'auditor', $refresh_url ) ); ?>" class="nav-tab <?php echo 'auditor' === $mode_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Auditor', 'versi-content-tools' ); ?>
+				</a>
 			</h3>
 
-			<?php if ( 'bg' === $mode_tab ) : ?>
+			<?php if ( 'auditor' === $mode_tab ) : ?>
+				<?php $this->render_auditor_tab(); ?>
+			<?php elseif ( 'bg' === $mode_tab ) : ?>
 				<?php $this->render_background_tab( $workload ); ?>
 			<?php else : ?>
 				<?php $this->render_live_tab( $workload ); ?>
@@ -1825,12 +1829,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$dest_mode   = 'improve';
 		}
 		?>
-		<div id="versi-auditor-tab" class="versi-tab" style="display:none;">
-			<h3><?php esc_html_e( 'Attachment Auditor', 'versi-content-tools' ); ?></h3>
-			<p><?php esc_html_e( 'Scan for unlinked images referenced in post content.', 'versi-content-tools' ); ?></p>
-			<button type="button" class="button button-primary" id="versi-audit-btn"><?php esc_html_e( 'Run Audit', 'versi-content-tools' ); ?></button>
-			<div id="versi-audit-results" style="margin-top:16px;"></div>
-		</div>
 		<div id="versi-bg-tab">
 			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
 				<div class="notice notice-info">
@@ -1875,42 +1873,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					});
 				});
 				</script>
-				<script>
-				jQuery(function($) {
-					$('#versi-audit-btn').on('click', function() {
-						$('#versi-audit-results').text('<?php echo esc_js( __( 'Scanning...', 'versi-content-tools' ) ); ?>');
-						$.post(ajaxurl, {
-							action: 'versi_run_audit',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>'
-						}, function(resp) {
-							if (resp.success && resp.data.length > 0) {
-								let html = '<table class="wp-list-table widefat fixed striped"><thead><tr><th>Image ID</th><th>Found In</th><th>Action</th></tr></thead><tbody>';
-								resp.data.forEach(item => {
-									html += '<tr><td><a href="' + item.attachment_url + '" target="_blank">' + item.attachment_id + '</a></td><td>' + item.post_title + '</td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_html_e( 'Link', 'versi-content-tools' ); ?></button></td></tr>';
-								});
-								html += '</tbody></table>';
-								$('#versi-audit-results').html(html);
-							} else {
-								$('#versi-audit-results').text('<?php esc_html_e( 'No unlinked images found.', 'versi-content-tools' ); ?>');
-							}
-						});
-					});
-
-					$(document).on('click', '.versi-link-btn', function() {
-						const $btn = $(this);
-						$.post(ajaxurl, {
-							action: 'versi_link_attachment',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_link_attachment' ) ); ?>',
-							attachment_id: $btn.data('att'),
-							post_id: $btn.data('post')
-						}, function(resp) {
-							if (resp.success) {
-								$btn.text('<?php esc_html_e( 'Linked', 'versi-content-tools' ); ?>').prop('disabled', true);
-							}
-						});
-					});
-				});
-				</script>
 			<?php else : ?>
 				<p><?php esc_html_e( 'No active background job. Start a new one:', 'versi-content-tools' ); ?></p>
 				<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
@@ -1947,6 +1909,58 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				});
 				</script>
 			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Auditor tab.
+	 *
+	 * @return void
+	 */
+	private function render_auditor_tab() {
+		?>
+		<div>
+			<h3><?php esc_html_e( 'Attachment Auditor', 'versi-content-tools' ); ?></h3>
+			<p><?php esc_html_e( 'Find images in your media library that are not linked to any post but are being used somewhere in your published content. Linking them gives the AI better context when generating alt text, excerpts, and SEO keywords.', 'versi-content-tools' ); ?></p>
+			<button type="button" class="button button-primary" id="versi-audit-btn"><?php esc_html_e( 'Run Audit', 'versi-content-tools' ); ?></button>
+			<div id="versi-audit-results" style="margin-top:16px;"></div>
+			<script>
+			jQuery(function($) {
+				$('#versi-audit-btn').on('click', function() {
+					$('#versi-audit-results').text('<?php echo esc_js( __( 'Scanning...', 'versi-content-tools' ) ); ?>');
+					$.post(ajaxurl, {
+						action: 'versi_run_audit',
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>'
+					}, function(resp) {
+						if (resp.success && resp.data.length > 0) {
+							let html = '<table class="wp-list-table widefat fixed striped"><thead><tr><th>Image</th><th>Found In</th><th>Action</th></tr></thead><tbody>';
+							resp.data.forEach(item => {
+								html += '<tr><td><a href="' + item.attachment_url + '" target="_blank">#' + item.attachment_id + '</a></td><td>' + item.post_title + '</td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_html_e( 'Link', 'versi-content-tools' ); ?></button></td></tr>';
+							});
+							html += '</tbody></table>';
+							$('#versi-audit-results').html(html);
+						} else {
+							$('#versi-audit-results').text('<?php esc_html_e( 'No unlinked images found.', 'versi-content-tools' ); ?>');
+						}
+					});
+				});
+
+				$(document).on('click', '.versi-link-btn', function() {
+					const $btn = $(this);
+					$.post(ajaxurl, {
+						action: 'versi_link_attachment',
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_link_attachment' ) ); ?>',
+						attachment_id: $btn.data('att'),
+						post_id: $btn.data('post')
+					}, function(resp) {
+						if (resp.success) {
+							$btn.text('<?php esc_html_e( 'Linked', 'versi-content-tools' ); ?>').prop('disabled', true);
+						}
+					});
+				});
+			});
+			</script>
 		</div>
 		<?php
 	}
@@ -2603,16 +2617,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 		$counted = 0;
 		foreach ( $ids_result['ids'] as $id ) {
-		$safe_label   = '';
-		$safe_mode    = '';
-		$review_label = null;
-		$review_mode  = '';
-		$short_label  = '';
-		$short_mode   = '';
-		$dest_label   = '';
-		$dest_mode    = '';
+			$safe_label   = '';
+			$safe_mode    = '';
+			$review_label = null;
+			$review_mode  = '';
+			$short_label  = '';
+			$short_mode   = '';
+			$dest_label   = '';
+			$dest_mode    = '';
 
-		if ( 'alt' === $workload ) {
+			if ( 'alt' === $workload ) {
 				$result = $alt_proc->process_single( $id );
 			} elseif ( 'seo' === $workload ) {
 				$result = $this->process_seo_single( $id );
