@@ -37,22 +37,30 @@ class Versi_Auditor {
 	}
 
 	/**
-	 * Get a map of all image filenames currently used in published posts.
+	 * Get a map of all attachment IDs currently used in posts (featured or embedded).
 	 *
 	 * @return array
 	 */
-	private function get_used_image_filenames() {
+	private function get_used_attachment_ids() {
 		global $wpdb;
-		$posts          = $wpdb->get_results( "SELECT post_content FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish'" );
-		$used_filenames = array();
+		$used_ids = array();
+
+		// 1. Featured images.
+		$featured = $wpdb->get_col( "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_thumbnail_id'" );
+		foreach ( $featured as $id ) {
+			$used_ids[ (int) $id ] = true;
+		}
+
+		// 2. Embedded images (wp-image-{id} class).
+		$posts = $wpdb->get_results( "SELECT post_content FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish'" );
 		foreach ( $posts as $post ) {
-			if ( preg_match_all( '/\b([\w-]+\.(?:jpg|jpeg|png|gif|webp|svg))\b/i', $post->post_content, $matches ) ) {
-				foreach ( $matches[1] as $filename ) {
-					$used_filenames[ strtolower( $filename ) ] = true;
+			if ( preg_match_all( '/wp-image-(\d+)/', $post->post_content, $matches ) ) {
+				foreach ( $matches[1] as $id ) {
+					$used_ids[ (int) $id ] = true;
 				}
 			}
 		}
-		return $used_filenames;
+		return $used_ids;
 	}
 
 	/**
@@ -65,7 +73,7 @@ class Versi_Auditor {
 	public function find_unlinked_batch( $offset = 0, $limit = 50 ) {
 		global $wpdb;
 
-		// Get a batch of unlinked image attachments.
+		// Get all unlinked attachments.
 		$unlinked_attachments = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT ID, guid FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE %s AND post_parent = 0 ORDER BY ID ASC LIMIT %d OFFSET %d",
@@ -79,37 +87,37 @@ class Versi_Auditor {
 			return array();
 		}
 
-		$used_filenames  = $this->get_used_image_filenames();
+		$used_ids        = $this->get_used_attachment_ids();
 		$potential_links = array();
 
 		foreach ( $unlinked_attachments as $attachment ) {
-			$filename = strtolower( basename( $attachment->guid ) );
+			// If ID is in our used map, it's not truly unlinked.
+			if ( isset( $used_ids[ (int) $attachment->ID ] ) ) {
+				continue;
+			}
 
-			if ( isset( $used_filenames[ $filename ] ) ) {
-				// We found the filename in our used-images index.
-				// Now find which post(s) it is in, and verify the filename is an exact match.
-				$found_in = $wpdb->get_results(
-					$wpdb->prepare(
-						"SELECT ID, post_title, post_content FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND post_content LIKE %s",
-						'%' . $wpdb->esc_like( basename( $attachment->guid ) ) . '%'
-					)
-				);
+			// For truly unlinked, find potential parents (by filename match in content).
+			$filename = basename( $attachment->guid );
+			$found_in = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT ID, post_title, post_content FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND post_content LIKE %s",
+					'%' . $wpdb->esc_like( $filename ) . '%'
+				)
+			);
 
-				// PHP regex for exact filename match (word-boundary aware).
-				$pattern = '/(?<![\w-])' . preg_quote( basename( $attachment->guid ), '/' ) . '(?![A-Za-z0-9_-])(?=\.jpg|\.jpeg|\.png|\.gif|\.webp|\.svg)/i';
+			$pattern = '/(?<![\w-])' . preg_quote( $filename, '/' ) . '(?![A-Za-z0-9_-])(?=\.jpg|\.jpeg|\.png|\.gif|\.webp|\.svg)/i';
 
-				foreach ( $found_in as $post ) {
-					if ( preg_match( $pattern, $post->post_content ) ) {
-						$potential_links[] = array(
-							'attachment_id'  => $attachment->ID,
-							'attachment_url' => $attachment->guid,
-							'att_edit_link'  => get_edit_post_link( $attachment->ID ),
-							'att_path'       => preg_replace( '/^.*\/wp-content\/uploads\//', '', $attachment->guid ),
-							'post_id'        => $post->ID,
-							'post_title'     => $post->post_title,
-							'post_edit_link' => get_edit_post_link( $post->ID ),
-						);
-					}
+			foreach ( $found_in as $post ) {
+				if ( preg_match( $pattern, $post->post_content ) ) {
+					$potential_links[] = array(
+						'attachment_id'  => $attachment->ID,
+						'attachment_url' => $attachment->guid,
+						'att_edit_link'  => get_edit_post_link( $attachment->ID ),
+						'att_path'       => preg_replace( '/^.*\/wp-content\/uploads\//', '', $attachment->guid ),
+						'post_id'        => $post->ID,
+						'post_title'     => $post->post_title,
+						'post_edit_link' => get_edit_post_link( $post->ID ),
+					);
 				}
 			}
 		}
