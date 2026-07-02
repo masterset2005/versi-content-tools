@@ -68,6 +68,7 @@ class Versi_Admin {
 		add_action( 'wp_ajax_versi_load_job', array( $this, 'ajax_load_job' ) );
 		add_action( 'wp_ajax_versi_dismiss_job', array( $this, 'ajax_dismiss_job' ) );
 		add_action( 'wp_ajax_versi_run_audit', array( $this, 'ajax_run_audit' ) );
+		add_action( 'wp_ajax_versi_audit_progress', array( $this, 'ajax_audit_progress' ) );
 		add_action( 'wp_ajax_versi_link_attachment', array( $this, 'ajax_link_attachment' ) );
 		add_action( 'versi_process_batch', array( $this, 'process_background_batch' ) );
 	}
@@ -2204,25 +2205,25 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$('#versi-audit-btn').on('click', function() {
 				const $btn = $(this).prop('disabled', true);
 				const $results = $('#versi-audit-results');
-				$results.html('<div class="versi-scan-status"><span class="versi-scan-spinner"></span><?php echo esc_js( __( 'Scanning post content for unlinked images...', 'versi-content-tools' ) ); ?></div>');
+				$results.html('<div class="versi-scan-status"><span class="versi-scan-spinner"></span><?php echo esc_js( __( 'Initializing audit...', 'versi-content-tools' ) ); ?></div>');
+				
 				$.post(ajaxurl, {
 					action: 'versi_run_audit',
 					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>'
 				}, function(resp) {
-					if (resp.success && resp.data.length > 0) {
-						const totalPosts = new Set(resp.data.map(i => i.post_id)).size;
-						let html = '<div class="versi-audit-summary"><?php echo esc_js( __( 'Found', 'versi-content-tools' ) ); ?> <strong>' + resp.data.length + '</strong> <?php echo esc_js( __( 'unlinked image(s) across', 'versi-content-tools' ) ); ?> <strong>' + totalPosts + '</strong> <?php echo esc_js( __( 'post(s).', 'versi-content-tools' ) ); ?></div>';
-						html += '<div style="margin-bottom:10px;"><button class="button" id="versi-bulk-link-btn"><?php echo esc_js( __( 'Link Selected', 'versi-content-tools' ) ); ?></button></div>';
-						html += '<table class="wp-list-table widefat fixed striped"><thead><tr><th style="width:40px;"><input type="checkbox" id="versi-select-all"></th><th><?php echo esc_js( __( 'Image', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Found In', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Action', 'versi-content-tools' ) ); ?></th></tr></thead><tbody>';
-						resp.data.forEach(item => {
-							html += '<tr><td><input type="checkbox" class="versi-link-check" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"></td><td><a href="' + item.att_edit_link + '" target="_blank">#' + item.attachment_id + '</a><br><small style="color:#666;">' + item.att_path + '</small></td><td><a href="' + item.post_edit_link + '" target="_blank">' + item.post_title + '</a></td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_js( __( 'Link', 'versi-content-tools' ) ); ?></button></td></tr>';
-						});
-						html += '</tbody></table>';
-						$results.html(html);
-					} else {
-						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ) ); ?></div>');
+					if (!resp.success) {
+						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">' + (resp.data?.message || 'Unknown error') + '</div>');
+						$btn.prop('disabled', false);
+						return;
 					}
-					$btn.prop('disabled', false);
+					
+					if (resp.data.complete) {
+						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ) ); ?></div>');
+						$btn.prop('disabled', false);
+						return;
+					}
+					
+					processAuditBatch(0, resp.data.total, []);
 				}).fail(function(jqXHR) {
 					var msg = '<?php echo esc_js( __( 'Scan failed. Please try again.', 'versi-content-tools' ) ); ?>';
 					if (jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.message) {
@@ -2238,6 +2239,52 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					$btn.prop('disabled', false);
 				});
 			});
+
+			function processAuditBatch(offset, total, accumulatedResults) {
+				const $results = $('#versi-audit-results');
+				const $btn = $('#versi-audit-btn');
+				
+				$results.html('<div class="versi-scan-status"><span class="versi-scan-spinner"></span><?php echo esc_js( __( 'Scanning', 'versi-content-tools' ) ); ?> ' + offset + ' / ' + total + '...</div>');
+				
+				$.post(ajaxurl, {
+					action: 'versi_audit_progress',
+					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>',
+					offset: offset,
+					limit: <?php echo Versi_Auditor::BATCH_SIZE; ?>
+				}, function(resp) {
+					if (!resp.success) {
+						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">' + (resp.data?.message || 'Scan failed') + '</div>');
+						$btn.prop('disabled', false);
+						return;
+					}
+					
+					const newResults = resp.data.results;
+					const combined = accumulatedResults.concat(newResults);
+					
+					if (resp.data.complete) {
+						if (combined.length > 0) {
+							const totalPosts = new Set(combined.map(i => i.post_id)).size;
+							let html = '<div class="versi-audit-summary"><?php echo esc_js( __( 'Found', 'versi-content-tools' ) ); ?> <strong>' + combined.length + '</strong> <?php echo esc_js( __( 'unlinked image(s) across', 'versi-content-tools' ) ); ?> <strong>' + totalPosts + '</strong> <?php echo esc_js( __( 'post(s).', 'versi-content-tools' ) ); ?></div>';
+							html += '<div style="margin-bottom:10px;"><button class="button" id="versi-bulk-link-btn"><?php echo esc_js( __( 'Link Selected', 'versi-content-tools' ) ); ?></button></div>';
+							html += '<table class="wp-list-table widefat fixed striped"><thead><tr><th style="width:40px;"><input type="checkbox" id="versi-select-all"></th><th><?php echo esc_js( __( 'Image', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Found In', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Action', 'versi-content-tools' ) ); ?></th></tr></thead><tbody>';
+							combined.forEach(item => {
+								html += '<tr><td><input type="checkbox" class="versi-link-check" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"></td><td><a href="' + item.att_edit_link + '" target="_blank">#' + item.attachment_id + '</a><br><small style="color:#666;">' + item.att_path + '</small></td><td><a href="' + item.post_edit_link + '" target="_blank">' + item.post_title + '</a></td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_js( __( 'Link', 'versi-content-tools' ) ); ?></button></td></tr>';
+							});
+							html += '</tbody></table>';
+							$results.html(html);
+						} else {
+							$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ) ); ?></div>');
+						}
+						$btn.prop('disabled', false);
+					} else {
+						processAuditBatch(resp.data.scanned, total, combined);
+					}
+				}).fail(function(jqXHR) {
+					$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">Request failed: ' + jqXHR.status + '</div>');
+					$btn.prop('disabled', false);
+				});
+			}
+
 
 			$(document).on('click', '#versi-select-all', function() {
 				$('.versi-link-check').prop('checked', $(this).prop('checked'));
@@ -2989,7 +3036,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	}
 
 	/**
-	 * AJAX: Run attachment audit (supports batched scanning).
+	 * AJAX: Initialize attachment audit.
 	 */
 	public function ajax_run_audit() {
 		check_ajax_referer( 'versi_run_audit' );
@@ -2997,40 +3044,42 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 		}
 
-		$offset   = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
-		$limit    = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : Versi_Auditor::BATCH_SIZE;
-		$is_batch = $offset > 0 || isset( $_POST['batched'] );
+		try {
+			$total = Versi_Auditor::init()->get_unlinked_count();
+			wp_send_json_success( array(
+				'total'    => $total,
+				'complete' => ( 0 === $total ),
+				'results'  => array(),
+			) );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * AJAX: Get auditor progress and results batch.
+	 */
+	public function ajax_audit_progress() {
+		check_ajax_referer( 'versi_run_audit' );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
+		}
+
+		$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
+		$limit  = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : Versi_Auditor::BATCH_SIZE;
 
 		try {
-			if ( $is_batch ) {
-				$total = Versi_Auditor::init()->get_unlinked_count();
-				if ( 0 === $total ) {
-					wp_send_json_success(
-						array(
-							'complete' => true,
-							'results'  => array(),
-							'scanned'  => 0,
-							'total'    => 0,
-						)
-					);
-				}
-				$batch_results = Versi_Auditor::init()->find_unlinked_batch( $offset, $limit );
-				$scanned       = min( $offset + $limit, $total );
-				$complete      = $scanned >= $total;
+			$total = Versi_Auditor::init()->get_unlinked_count();
+			$batch_results = Versi_Auditor::init()->find_unlinked_batch( $offset, $limit );
+			$scanned       = min( $offset + $limit, $total );
+			$complete      = $scanned >= $total;
 
-				wp_send_json_success(
-					array(
-						'complete' => $complete,
-						'results'  => $batch_results,
-						'scanned'  => $scanned,
-						'total'    => $total,
-					)
-				);
-			} else {
-				// Legacy single-call mode.
-				$results = Versi_Auditor::init()->find_unlinked_images();
-				wp_send_json_success( $results );
-			}
+			wp_send_json_success( array(
+				'complete' => $complete,
+				'results'  => $batch_results,
+				'scanned'  => $scanned,
+				'total'    => $total,
+			) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
