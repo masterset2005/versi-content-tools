@@ -32,6 +32,7 @@ $versi_options = array(
 	'versi_alt_vision_model',
 	'versi_alt_vision_fallback',
 	'versi_alt_text_model',
+	'versi_alt_image_size',
 	'versi_alt_text_fallback',
 	'versi_excerpt_text_model',
 	'versi_excerpt_text_fallback',

@@ -169,7 +169,17 @@ class Versi_Admin {
 
 		// Fallback model preferences (used when primary is rate-limited).
 		foreach ( array( 'versi_alt_vision_fallback', 'versi_alt_text_fallback', 'versi_excerpt_text_fallback', 'versi_seo_text_fallback' ) as $opt ) {
-			register_setting(
+		register_setting(
+			'versi_settings',
+			'versi_alt_image_size',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => 'large',
+			)
+		);
+
+		register_setting(
 				'versi_settings',
 				$opt,
 				array(
@@ -572,7 +582,7 @@ class Versi_Admin {
 									?>
 								</select>
 								<br>
-								<select id="versi_alt_vision_fallback" name="versi_alt_vision_fallback" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
+								<select id="versi_alt_vision_fallback" name="versi_alt_vision_fallback" aria-label="<?php esc_attr_e( 'Vision model fallback', 'versi-content-tools' ); ?>" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
 									<option value=""><?php esc_html_e( '- No Fallback -', 'versi-content-tools' ); ?></option>
 									<?php
 									$saved_fb = get_option( 'versi_alt_vision_fallback', '' );
@@ -598,7 +608,7 @@ class Versi_Admin {
 									?>
 								</select>
 								<br>
-								<select id="versi_alt_text_fallback" name="versi_alt_text_fallback" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
+								<select id="versi_alt_text_fallback" name="versi_alt_text_fallback" aria-label="<?php esc_attr_e( 'Text model fallback', 'versi-content-tools' ); ?>" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
 									<option value=""><?php esc_html_e( '- No Fallback -', 'versi-content-tools' ); ?></option>
 									<?php
 									$saved_fb = get_option( 'versi_alt_text_fallback', '' );
@@ -615,6 +625,7 @@ class Versi_Admin {
 							</th>
 							<td>
 								<fieldset>
+									<legend class="screen-reader-text"><?php esc_html_e( 'Processing Mode', 'versi-content-tools' ); ?></legend>
 									<label style="display:block;margin-bottom:6px;">
 										<input type="radio" name="versi_alt_processing_mode" value="single-pass" <?php checked( get_option( 'versi_alt_processing_mode', 'two-pass' ), 'single-pass' ); ?>>
 										<strong><?php esc_html_e( 'Single-Pass', 'versi-content-tools' ); ?></strong>
@@ -626,6 +637,28 @@ class Versi_Admin {
 										&mdash; <?php esc_html_e( 'Vision Agent observes, then Synthesizer formats. Designed for smaller models.', 'versi-content-tools' ); ?>
 									</label>
 								</fieldset>
+							</td>
+						</tr>
+						<tr data-mode="single-pass">
+							<th scope="row">
+								<label for="versi_alt_image_size"><?php esc_html_e( 'Image Size for AI', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<select id="versi_alt_image_size" name="versi_alt_image_size" aria-label="<?php esc_attr_e( 'Image Size for AI', 'versi-content-tools' ); ?>" class="regular-text">
+									<?php
+									$sizes = array(
+										'full'      => __( 'Full Size (Original)', 'versi-content-tools' ),
+										'large'     => __( 'Large', 'versi-content-tools' ),
+										'medium_large' => __( 'Medium Large', 'versi-content-tools' ),
+										'medium'    => __( 'Medium', 'versi-content-tools' ),
+									);
+									$selected = get_option( 'versi_alt_image_size', 'large' );
+									foreach ( $sizes as $value => $label ) {
+										echo '<option value="' . esc_attr( $value ) . '" ' . selected( $selected, $value, false ) . '>' . esc_html( $label ) . '</option>';
+									}
+									?>
+								</select>
+								<p class="description"><?php esc_html_e( 'Choose the image size sent to the AI. Smaller sizes reduce token usage.', 'versi-content-tools' ); ?></p>
 							</td>
 						</tr>
 						<tr data-mode="single-pass">
@@ -757,7 +790,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 									?>
 								</select>
 								<br>
-								<select id="versi_excerpt_text_fallback" name="versi_excerpt_text_fallback" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
+								<select id="versi_excerpt_text_fallback" name="versi_excerpt_text_fallback" aria-label="<?php esc_attr_e( 'Excerpt model fallback', 'versi-content-tools' ); ?>" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
 									<option value=""><?php esc_html_e( '- No Fallback -', 'versi-content-tools' ); ?></option>
 									<?php
 									$saved_fb = get_option( 'versi_excerpt_text_fallback', '' );
@@ -839,7 +872,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				$('#versi-tabs a').removeClass('nav-tab-active');
 				$(this).addClass('nav-tab-active');
 				$('.versi-tab').hide();
-				$($(this).attr('href')).show();
+				const $panel = $($(this).attr('href'));
+				$panel.show();
+				$panel.find('h2, h3').first().attr('tabindex', '-1').focus();
 			});
 
 			function toggleMode() {
@@ -881,6 +916,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		</script>
 		<style>
 		tr[data-mode].hidden { display: none; }
+		a:focus, button:focus, .button:focus, input:focus, select:focus, textarea:focus { outline: 2px solid #2271b1; outline-offset: 2px; }
 		</style>
 		<?php
 	}
@@ -1111,7 +1147,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>" data-destructive="1">
 					<?php echo esc_html( $dest_label ); ?>
 				</button>
-				<span class="versi-or-text" style="color:#888;font-style:italic;"><?php esc_html_e( 'Choose a mode above to begin.', 'versi-content-tools' ); ?></span>
+				<span class="versi-or-text" style="color:#666;font-style:italic;"><?php esc_html_e( 'Choose a mode above to begin.', 'versi-content-tools' ); ?></span>
 			</div>
 
 			<!-- Overwrite warning (shown via JS when destructive mode is selected) -->
@@ -1137,7 +1173,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			<!-- Processing area (hidden until start is clicked) -->
 			<div id="versi-processing-area" style="display:none;">
 				<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-					<h2 style="margin:0;padding:0;font-size:1.3em;">
+					<h2 style="margin:0;padding:0;font-size:1.3em;" tabindex="-1">
 						<?php esc_html_e( 'Processing', 'versi-content-tools' ); ?>&hellip;
 					</h2>
 					<a href="#" id="versi-stop-link" class="versi-stop-link" style="color:#d63638;text-decoration:none;font-size:13px;">
@@ -1145,7 +1181,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</a>
 				</div>
 				<div id="versi-status" style="margin:8px 0;font-size:13px;color:#555;"></div>
-				<div id="versi-results" style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-height:600px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.6;"></div>
+				<div id="versi-results" aria-live="polite" role="status" style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-height:600px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.6;"></div>
 			</div>
 		</div>
 
@@ -1202,6 +1238,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$('#versi-resume-btn').on('click', function() {
 				$resumeNotice.hide();
 				$processingArea.show();
+				$('#versi-processing-area h2').focus();
 				$orText.hide();
 				$status.text('<?php echo esc_js( __( 'Resuming...', 'versi-content-tools' ) ); ?>');
 				$stopLink.show();
@@ -1260,6 +1297,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 				dismissSavedJob();
 				$processingArea.show();
+				$('#versi-processing-area h2').focus();
 				$resumeNotice.hide();
 				$orText.hide();
 				$results.empty();
@@ -1790,14 +1828,14 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					<p><strong><?php esc_html_e( 'Background job running', 'versi-content-tools' ); ?></strong></p>
 					<p>
 						<?php esc_html_e( 'Progress:', 'versi-content-tools' ); ?>
-						<span id="versi-bg-progress"><?php echo esc_html( $job['processed'] ); ?> / <?php echo esc_html( $job['total'] ); ?></span>
+						<span id="versi-bg-progress-tab"><?php echo esc_html( $job['processed'] ); ?> / <?php echo esc_html( $job['total'] ); ?></span>
 						&mdash;
 						<?php echo esc_html( $job['workload'] ); ?> / <?php echo esc_html( $job['mode'] ); ?>
 					</p>
-					<p id="versi-bg-stall-warn" style="color:#b32d2e;display:none;margin:8px 0 0;">
+					<p id="versi-bg-stall-warn-tab" style="color:#b32d2e;display:none;margin:8px 0 0;">
 						<?php esc_html_e( 'This job appears stalled. WP-Cron events may not be firing. If you have set DISABLE_WP_CRON, make sure your system cron is calling wp-cron.php regularly. Otherwise, remove that constant from wp-config.php.', 'versi-content-tools' ); ?>
 					</p>
-					<button id="versi-bg-cancel" class="button"><?php esc_html_e( 'Cancel Job', 'versi-content-tools' ); ?></button>
+					<button id="versi-bg-cancel-tab" class="button"><?php esc_html_e( 'Cancel Job', 'versi-content-tools' ); ?></button>
 				</div>
 				<script>
 				jQuery(function($) {
@@ -1807,8 +1845,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_job_status' ) ); ?>'
 						}, resp => {
 							if (resp.success && resp.data) {
-								$('#versi-bg-progress').text(resp.data.processed + ' / ' + resp.data.total);
-								$('#versi-bg-stall-warn').toggle(resp.data.stalled === true);
+								$('#versi-bg-progress-tab').text(resp.data.processed + ' / ' + resp.data.total);
+								$('#versi-bg-stall-warn-tab').toggle(resp.data.stalled === true);
 								if (resp.data.is_running) {
 									setTimeout(poll, 3000);
 								} else {
@@ -1819,7 +1857,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						});
 					}
 					poll();
-					$('#versi-bg-cancel').on('click', function() {
+					$('#versi-bg-cancel-tab').on('click', function() {
 						$.post(ajaxurl, {
 							action: 'versi_cancel_job',
 							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_cancel_job' ) ); ?>'
