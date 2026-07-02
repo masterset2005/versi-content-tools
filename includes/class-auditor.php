@@ -123,7 +123,8 @@ class Versi_Auditor {
 			);
 
 			// Fix: a simple regex that checks for the filename bounded by non-word characters.
-			$pattern = '/(?<![\w-])' . preg_quote( $filename, '/' ) . '(?![A-Za-z0-9_-])/i';
+			// We ensure the match is preceded by a slash or start of string to prevent substring matches in IDs.
+			$pattern = '/(?<=\/|^)' . preg_quote( $filename, '/' ) . '(?![A-Za-z0-9_-])/i';
 
 			foreach ( $found_in as $post ) {
 				if ( preg_match( $pattern, $post->post_content ) ) {
