@@ -2227,6 +2227,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					var msg = '<?php echo esc_js( __( 'Scan failed. Please try again.', 'versi-content-tools' ) ); ?>';
 					if (jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.message) {
 						msg = jqXHR.responseJSON.data.message;
+					} else if ( jqXHR.status === 500 ) {
+						msg = '<?php echo esc_js( __( 'Server error (500). This often happens due to memory limits on very large sites.', 'versi-content-tools' ) ); ?>';
+					} else if ( jqXHR.status === 504 || jqXHR.status === 502 ) {
+						msg = '<?php echo esc_js( __( 'Server timeout (504/502). The scan took too long to respond.', 'versi-content-tools' ) ); ?>';
+					} else if ( jqXHR.status ) {
+						msg = '<?php echo esc_js( __( 'Request failed with status: ', 'versi-content-tools' ) ); ?>' + jqXHR.status;
 					}
 					$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">' + msg + '</div>');
 					$btn.prop('disabled', false);
