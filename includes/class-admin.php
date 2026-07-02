@@ -937,6 +937,59 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$mode_tab = isset( $_GET['versi_mode_tab'] ) ? sanitize_key( wp_unslash( $_GET['versi_mode_tab'] ) ) : 'live';
 
 		$alt_stats = Versi_Alt_Text_Processor::init()->get_stats();
+		?>
+		<style>
+		.versi-stat-card {
+			display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);box-shadow:0 1px 3px rgba(0,0,0,0.04);min-width:0;
+		}
+		.versi-stat-card .versi-stat-icon {
+			width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+		}
+		.versi-stat-card .versi-stat-number {
+			font-size:20px;font-weight:700;line-height:1.2;color:#1e1e1e;
+		}
+		.versi-stat-card .versi-stat-label {
+			font-size:12px;color:#6b7280;line-height:1.3;
+		}
+		.versi-mode-card {
+			display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:#374151;text-decoration:none;transition:all 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.04);
+		}
+		.versi-mode-card:hover {
+			border-color:#9ca3af;box-shadow:0 2px 8px rgba(0,0,0,0.08);color:#111827;
+		}
+		.versi-mode-card.versi-mode-primary {
+			background:#2271b1;border-color:#2271b1;color:#fff;font-weight:600;
+		}
+		.versi-mode-card.versi-mode-primary:hover {
+			background:#135e96;border-color:#135e96;
+		}
+		.versi-mode-card.versi-mode-danger {
+			color:#dc2626;border-color:#fca5a5;
+		}
+		.versi-mode-card.versi-mode-danger:hover {
+			background:#fef2f2;border-color:#f87171;
+		}
+		.versi-results-box {
+			background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;max-height:600px;overflow-y:auto;font-family:SF Pro Text, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, monospace;font-size:13px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+		}
+		.versi-results-box .versi-entry {
+			display:flex;align-items:flex-start;gap:8px;padding:6px 10px;margin:2px 0;border-radius:8px;transition:background 0.15s;
+		}
+		.versi-auditor-card {
+			border-radius:12px;border:1px solid #e5e7eb;background:linear-gradient(135deg,#f9fafb 0%,#f3f4f6 100%);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+		}
+		.versi-auditor-card .versi-auditor-header {
+			padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:12px;
+		}
+		.versi-auditor-card .versi-auditor-header svg { flex-shrink:0; }
+		.versi-auditor-card .versi-auditor-body { padding:20px 24px; }
+		.versi-job-notice {
+			border-radius:12px;border:1px solid #dbeafe;background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+		}
+		.versi-job-notice .versi-job-header { padding:16px 20px;border-bottom:1px solid #dbeafe; }
+		.versi-job-notice .versi-job-body { padding:16px 20px; }
+		</style>
+		<?php
 		$exc_stats = Versi_Excerpt_Processor::init()->get_stats();
 
 		$base_url    = admin_url( 'upload.php?page=versi-processing' );
@@ -1014,57 +1067,112 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			</h2>
 
 			<!-- Stats bar -->
-			<div class="versi-stats" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+			<div class="versi-stats" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
 				<?php if ( 'alt' === $workload ) : ?>
-					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
-						<strong><?php echo esc_html( $alt_stats['total'] ); ?></strong>
-						<?php esc_html_e( 'total', 'versi-content-tools' ); ?>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#eff6ff;color:#2563eb;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $alt_stats['total'] ); ?></div>
+							<div class="versi-stat-label"><?php esc_html_e( 'total images', 'versi-content-tools' ); ?></div>
+						</div>
 					</div>
-					<div class="versi-stat" style="background:#fcf0f1;padding:6px 14px;border-radius:4px;">
-						<strong><?php echo esc_html( $alt_stats['missing'] ); ?></strong>
-						<?php esc_html_e( 'missing', 'versi-content-tools' ); ?>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#fef2f2;color:#dc2626;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $alt_stats['missing'] ); ?></div>
+							<div class="versi-stat-label"><?php esc_html_e( 'missing alt text', 'versi-content-tools' ); ?></div>
+						</div>
 					</div>
-					<div class="versi-stat" style="background:#fef8ee;padding:6px 14px;border-radius:4px;">
-						<strong><?php echo esc_html( $alt_stats['too_long'] ); ?></strong>
-						<?php esc_html_e( 'over 125 chars', 'versi-content-tools' ); ?>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#fffbeb;color:#d97706;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $alt_stats['too_long'] ); ?></div>
+							<div class="versi-stat-label"><?php esc_html_e( 'over 125 chars', 'versi-content-tools' ); ?></div>
+						</div>
 					</div>
-					<div class="versi-stat" style="background:#fef8ee;padding:6px 14px;border-radius:4px;">
-						<strong><?php echo esc_html( $alt_stats['too_short'] ); ?></strong>
-						<?php esc_html_e( 'under 15 chars', 'versi-content-tools' ); ?>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#fffbeb;color:#d97706;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $alt_stats['too_short'] ); ?></div>
+							<div class="versi-stat-label"><?php esc_html_e( 'under 15 chars', 'versi-content-tools' ); ?></div>
+						</div>
 					</div>
 			<?php elseif ( 'seo' === $workload ) : ?>
-				<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
-					<strong><?php esc_html_e( 'SEO', 'versi-content-tools' ); ?></strong>
-					<?php esc_html_e( 'bulk generation', 'versi-content-tools' ); ?>
+				<div class="versi-stat-card">
+					<div class="versi-stat-icon" style="background:#eff6ff;color:#2563eb;">
+						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+					</div>
+					<div>
+						<div class="versi-stat-number"><?php esc_html_e( 'SEO', 'versi-content-tools' ); ?></div>
+						<div class="versi-stat-label"><?php esc_html_e( 'bulk keyword generation', 'versi-content-tools' ); ?></div>
+					</div>
 				</div>
 			<?php elseif ( 'content' === $workload ) : ?>
-				<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
-					<strong><?php esc_html_e( 'Database', 'versi-content-tools' ); ?></strong>
-					<?php esc_html_e( 'bulk post content edit', 'versi-content-tools' ); ?>
+				<div class="versi-stat-card">
+					<div class="versi-stat-icon" style="background:#eff6ff;color:#2563eb;">
+						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+					</div>
+					<div>
+						<div class="versi-stat-number"><?php esc_html_e( 'Database', 'versi-content-tools' ); ?></div>
+						<div class="versi-stat-label"><?php esc_html_e( 'bulk post content edit', 'versi-content-tools' ); ?></div>
+					</div>
 				</div>
-				<div class="versi-stat" style="background:#fcf0f1;padding:6px 14px;border-radius:4px;">
-					<strong><?php esc_html_e( 'WARNING', 'versi-content-tools' ); ?></strong>
-					<?php esc_html_e( 'permanently modifies posts', 'versi-content-tools' ); ?>
+				<div class="versi-stat-card" style="border-color:#fca5a5;background:#fef2f2;">
+					<div class="versi-stat-icon" style="background:#fef2f2;color:#dc2626;">
+						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+					</div>
+					<div>
+						<div class="versi-stat-number" style="color:#dc2626;"><?php esc_html_e( 'WARNING', 'versi-content-tools' ); ?></div>
+						<div class="versi-stat-label"><?php esc_html_e( 'permanently modifies posts', 'versi-content-tools' ); ?></div>
+					</div>
 				</div>
 				<?php else : ?>
-					<div class="versi-stat" style="background:#f0f6fc;padding:6px 14px;border-radius:4px;">
-						<strong><?php echo esc_html( $exc_stats['total'] ); ?></strong>
-						<?php esc_html_e( 'total posts', 'versi-content-tools' ); ?>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#eff6ff;color:#2563eb;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['total'] ); ?></div>
+							<div class="versi-stat-label"><?php esc_html_e( 'total posts', 'versi-content-tools' ); ?></div>
+						</div>
 					</div>
-					<div class="versi-stat" style="background:#fcf0f1;padding:6px 14px;border-radius:4px;">
-						<strong><?php echo esc_html( $exc_stats['missing'] ); ?></strong>
-						<?php esc_html_e( 'missing excerpts', 'versi-content-tools' ); ?>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#fef2f2;color:#dc2626;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['missing'] ); ?></div>
+							<div class="versi-stat-label"><?php esc_html_e( 'missing excerpts', 'versi-content-tools' ); ?></div>
+						</div>
 					</div>
-					<div class="versi-stat" style="background:#edfaef;padding:6px 14px;border-radius:4px;">
-						<strong><?php echo esc_html( $exc_stats['has_excerpt'] ); ?></strong>
-						<?php esc_html_e( 'have excerpts', 'versi-content-tools' ); ?>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#f0fdf4;color:#16a34a;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['has_excerpt'] ); ?></div>
+							<div class="versi-stat-label"><?php esc_html_e( 'have excerpts', 'versi-content-tools' ); ?></div>
+						</div>
 					</div>
-					<div class="versi-stat" style="background:#fef8ee;padding:6px 14px;border-radius:4px;">
-						<strong><?php echo esc_html( $exc_stats['short'] ); ?></strong>
-						<?php esc_html_e( 'short excerpts', 'versi-content-tools' ); ?>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#fffbeb;color:#d97706;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['short'] ); ?></div>
+							<div class="versi-stat-label"><?php esc_html_e( 'short excerpts', 'versi-content-tools' ); ?></div>
+						</div>
 					</div>
 				<?php endif; ?>
-				<a href="<?php echo esc_url( $refresh_url ); ?>" class="button" style="margin-left:auto;">
+				<a href="<?php echo esc_url( $refresh_url ); ?>" class="button" style="margin-left:auto;align-self:center;">
 					<?php esc_html_e( 'Refresh', 'versi-content-tools' ); ?>
 				</a>
 			</div>
@@ -1133,32 +1241,37 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		}
 		?>
 		<div id="versi-live-tab">
-			<div class="versi-mode-selector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;">
-				<button type="button" class="button button-primary versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
+			<div class="versi-mode-selector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;align-items:center;">
+				<button type="button" class="versi-mode-card versi-mode-primary versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
+					<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
 					<?php echo esc_html( $safe_label ); ?>
 				</button>
 				<?php if ( isset( $review_label ) ) : ?>
-					<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $review_mode ); ?>">
+					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $review_mode ); ?>">
+						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
 						<?php echo esc_html( $review_label ); ?>
 					</button>
 				<?php endif; ?>
 				<?php if ( 'excerpt' === $workload ) : ?>
-					<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
 						<?php echo esc_html( $short_label ); ?>
 					</button>
 				<?php elseif ( 'content' === $workload ) : ?>
-					<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
 						<?php echo esc_html( $short_label ); ?>
 					</button>
 				<?php endif; ?>
-				<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>" data-destructive="1">
+				<button type="button" class="versi-mode-card versi-mode-danger versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>" data-destructive="1">
+					<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
 					<?php echo esc_html( $dest_label ); ?>
 				</button>
-				<span class="versi-or-text" style="color:#666;font-style:italic;"><?php esc_html_e( 'Choose a mode above to begin.', 'versi-content-tools' ); ?></span>
+				<span class="versi-or-text" style="color:#6b7280;font-style:italic;font-size:13px;"><?php esc_html_e( 'Choose a mode above to begin.', 'versi-content-tools' ); ?></span>
 			</div>
 
 			<!-- Overwrite warning (shown via JS when destructive mode is selected) -->
-			<div class="notice notice-warning versi-overwrite-warning" style="display:none;">
+			<div class="notice notice-warning versi-overwrite-warning" style="display:none;border-radius:10px;">
 				<p>
 					<strong><?php esc_html_e( 'Warning:', 'versi-content-tools' ); ?></strong>
 					<?php esc_html_e( 'This will overwrite existing content for all items. You can undo individual items after processing using the per-item undo button. Consider running "Generate Missing" first.', 'versi-content-tools' ); ?>
@@ -1166,30 +1279,37 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			</div>
 
 			<!-- Resume notice (shown if a paused job exists) -->
-			<div id="versi-resume-notice" class="notice notice-info" style="display:none;">
-				<p>
-					<strong><?php esc_html_e( 'Resume previous session?', 'versi-content-tools' ); ?></strong>
-					<span id="versi-resume-text"></span>
-				</p>
-				<p>
-					<button type="button" id="versi-resume-btn" class="button button-primary"><?php esc_html_e( 'Resume', 'versi-content-tools' ); ?></button>
-					<button type="button" id="versi-dismiss-btn" class="button"><?php esc_html_e( 'Start Fresh', 'versi-content-tools' ); ?></button>
-				</p>
-			</div>
+				<div id="versi-resume-notice" class="versi-job-notice" style="display:none;">
+					<div class="versi-job-header">
+						<p style="margin:0;font-size:14px;font-weight:600;color:#1e40af;">
+							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:text-bottom;margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+							<?php esc_html_e( 'Resume previous session?', 'versi-content-tools' ); ?>
+						</p>
+						<span id="versi-resume-text" style="font-size:13px;color:#4b5563;display:block;margin:4px 0 0;"></span>
+					</div>
+					<div class="versi-job-body" style="display:flex;gap:8px;">
+						<button type="button" id="versi-resume-btn" class="button button-primary"><?php esc_html_e( 'Resume', 'versi-content-tools' ); ?></button>
+						<button type="button" id="versi-dismiss-btn" class="button"><?php esc_html_e( 'Start Fresh', 'versi-content-tools' ); ?></button>
+					</div>
+				</div>
 
 			<!-- Processing area (hidden until start is clicked) -->
-			<div id="versi-processing-area" style="display:none;">
-				<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-					<h2 style="margin:0;padding:0;font-size:1.3em;" tabindex="-1">
+			<div id="versi-processing-area" style="display:none;margin-top:20px;">
+				<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+					<div style="width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 1.5s infinite;flex-shrink:0;"></div>
+					<h2 style="margin:0;padding:0;font-size:1.2rem;font-weight:600;color:#1e1e1e;" tabindex="-1">
 						<?php esc_html_e( 'Processing', 'versi-content-tools' ); ?>&hellip;
 					</h2>
-					<a href="#" id="versi-stop-link" class="versi-stop-link" style="color:#d63638;text-decoration:none;font-size:13px;">
-						<?php esc_html_e( 'stop', 'versi-content-tools' ); ?>
+					<a href="#" id="versi-stop-link" class="versi-stop-link" style="color:#dc2626;text-decoration:none;font-size:12px;font-weight:500;margin-left:auto;padding:4px 10px;border-radius:6px;border:1px solid #fca5a5;">
+						<?php esc_html_e( 'Stop', 'versi-content-tools' ); ?>
 					</a>
 				</div>
-				<div id="versi-status" style="margin:8px 0;font-size:13px;color:#555;"></div>
-				<div id="versi-results" aria-live="polite" role="status" style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-height:600px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.6;"></div>
+				<div id="versi-status" style="margin:0 0 10px 0;font-size:13px;color:#6b7280;"></div>
+				<div id="versi-results" aria-live="polite" role="status" class="versi-results-box"></div>
 			</div>
+			<style>
+			@keyframes pulse { 0%, 100% { opacity:1; } 50% { opacity:0.4; } }
+			</style>
 		</div>
 
 		<script>
@@ -1831,8 +1951,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		?>
 		<div id="versi-bg-tab">
 			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
-				<div class="notice notice-info">
-					<p><strong><?php esc_html_e( 'Background job running', 'versi-content-tools' ); ?></strong></p>
+				<div class="versi-job-notice">
+					<div class="versi-job-header" style="display:flex;align-items:center;gap:12px;">
+						<svg width="20" height="20" fill="none" stroke="#1e40af" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+						<div>
+							<p style="margin:0;font-size:14px;font-weight:600;color:#1e40af;"><strong><?php esc_html_e( 'Background job running', 'versi-content-tools' ); ?></strong></p>
 					<p>
 						<?php esc_html_e( 'Progress:', 'versi-content-tools' ); ?>
 						<span id="versi-bg-progress-tab"><?php echo esc_html( $job['processed'] ); ?> / <?php echo esc_html( $job['total'] ); ?></span>
@@ -1920,11 +2043,24 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 */
 	private function render_auditor_tab() {
 		?>
-		<div>
-			<h3><?php esc_html_e( 'Attachment Auditor', 'versi-content-tools' ); ?></h3>
-			<p><?php esc_html_e( 'Find images in your media library that are not linked to any post but are being used somewhere in your published content. Linking them gives the AI better context when generating alt text, excerpts, and SEO keywords.', 'versi-content-tools' ); ?></p>
-			<button type="button" class="button button-primary" id="versi-audit-btn"><?php esc_html_e( 'Run Audit', 'versi-content-tools' ); ?></button>
-			<div id="versi-audit-results" style="margin-top:16px;"></div>
+		<div class="versi-auditor-card">
+			<div class="versi-auditor-header">
+				<svg width="24" height="24" fill="none" stroke="#6366f1" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+				<div>
+					<h3 style="margin:0;font-size:15px;font-weight:600;color:#1e1e1e;"><?php esc_html_e( 'Attachment Auditor', 'versi-content-tools' ); ?></h3>
+					<p style="margin:2px 0 0;font-size:13px;color:#6b7280;"><?php esc_html_e( 'Find images used in your content that are not linked to any post.', 'versi-content-tools' ); ?></p>
+				</div>
+			</div>
+			<div class="versi-auditor-body">
+				<p style="margin:0 0 16px;font-size:13px;color:#4b5563;line-height:1.5;">
+					<?php esc_html_e( 'Linking unlinked images to their parent post gives the AI better context when generating alt text, excerpts, and SEO keywords. The scan searches published post content for image filenames that match media library items with no post parent.', 'versi-content-tools' ); ?>
+				</p>
+				<button type="button" class="button button-primary" id="versi-audit-btn" style="border-radius:8px;">
+					<?php esc_html_e( 'Run Audit', 'versi-content-tools' ); ?>
+				</button>
+				<div id="versi-audit-results" style="margin-top:16px;"></div>
+			</div>
+		</div>
 			<script>
 			jQuery(function($) {
 				$('#versi-audit-btn').on('click', function() {
