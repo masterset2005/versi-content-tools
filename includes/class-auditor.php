@@ -16,16 +16,40 @@ class Versi_Auditor {
 	use Versi_Singleton;
 
 	/**
-	 * Find images not linked to any post but referenced in post_content.
+	 * Batch size for scanning.
+	 */
+	const BATCH_SIZE = 50;
+
+	/**
+	 * Get total count of unlinked image attachments.
 	 *
+	 * @return int
+	 */
+	public function get_unlinked_count() {
+		global $wpdb;
+		$count = $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' AND post_parent = 0"
+		);
+		return (int) $count;
+	}
+
+	/**
+	 * Find unlinked images in a batch.
+	 *
+	 * @param int $offset Starting offset.
+	 * @param int $limit  Batch size.
 	 * @return array
 	 */
-	public function find_unlinked_images() {
+	public function find_unlinked_batch( $offset = 0, $limit = 50 ) {
 		global $wpdb;
 
-		// Get all image attachments with no parent.
+		// Get a batch of unlinked image attachments.
 		$unlinked_attachments = $wpdb->get_results(
-			"SELECT ID, guid FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' AND post_parent = 0"
+			$wpdb->prepare(
+				"SELECT ID, guid FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' AND post_parent = 0 ORDER BY ID ASC LIMIT %d OFFSET %d",
+				$limit,
+				$offset
+			)
 		);
 
 		if ( empty( $unlinked_attachments ) ) {
@@ -61,6 +85,15 @@ class Versi_Auditor {
 		}
 
 		return $potential_links;
+	}
+
+	/**
+	 * Find images not linked to any post but referenced in post_content.
+	 *
+	 * @return array
+	 */
+	public function find_unlinked_images() {
+		return $this->find_unlinked_batch( 0, PHP_INT_MAX );
 	}
 
 	/**

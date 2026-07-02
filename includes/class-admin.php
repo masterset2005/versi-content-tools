@@ -2943,16 +2943,48 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	}
 
 	/**
-	 * AJAX: Run attachment audit.
+	 * AJAX: Run attachment audit (supports batched scanning).
 	 */
 	public function ajax_run_audit() {
 		check_ajax_referer( 'versi_run_audit' );
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 		}
+
+		$offset   = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
+		$limit    = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : Versi_Auditor::BATCH_SIZE;
+		$is_batch = $offset > 0 || isset( $_POST['batched'] );
+
 		try {
-			$results = Versi_Auditor::init()->find_unlinked_images();
-			wp_send_json_success( $results );
+			if ( $is_batch ) {
+				$total = Versi_Auditor::init()->get_unlinked_count();
+				if ( $total === 0 ) {
+					wp_send_json_success(
+						array(
+							'complete' => true,
+							'results'  => array(),
+							'scanned'  => 0,
+							'total'    => 0,
+						)
+					);
+				}
+				$batch_results = Versi_Auditor::init()->find_unlinked_batch( $offset, $limit );
+				$scanned       = min( $offset + $limit, $total );
+				$complete      = $scanned >= $total;
+
+				wp_send_json_success(
+					array(
+						'complete' => $complete,
+						'results'  => $batch_results,
+						'scanned'  => $scanned,
+						'total'    => $total,
+					)
+				);
+			} else {
+				// Legacy single-call mode.
+				$results = Versi_Auditor::init()->find_unlinked_images();
+				wp_send_json_success( $results );
+			}
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
