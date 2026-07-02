@@ -190,8 +190,9 @@ class Versi_Alt_Text_Processor {
 		$raw = preg_replace( '/\[\[.*?\]\]/s', '', $raw );
 		$raw = trim( $raw );
 
-		if ( strlen( $raw ) > 125 ) {
-			$raw = substr( $raw, 0, 125 );
+		// Enforce a reasonable limit for database storage, but allow enough for descriptive text.
+		if ( strlen( $raw ) > 500 ) {
+			$raw = substr( $raw, 0, 500 );
 		}
 
 		return $raw;
@@ -282,7 +283,13 @@ class Versi_Alt_Text_Processor {
 			return $new_alt;
 		}
 
-		return trim( $result );
+		$trimmed = trim( $result );
+		// Check if the result looks cut-off (ends in ellipsis).
+		if ( preg_match( '/(\.\.\.|\…)$/', $trimmed ) ) {
+			return new WP_Error( 'ai_incomplete', 'AI response was cut off.' );
+		}
+
+		return $trimmed;
 	}
 
 	/**
@@ -293,6 +300,8 @@ class Versi_Alt_Text_Processor {
 	public function default_system_prompt() {
 		return 'You are a **visual description specialist**. Describe only what is visibly present in the image.' . "\n"
 			. '- List subjects, objects, actions, setting, text, and details.' . "\n"
+			. '- Focus on actions and context rather than demographic details (e.g., race, gender, age) unless strictly essential to the image\'s meaning.' . "\n"
+			. '- Do NOT start with "Image of", "Photo of", "Graphic of", or similar descriptors. Screen readers already announce the element as an image.' . "\n"
 			. '- Do not infer purpose, meaning, emotions, or context.' . "\n"
 			. '- Do not shorten for accessibility or style.' . "\n"
 			. '- Be factual, neutral, and concise.' . "\n"
@@ -306,6 +315,11 @@ class Versi_Alt_Text_Processor {
 	 */
 	public function default_single_prompt() {
 		return 'You are an **accessibility expert** generating alt text for HTML images.' . "\n\n"
+			. '**Rules:**' . "\n"
+			. '- Focus on the action, setting, and essential context provided in the article.' . "\n"
+			. '- Omit demographic details (race, gender, age) unless strictly essential.' . "\n"
+			. '- Do NOT start with "Image of", "Photo of", "Graphic of", or similar descriptors.' . "\n"
+			. '- Be factual, neutral, and concise.' . "\n\n"
 			. '**Input:** Context below + attached image' . "\n"
 			. '**Output:** One sentence only' . "\n\n"
 			. '**W3C Alt Decision Tree (follow in order):**' . "\n\n"

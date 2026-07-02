@@ -1241,6 +1241,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			</div>
 			<?php
 		}
+        /**
+	 * @param string $workload 'alt' or 'excerpt' .
+	 * @return void
+	 */
+	private function render_live_tab( $workload ) {
 		$base_url = admin_url( 'upload.php?page=versi-processing&versi_workload=' . $workload . '&versi_mode_tab=live' );
 
 		if ( 'alt' === $workload ) {
@@ -1278,6 +1283,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<button type="button" class="versi-mode-card versi-mode-primary versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
 					<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
 					<?php echo esc_html( $safe_label ); ?>
+				</button>
+				<button type="button" class="versi-mode-card versi-mode-primary" id="versi-pause-btn" style="display:none;" data-status="running">
+					<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6"/></svg>
+					<?php esc_html_e( 'Pause', 'versi-content-tools' ); ?>
 				</button>
 				<?php if ( isset( $review_label ) ) : ?>
 					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $review_mode ); ?>">
