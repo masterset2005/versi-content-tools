@@ -933,10 +933,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return;
 		}
 
-		$workload = isset( $_GET['versi_workload'] ) ? sanitize_key( wp_unslash( $_GET['versi_workload'] ) ) : 'alt';
+		$workload = isset( $_GET['versi_workload'] ) ? sanitize_key( wp_unslash( $_GET['versi_workload'] ) ) : 'dashboard';
 		$mode_tab = isset( $_GET['versi_mode_tab'] ) ? sanitize_key( wp_unslash( $_GET['versi_mode_tab'] ) ) : 'live';
 
-		$alt_stats = Versi_Alt_Text_Processor::init()->get_stats();
+		$alt_stats        = Versi_Alt_Text_Processor::init()->get_stats();
+		$exc_stats        = Versi_Excerpt_Processor::init()->get_stats();
+		$is_proc_workload = in_array( $workload, array( 'alt', 'excerpt', 'seo', 'content' ), true );
 		?>
 		<style>
 		.versi-stat-card {
@@ -993,13 +995,15 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$exc_stats = Versi_Excerpt_Processor::init()->get_stats();
 
 		$base_url    = admin_url( 'upload.php?page=versi-processing' );
+		$dash_url    = add_query_arg( 'versi_workload', 'dashboard', $base_url );
 		$alt_url     = add_query_arg( 'versi_workload', 'alt', $base_url );
 		$exc_url     = add_query_arg( 'versi_workload', 'excerpt', $base_url );
 		$seo_url     = add_query_arg( 'versi_workload', 'seo', $base_url );
 		$content_url = add_query_arg( 'versi_workload', 'content', $base_url );
+		$auditor_url = add_query_arg( 'versi_workload', 'auditor', $base_url );
 		$live_url    = add_query_arg( 'versi_mode_tab', 'live', $base_url );
 		$bg_url      = add_query_arg( 'versi_mode_tab', 'bg', $base_url );
-		$refresh_url = 'alt' === $workload ? $alt_url : ( 'seo' === $workload ? $seo_url : ( 'content' === $workload ? $content_url : $exc_url ) );
+		$refresh_url = 'alt' === $workload ? $alt_url : ( 'seo' === $workload ? $seo_url : ( 'content' === $workload ? $content_url : ( 'excerpt' === $workload ? $exc_url : $dash_url ) ) );
 
 		$job = get_option( 'versi_job_status' );
 		?>
@@ -1052,6 +1056,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 			<!-- Workload tabs -->
 			<h2 class="nav-tab-wrapper">
+				<a href="<?php echo esc_url( $dash_url ); ?>" class="nav-tab <?php echo 'dashboard' === $workload ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Dashboard', 'versi-content-tools' ); ?>
+				</a>
 				<a href="<?php echo esc_url( $alt_url ); ?>" class="nav-tab <?php echo 'alt' === $workload ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Alt Text', 'versi-content-tools' ); ?>
 				</a>
@@ -1064,8 +1071,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<a href="<?php echo esc_url( $content_url ); ?>" class="nav-tab <?php echo 'content' === $workload ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Content Cleanup', 'versi-content-tools' ); ?>
 				</a>
+				<a href="<?php echo esc_url( $auditor_url ); ?>" class="nav-tab <?php echo 'auditor' === $workload ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Media Auditor', 'versi-content-tools' ); ?>
+				</a>
 			</h2>
 
+			<?php if ( $is_proc_workload ) : ?>
 			<!-- Stats bar -->
 			<div class="versi-stats" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
 				<?php if ( 'alt' === $workload ) : ?>
@@ -1185,17 +1196,17 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'bg', $refresh_url ) ); ?>" class="nav-tab <?php echo 'bg' === $mode_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Background Jobs', 'versi-content-tools' ); ?>
 				</a>
-				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'auditor', $refresh_url ) ); ?>" class="nav-tab <?php echo 'auditor' === $mode_tab ? 'nav-tab-active' : ''; ?>">
-					<?php esc_html_e( 'Auditor', 'versi-content-tools' ); ?>
-				</a>
 			</h3>
 
-			<?php if ( 'auditor' === $mode_tab ) : ?>
-				<?php $this->render_auditor_tab(); ?>
-			<?php elseif ( 'bg' === $mode_tab ) : ?>
-				<?php $this->render_background_tab( $workload ); ?>
+				<?php if ( 'bg' === $mode_tab ) : ?>
+					<?php $this->render_background_tab( $workload ); ?>
 			<?php else : ?>
 				<?php $this->render_live_tab( $workload ); ?>
+			<?php endif; ?>
+			<?php elseif ( 'dashboard' === $workload ) : ?>
+				<?php $this->render_dashboard_tab(); ?>
+			<?php elseif ( 'auditor' === $workload ) : ?>
+				<?php $this->render_auditor_tab(); ?>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -2037,6 +2048,116 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	}
 
 	/**
+	 * Render the Dashboard tab with overview stats and recommended order.
+	 *
+	 * @return void
+	 */
+	private function render_dashboard_tab() {
+		$alt_stats   = Versi_Alt_Text_Processor::init()->get_stats();
+		$exc_stats   = Versi_Excerpt_Processor::init()->get_stats();
+		$auditor     = Versi_Auditor::init();
+		$has_ai      = function_exists( 'wp_ai_client_prompt' );
+		$base_url    = admin_url( 'upload.php?page=versi-processing' );
+		$alt_url     = add_query_arg( 'versi_workload', 'alt', $base_url );
+		$exc_url     = add_query_arg( 'versi_workload', 'excerpt', $base_url );
+		$auditor_url = add_query_arg( 'versi_workload', 'auditor', $base_url );
+		?>
+		<style>
+		.versi-dash-grid {
+			display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:20px 0;
+		}
+		.versi-dash-card {
+			border-radius:12px;border:1px solid #e5e7eb;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:box-shadow 0.15s;
+		}
+		.versi-dash-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+		.versi-dash-card-header {
+			padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px;
+		}
+		.versi-dash-card-body { padding:16px 20px; }
+		.versi-dash-number { font-size:28px;font-weight:700;color:#1e1e1e;line-height:1.2; }
+		.versi-dash-label { font-size:13px;color:#4b5563;margin:2px 0 8px; }
+		.versi-dash-order {
+			list-style:none;margin:0;padding:0;counter-reset:step;
+		}
+		.versi-dash-order li {
+			counter-increment:step;padding:12px 16px;margin:4px 0;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;display:flex;align-items:center;gap:12px;font-size:13px;
+		}
+		.versi-dash-order li::before {
+			content:counter(step);width:26px;height:26px;border-radius:50%;background:#2271b1;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+		}
+		.versi-dash-status {
+			display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
+		}
+		.versi-dash-status.ok { background:#f0fdf4;color:#166534; }
+		.versi-dash-status.warn { background:#fef2f2;color:#991b1b; }
+		.versi-dash-status.neutral { background:#f3f4f6;color:#4b5563; }
+		</style>
+		<div class="versi-dash-grid">
+			<div class="versi-dash-card">
+				<div class="versi-dash-card-header">
+					<svg aria-hidden="true" focusable="false" width="20" height="20" fill="none" stroke="#2563eb" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+					<span style="font-weight:600;font-size:14px;"><?php esc_html_e( 'Alt Text', 'versi-content-tools' ); ?></span>
+				</div>
+				<div class="versi-dash-card-body">
+					<div class="versi-dash-number"><?php echo esc_html( $alt_stats['missing'] ); ?></div>
+					<div class="versi-dash-label"><?php esc_html_e( 'images missing alt text', 'versi-content-tools' ); ?></div>
+					<a href="<?php echo esc_url( $alt_url ); ?>" class="button button-primary" style="border-radius:8px;"><?php esc_html_e( 'Generate Alt Text', 'versi-content-tools' ); ?></a>
+				</div>
+			</div>
+			<div class="versi-dash-card">
+				<div class="versi-dash-card-header">
+					<svg aria-hidden="true" focusable="false" width="20" height="20" fill="none" stroke="#16a34a" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+					<span style="font-weight:600;font-size:14px;"><?php esc_html_e( 'Excerpts', 'versi-content-tools' ); ?></span>
+				</div>
+				<div class="versi-dash-card-body">
+					<div class="versi-dash-number"><?php echo esc_html( $exc_stats['missing'] ); ?></div>
+					<div class="versi-dash-label"><?php esc_html_e( 'posts missing excerpts', 'versi-content-tools' ); ?></div>
+					<a href="<?php echo esc_url( $exc_url ); ?>" class="button button-primary" style="border-radius:8px;"><?php esc_html_e( 'Generate Excerpts', 'versi-content-tools' ); ?></a>
+				</div>
+			</div>
+			<div class="versi-dash-card">
+				<div class="versi-dash-card-header">
+					<svg aria-hidden="true" focusable="false" width="20" height="20" fill="none" stroke="#6366f1" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+					<span style="font-weight:600;font-size:14px;"><?php esc_html_e( 'Media Auditor', 'versi-content-tools' ); ?></span>
+				</div>
+				<div class="versi-dash-card-body">
+					<div class="versi-dash-number">&mdash;</div>
+					<div class="versi-dash-label"><?php esc_html_e( 'Run a scan to find unlinked images', 'versi-content-tools' ); ?></div>
+					<a href="<?php echo esc_url( $auditor_url ); ?>" class="button" style="border-radius:8px;"><?php esc_html_e( 'Open Auditor', 'versi-content-tools' ); ?></a>
+				</div>
+			</div>
+		</div>
+
+		<div class="versi-dash-card" style="max-width:700px;">
+			<div class="versi-dash-card-header">
+				<svg aria-hidden="true" focusable="false" width="20" height="20" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+				<span style="font-weight:600;font-size:14px;"><?php esc_html_e( 'Recommended Order', 'versi-content-tools' ); ?></span>
+			</div>
+			<div class="versi-dash-card-body">
+				<ol class="versi-dash-order">
+					<li>
+						<div><strong><?php esc_html_e( 'Run Media Auditor', 'versi-content-tools' ); ?></strong><br>
+						<span style="color:#4b5563;"><?php esc_html_e( 'Link unlinked images to their parent posts for better AI context.', 'versi-content-tools' ); ?></span></div>
+					</li>
+					<li>
+						<div><strong><?php esc_html_e( 'Generate Alt Text', 'versi-content-tools' ); ?></strong><br>
+						<span style="color:#4b5563;"><?php esc_html_e( 'Create descriptive alt text for all images with AI context from linked posts.', 'versi-content-tools' ); ?></span></div>
+					</li>
+					<li>
+						<div><strong><?php esc_html_e( 'Generate Excerpts', 'versi-content-tools' ); ?></strong><br>
+						<span style="color:#4b5563;"><?php esc_html_e( 'AI-generated post excerpts benefit from alt text context on featured images.', 'versi-content-tools' ); ?></span></div>
+					</li>
+					<li>
+						<div><strong><?php esc_html_e( 'SEO Keywords', 'versi-content-tools' ); ?></strong><br>
+						<span style="color:#4b5563;"><?php esc_html_e( 'Generate focus keywords last, using the complete post content including excerpts.', 'versi-content-tools' ); ?></span></div>
+					</li>
+				</ol>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Render the Auditor tab.
 	 *
 	 * @return void
@@ -2047,7 +2168,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			<div class="versi-auditor-header">
 				<svg aria-hidden="true" focusable="false" width="24" height="24" fill="none" stroke="#6366f1" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
 				<div>
-					<h3 style="margin:0;font-size:15px;font-weight:600;color:#1e1e1e;"><?php esc_html_e( 'Attachment Auditor', 'versi-content-tools' ); ?></h3>
+					<h3 style="margin:0;font-size:15px;font-weight:600;color:#1e1e1e;"><?php esc_html_e( 'Media Auditor', 'versi-content-tools' ); ?></h3>
 					<p style="margin:2px 0 0;font-size:13px;color:#4b5563;"><?php esc_html_e( 'Find images used in your content that are not linked to any post.', 'versi-content-tools' ); ?></p>
 				</div>
 			</div>
@@ -2061,43 +2182,62 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<div id="versi-audit-results" style="margin-top:16px;"></div>
 			</div>
 		</div>
-			<script>
-			jQuery(function($) {
-				$('#versi-audit-btn').on('click', function() {
-					$('#versi-audit-results').text('<?php echo esc_js( __( 'Scanning...', 'versi-content-tools' ) ); ?>');
-					$.post(ajaxurl, {
-						action: 'versi_run_audit',
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>'
-					}, function(resp) {
-						if (resp.success && resp.data.length > 0) {
-							let html = '<table class="wp-list-table widefat fixed striped"><thead><tr><th>Image</th><th>Found In</th><th>Action</th></tr></thead><tbody>';
-							resp.data.forEach(item => {
-								html += '<tr><td><a href="' + item.attachment_url + '" target="_blank">#' + item.attachment_id + '</a></td><td>' + item.post_title + '</td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_html_e( 'Link', 'versi-content-tools' ); ?></button></td></tr>';
-							});
-							html += '</tbody></table>';
-							$('#versi-audit-results').html(html);
-						} else {
-							$('#versi-audit-results').text('<?php esc_html_e( 'No unlinked images found.', 'versi-content-tools' ); ?>');
-						}
-					});
-				});
-
-				$(document).on('click', '.versi-link-btn', function() {
-					const $btn = $(this);
-					$.post(ajaxurl, {
-						action: 'versi_link_attachment',
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_link_attachment' ) ); ?>',
-						attachment_id: $btn.data('att'),
-						post_id: $btn.data('post')
-					}, function(resp) {
-						if (resp.success) {
-							$btn.text('<?php esc_html_e( 'Linked', 'versi-content-tools' ); ?>').prop('disabled', true);
-						}
-					});
+		<style>
+		.versi-scan-spinner {
+			display:inline-block;width:16px;height:16px;border:2px solid #d1d5db;border-top-color:#2271b1;border-radius:50%;animation:versi-spin 0.6s linear infinite;vertical-align:middle;margin-right:8px;
+		}
+		@keyframes versi-spin { to { transform:rotate(360deg); } }
+		.versi-scan-status {
+			display:flex;align-items:center;gap:8px;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:13px;color:#0369a1;
+		}
+		.versi-audit-summary {
+			padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;margin-bottom:12px;
+		}
+		</style>
+		<script>
+		jQuery(function($) {
+			$('#versi-audit-btn').on('click', function() {
+				const $btn = $(this).prop('disabled', true);
+				const $results = $('#versi-audit-results');
+				$results.html('<div class="versi-scan-status"><span class="versi-scan-spinner"></span><?php echo esc_js( __( 'Scanning post content for unlinked images...', 'versi-content-tools' ) ); ?></div>');
+				$.post(ajaxurl, {
+					action: 'versi_run_audit',
+					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>'
+				}, function(resp) {
+					if (resp.success && resp.data.length > 0) {
+						const totalPosts = new Set(resp.data.map(i => i.post_id)).size;
+						let html = '<div class="versi-audit-summary"><?php echo esc_js( __( 'Found', 'versi-content-tools' ) ); ?> <strong>' + resp.data.length + '</strong> <?php echo esc_js( __( 'unlinked image(s) across', 'versi-content-tools' ) ); ?> <strong>' + totalPosts + '</strong> <?php echo esc_js( __( 'post(s).', 'versi-content-tools' ) ); ?></div>';
+						html += '<table class="wp-list-table widefat fixed striped"><thead><tr><th><?php echo esc_js( __( 'Image', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Found In', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Action', 'versi-content-tools' ) ); ?></th></tr></thead><tbody>';
+						resp.data.forEach(item => {
+							html += '<tr><td><a href="' + item.attachment_url + '" target="_blank">#' + item.attachment_id + '</a></td><td>' + item.post_title + '</td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_js( __( 'Link', 'versi-content-tools' ) ); ?></button></td></tr>';
+						});
+						html += '</tbody></table>';
+						$results.html(html);
+					} else {
+						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ) ); ?></div>');
+					}
+					$btn.prop('disabled', false);
+				}).fail(function() {
+					$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'Scan failed. Please try again.', 'versi-content-tools' ) ); ?></div>');
+					$btn.prop('disabled', false);
 				});
 			});
-			</script>
-		</div>
+
+			$(document).on('click', '.versi-link-btn', function() {
+				const $btn = $(this);
+				$.post(ajaxurl, {
+					action: 'versi_link_attachment',
+					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_link_attachment' ) ); ?>',
+					attachment_id: $btn.data('att'),
+					post_id: $btn.data('post')
+				}, function(resp) {
+					if (resp.success) {
+						$btn.text('<?php echo esc_js( __( 'Linked', 'versi-content-tools' ) ); ?>').prop('disabled', true);
+					}
+				});
+			});
+		});
+		</script>
 		<?php
 	}
 

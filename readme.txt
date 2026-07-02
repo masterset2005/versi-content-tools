@@ -91,6 +91,7 @@ targets all excerpts.
 = 1.8.0 =
 * New: Image size optimization setting — choose which attachment size (thumbnail, medium, large, full) to send to the AI
 * New: Attachment Auditor — scan content for unlinked images and link them to their attachment posts
+* New: Dashboard tab on processing page showing tool overview, stats, and recommended run order
 * New: Improved AI error handling with structured error classification (503, timeout, 400, rate-limit)
 * Fix: "Generate Missing Excerpts" now correctly processes only posts without excerpts
 * Fix: Duplicate HTML IDs on processing tab panels resolved for WCAG compliance
@@ -98,8 +99,11 @@ targets all excerpts.
 * Fix: Color contrast improvements for small-status text (gray-600 replaces gray-500)
 * Fix: Decorative SVG icons marked aria-hidden + focusable="false" for screen readers
 * Tweak: UI modernization — card-based design with gradient backgrounds, SVG icons, rounded corners
-* Tweak: Auditor moved to processing page as a sub-tab (Live / Background / Auditor)
+* Tweak: Media Auditor promoted to top-level workload tab alongside Alt Text, Excerpts, etc.
+* Tweak: Auditor scan now shows animated spinner, result counts, and error handling feedback
+* Tweak: Live/Background sub-tabs hidden for Dashboard and Auditor tabs
 * Dev: PHPCS auto-fixes (34+ formatting issues), PHPDoc corrections, undefined variable hardening
+* Dev: Fix plugin version header to match readme stable tag
 
 = 1.6.0 =
 * New: Auto-retry on API rate limits (429) — detects provider retry-after, waits and retries up to 5 times
