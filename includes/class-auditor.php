@@ -52,13 +52,30 @@ class Versi_Auditor {
 		}
 
 		// 2. Embedded images (wp-image-{id} class).
-		$posts = $wpdb->get_results( "SELECT post_content FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish'" );
-		foreach ( $posts as $post ) {
-			if ( preg_match_all( '/wp-image-(\d+)/', $post->post_content, $matches ) ) {
-				foreach ( $matches[1] as $id ) {
-					$used_ids[ (int) $id ] = true;
+		// To avoid memory exhaustion on large sites, we scan content in chunks.
+		$total_posts = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish'" );
+		$chunk_size = 100;
+		$offset = 0;
+
+		while ( $offset < $total_posts ) {
+			$posts = $wpdb->get_results( $wpdb->prepare(
+				"SELECT post_content FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' ORDER BY ID ASC LIMIT %d OFFSET %d",
+				$chunk_size,
+				$offset
+			) );
+
+			if ( empty( $posts ) ) {
+				break;
+			}
+
+			foreach ( $posts as $post ) {
+				if ( preg_match_all( '/wp-image-(\d+)/', $post->post_content, $matches ) ) {
+					foreach ( $matches[1] as $id ) {
+						$used_ids[ (int) $id ] = true;
+					}
 				}
 			}
+			$offset += $chunk_size;
 		}
 		return $used_ids;
 	}
