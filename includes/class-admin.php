@@ -949,7 +949,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			font-size:20px;font-weight:700;line-height:1.2;color:#1e1e1e;
 		}
 		.versi-stat-card .versi-stat-label {
-			font-size:12px;color:#6b7280;line-height:1.3;
+			font-size:12px;color:#4b5563;line-height:1.3;
 		}
 		.versi-mode-card {
 			display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:#374151;text-decoration:none;transition:all 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.04);
@@ -1071,7 +1071,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<?php if ( 'alt' === $workload ) : ?>
 					<div class="versi-stat-card">
 						<div class="versi-stat-icon" style="background:#eff6ff;color:#2563eb;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
 						</div>
 						<div>
 							<div class="versi-stat-number"><?php echo esc_html( $alt_stats['total'] ); ?></div>
@@ -1080,7 +1080,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</div>
 					<div class="versi-stat-card">
 						<div class="versi-stat-icon" style="background:#fef2f2;color:#dc2626;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
 						</div>
 						<div>
 							<div class="versi-stat-number"><?php echo esc_html( $alt_stats['missing'] ); ?></div>
@@ -1089,7 +1089,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</div>
 					<div class="versi-stat-card">
 						<div class="versi-stat-icon" style="background:#fffbeb;color:#d97706;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
 						</div>
 						<div>
 							<div class="versi-stat-number"><?php echo esc_html( $alt_stats['too_long'] ); ?></div>
@@ -1098,7 +1098,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</div>
 					<div class="versi-stat-card">
 						<div class="versi-stat-icon" style="background:#fffbeb;color:#d97706;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
 						</div>
 						<div>
 							<div class="versi-stat-number"><?php echo esc_html( $alt_stats['too_short'] ); ?></div>
@@ -1108,7 +1108,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			<?php elseif ( 'seo' === $workload ) : ?>
 				<div class="versi-stat-card">
 					<div class="versi-stat-icon" style="background:#eff6ff;color:#2563eb;">
-						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
 					</div>
 					<div>
 						<div class="versi-stat-number"><?php esc_html_e( 'SEO', 'versi-content-tools' ); ?></div>
@@ -1118,7 +1118,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			<?php elseif ( 'content' === $workload ) : ?>
 				<div class="versi-stat-card">
 					<div class="versi-stat-icon" style="background:#eff6ff;color:#2563eb;">
-						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
 					</div>
 					<div>
 						<div class="versi-stat-number"><?php esc_html_e( 'Database', 'versi-content-tools' ); ?></div>
@@ -1127,7 +1127,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				</div>
 				<div class="versi-stat-card" style="border-color:#fca5a5;background:#fef2f2;">
 					<div class="versi-stat-icon" style="background:#fef2f2;color:#dc2626;">
-						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
 					</div>
 					<div>
 						<div class="versi-stat-number" style="color:#dc2626;"><?php esc_html_e( 'WARNING', 'versi-content-tools' ); ?></div>
@@ -1137,7 +1137,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<?php else : ?>
 					<div class="versi-stat-card">
 						<div class="versi-stat-icon" style="background:#eff6ff;color:#2563eb;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
 						</div>
 						<div>
 							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['total'] ); ?></div>
@@ -1146,7 +1146,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</div>
 					<div class="versi-stat-card">
 						<div class="versi-stat-icon" style="background:#fef2f2;color:#dc2626;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
 						</div>
 						<div>
 							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['missing'] ); ?></div>
@@ -1155,7 +1155,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</div>
 					<div class="versi-stat-card">
 						<div class="versi-stat-icon" style="background:#f0fdf4;color:#16a34a;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
 						</div>
 						<div>
 							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['has_excerpt'] ); ?></div>
@@ -1164,7 +1164,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</div>
 					<div class="versi-stat-card">
 						<div class="versi-stat-icon" style="background:#fffbeb;color:#d97706;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
 						</div>
 						<div>
 							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['short'] ); ?></div>
@@ -1243,31 +1243,31 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		<div id="versi-live-tab">
 			<div class="versi-mode-selector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;align-items:center;">
 				<button type="button" class="versi-mode-card versi-mode-primary versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
-					<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+					<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
 					<?php echo esc_html( $safe_label ); ?>
 				</button>
 				<?php if ( isset( $review_label ) ) : ?>
 					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $review_mode ); ?>">
-						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
 						<?php echo esc_html( $review_label ); ?>
 					</button>
 				<?php endif; ?>
 				<?php if ( 'excerpt' === $workload ) : ?>
 					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
-						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
 						<?php echo esc_html( $short_label ); ?>
 					</button>
 				<?php elseif ( 'content' === $workload ) : ?>
 					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
-						<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
 						<?php echo esc_html( $short_label ); ?>
 					</button>
 				<?php endif; ?>
 				<button type="button" class="versi-mode-card versi-mode-danger versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>" data-destructive="1">
-					<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+					<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
 					<?php echo esc_html( $dest_label ); ?>
 				</button>
-				<span class="versi-or-text" style="color:#6b7280;font-style:italic;font-size:13px;"><?php esc_html_e( 'Choose a mode above to begin.', 'versi-content-tools' ); ?></span>
+				<span class="versi-or-text" style="color:#4b5563;font-style:italic;font-size:13px;"><?php esc_html_e( 'Choose a mode above to begin.', 'versi-content-tools' ); ?></span>
 			</div>
 
 			<!-- Overwrite warning (shown via JS when destructive mode is selected) -->
@@ -1282,7 +1282,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<div id="versi-resume-notice" class="versi-job-notice" style="display:none;">
 					<div class="versi-job-header">
 						<p style="margin:0;font-size:14px;font-weight:600;color:#1e40af;">
-							<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:text-bottom;margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:text-bottom;margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
 							<?php esc_html_e( 'Resume previous session?', 'versi-content-tools' ); ?>
 						</p>
 						<span id="versi-resume-text" style="font-size:13px;color:#4b5563;display:block;margin:4px 0 0;"></span>
@@ -1304,7 +1304,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						<?php esc_html_e( 'Stop', 'versi-content-tools' ); ?>
 					</a>
 				</div>
-				<div id="versi-status" style="margin:0 0 10px 0;font-size:13px;color:#6b7280;"></div>
+				<div id="versi-status" style="margin:0 0 10px 0;font-size:13px;color:#4b5563;"></div>
 				<div id="versi-results" aria-live="polite" role="status" class="versi-results-box"></div>
 			</div>
 			<style>
@@ -1953,7 +1953,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
 				<div class="versi-job-notice">
 					<div class="versi-job-header" style="display:flex;align-items:center;gap:12px;">
-						<svg width="20" height="20" fill="none" stroke="#1e40af" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+						<svg aria-hidden="true" focusable="false" width="20" height="20" fill="none" stroke="#1e40af" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
 						<div>
 							<p style="margin:0;font-size:14px;font-weight:600;color:#1e40af;"><strong><?php esc_html_e( 'Background job running', 'versi-content-tools' ); ?></strong></p>
 					<p>
@@ -2045,10 +2045,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		?>
 		<div class="versi-auditor-card">
 			<div class="versi-auditor-header">
-				<svg width="24" height="24" fill="none" stroke="#6366f1" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+				<svg aria-hidden="true" focusable="false" width="24" height="24" fill="none" stroke="#6366f1" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
 				<div>
 					<h3 style="margin:0;font-size:15px;font-weight:600;color:#1e1e1e;"><?php esc_html_e( 'Attachment Auditor', 'versi-content-tools' ); ?></h3>
-					<p style="margin:2px 0 0;font-size:13px;color:#6b7280;"><?php esc_html_e( 'Find images used in your content that are not linked to any post.', 'versi-content-tools' ); ?></p>
+					<p style="margin:2px 0 0;font-size:13px;color:#4b5563;"><?php esc_html_e( 'Find images used in your content that are not linked to any post.', 'versi-content-tools' ); ?></p>
 				</div>
 			</div>
 			<div class="versi-auditor-body">

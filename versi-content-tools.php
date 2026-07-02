@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'VERSI_VERSION', '1.6.0' );
+define( 'VERSI_VERSION', '1.8.0' );
 define( 'VERSI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

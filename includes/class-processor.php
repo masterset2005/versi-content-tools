@@ -436,6 +436,8 @@ class Versi_Processor {
 	 * @param string $generated Generated value (nullable).
 	 * @param bool   $changed   Whether value changed.
 	 * @param string $thumbnail Thumbnail URL.
+	 * @param bool   $rate_limited Whether this was a rate-limit error.
+	 * @param int    $retry_after  Seconds to wait before retry.
 	 * @return array
 	 */
 	public function result( $id, $title, $status, $previous = null, $error = null, $reason = null, $generated = null, $changed = false, $thumbnail = '', $rate_limited = false, $retry_after = 0 ) {
@@ -483,14 +485,14 @@ class Versi_Processor {
 	 * @return array
 	 */
 	public function classify_error( $message ) {
-		// Default: no retry
+		// Default: no retry.
 		$result = array(
 			'retry_after'  => false,
 			'should_retry' => false,
 			'reason'       => 'unknown',
 		);
 
-		// 1. Rate Limit parsing
+		// 1. Rate Limit parsing.
 		$retry_after = false;
 		if ( preg_match( '/Please retry in\s+([\d.]+)\s*s/i', $message, $m ) ) {
 			$retry_after = (float) $m[1];
@@ -507,15 +509,15 @@ class Versi_Processor {
 			return $result;
 		}
 
-		// 2. Transient Errors (503, Timeouts)
+		// 2. Transient Errors (503, Timeouts).
 		if ( preg_match( '/\b(?:503|Service Unavailable|timeout|cURL error 28)\b/i', $message ) ) {
-			$result['retry_after']  = 30.0; // Default backoff
+			$result['retry_after']  = 30.0; // Default backoff.
 			$result['should_retry'] = true;
 			$result['reason']       = 'transient_error';
 			return $result;
 		}
 
-		// 3. Fatal/Non-retryable (400)
+		// 3. Fatal/Non-retryable (400).
 		if ( preg_match( '/\b(?:400|Bad Request)\b/i', $message ) ) {
 			$result['should_retry'] = false;
 			$result['reason']       = 'bad_request';

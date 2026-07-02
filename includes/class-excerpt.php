@@ -44,7 +44,7 @@ class Versi_Excerpt_Processor {
 		}
 
 		list( $system, $prompt ) = $this->build_prompt( $existing_excerpt, $target_length );
-		$content = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
+		$content                 = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
 
 		if ( '1' === get_option( 'versi_match_author_tone', '0' ) ) {
 			$style = $shared->get_author_style_sample( $post_id );
@@ -80,7 +80,7 @@ class Versi_Excerpt_Processor {
 		}
 
 		if ( is_wp_error( $generated ) ) {
-			$error_msg  = sprintf(
+			$error_msg = sprintf(
 			/* translators: %s: AI provider error message */
 				__( 'AI generation failed: %s', 'versi-content-tools' ),
 				$generated->get_error_message()
@@ -92,7 +92,10 @@ class Versi_Excerpt_Processor {
 				'error',
 				null,
 				$error_msg,
-				null, null, false, '',
+				null,
+				null,
+				false,
+				'',
 				$error_info['should_retry'],
 				$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
 			);
@@ -121,8 +124,6 @@ class Versi_Excerpt_Processor {
 	/**
 	 * Build the system prompt for excerpt generation.
 	 *
-	 * @param string $existing      Current excerpt (may be empty).
-	 * @param int    $target_length Target word count.
 	 * @return string
 	 */
 	public function default_prompt(): string {

@@ -474,7 +474,7 @@ class Versi_Extensions {
 		$builder = Versi_Processor::init()->apply_text_preference( $builder, 'seo' );
 
 		self::$last_rate_limit = null;
-		$generated = $builder->generate_text();
+		$generated             = $builder->generate_text();
 
 		if ( is_wp_error( $generated ) ) {
 			$error_info = Versi_Processor::init()->classify_error( $generated->get_error_message() );

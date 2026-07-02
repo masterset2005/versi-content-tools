@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 License: GPL v2 or later
 
 AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
@@ -87,6 +87,19 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 1.8.0 =
+* New: Image size optimization setting — choose which attachment size (thumbnail, medium, large, full) to send to the AI
+* New: Attachment Auditor — scan content for unlinked images and link them to their attachment posts
+* New: Improved AI error handling with structured error classification (503, timeout, 400, rate-limit)
+* Fix: "Generate Missing Excerpts" now correctly processes only posts without excerpts
+* Fix: Duplicate HTML IDs on processing tab panels resolved for WCAG compliance
+* Fix: WCAG focus management — tabindex, focus() calls on panels and headings, global focus outline
+* Fix: Color contrast improvements for small-status text (gray-600 replaces gray-500)
+* Fix: Decorative SVG icons marked aria-hidden + focusable="false" for screen readers
+* Tweak: UI modernization — card-based design with gradient backgrounds, SVG icons, rounded corners
+* Tweak: Auditor moved to processing page as a sub-tab (Live / Background / Auditor)
+* Dev: PHPCS auto-fixes (34+ formatting issues), PHPDoc corrections, undefined variable hardening
 
 = 1.6.0 =
 * New: Auto-retry on API rate limits (429) — detects provider retry-after, waits and retries up to 5 times

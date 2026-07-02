@@ -33,11 +33,11 @@ class Versi_Alt_Text_Processor {
 		$file  = get_attached_file( $attachment_id );
 		$mime  = get_post_mime_type( $attachment_id );
 		$title = get_the_title( $attachment_id );
-		
-		// Get requested image size
+
+		// Get requested image size.
 		$size = get_option( 'versi_alt_image_size', 'large' );
-		
-		// If size is not 'full', try to find the path to the resized image
+
+		// If size is not 'full', try to find the path to the resized image.
 		if ( 'full' !== $size ) {
 			$meta = wp_get_attachment_metadata( $attachment_id );
 			if ( isset( $meta['sizes'][ $size ] ) ) {
