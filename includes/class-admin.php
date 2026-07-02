@@ -1948,11 +1948,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$safe_label  = __( 'Update Alt Attributes in Content', 'versi-content-tools' );
 			$safe_mode   = 'update_alt';
 			$short_label = __( 'Strip Self-Linking Image Wrappers', 'versi-content-tools' );
-			$short_mode  = 'strip_links';
+			$short_mode  = 'strip links';
 			$dest_label  = __( 'Apply Both (Alt + Strip Links)', 'versi-content-tools' );
 			$dest_mode   = 'both';
+		} elseif ( 'seo' === $workload ) {
+			$safe_label  = __( 'Generate Focus Keywords', 'versi-content-tools' );
+			$safe_mode   = 'generate';
+			$dest_label  = __( 'Regenerate All Keywords', 'versi-content-tools' );
+			$dest_mode   = 'regenerate';
 		} else {
-			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-tools' );
+			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-//content-tools' );
 			$safe_mode   = 'missing';
 			$short_label = __( 'Fix Short Excerpts', 'versi-content-tools' );
 			$short_mode  = 'short';

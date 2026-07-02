@@ -105,7 +105,8 @@ class Versi_Auditor {
 				)
 			);
 
-			$pattern = '/(?<![\w-])' . preg_quote( $filename, '/' ) . '(?![A-Za-z0-9_-])(?=\.jpg|\.jpeg|\.png|\.gif|\.webp|\.svg)/i';
+			// Fix: a simple regex that checks for the filename bounded by non-word characters.
+			$pattern = '/(?<![\w-])' . preg_quote( $filename, '/' ) . '(?![A-Za-z0-9_-])/i';
 
 			foreach ( $found_in as $post ) {
 				if ( preg_match( $pattern, $post->post_content ) ) {
