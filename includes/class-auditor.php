@@ -28,6 +28,10 @@ class Versi_Auditor {
 			"SELECT ID, guid FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' AND post_parent = 0"
 		);
 
+		if ( empty( $unlinked_attachments ) ) {
+			return array();
+		}
+
 		$potential_links = array();
 
 		foreach ( $unlinked_attachments as $attachment ) {
@@ -41,6 +45,10 @@ class Versi_Auditor {
 					'%' . $wpdb->esc_like( $filename ) . '%'
 				)
 			);
+
+			if ( empty( $found_in ) ) {
+				continue;
+			}
 
 			foreach ( $found_in as $post ) {
 				$potential_links[] = array(
