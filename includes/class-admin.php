@@ -2603,7 +2603,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 		$counted = 0;
 		foreach ( $ids_result['ids'] as $id ) {
-			if ( 'alt' === $workload ) {
+		$safe_label   = '';
+		$safe_mode    = '';
+		$review_label = null;
+		$review_mode  = '';
+		$short_label  = '';
+		$short_mode   = '';
+		$dest_label   = '';
+		$dest_mode    = '';
+
+		if ( 'alt' === $workload ) {
 				$result = $alt_proc->process_single( $id );
 			} elseif ( 'seo' === $workload ) {
 				$result = $this->process_seo_single( $id );

@@ -43,8 +43,8 @@ class Versi_Excerpt_Processor {
 			$target_length = 55;
 		}
 
-		$system = $this->build_prompt( $existing_excerpt, $target_length );
-		$prompt = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
+		list( $system, $prompt ) = $this->build_prompt( $existing_excerpt, $target_length );
+		$content = mb_substr( $content, 0, absint( get_option( 'versi_content_limit', 500 ) ) );
 
 		if ( '1' === get_option( 'versi_match_author_tone', '0' ) ) {
 			$style = $shared->get_author_style_sample( $post_id );
@@ -148,12 +148,12 @@ class Versi_Excerpt_Processor {
 	 *
 	 * @param string $existing      Current excerpt (may be empty).
 	 * @param int    $target_length Target word count.
-	 * @return string
+	 * @return array
 	 */
 	public function build_prompt( $existing = '', $target_length = 55 ) {
 		$custom = get_option( 'versi_excerpt_prompt', '' );
 		if ( ! empty( trim( $custom ) ) ) {
-			return $custom;
+			return array( '', $custom );
 		}
 
 		$prompt = $this->default_prompt();
@@ -163,7 +163,7 @@ class Versi_Excerpt_Processor {
 				. 'Improve upon it — do not repeat it verbatim.' . "\n";
 		}
 
-		return $prompt;
+		return array( '', $prompt );
 	}
 
 	/**

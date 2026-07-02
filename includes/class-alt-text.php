@@ -30,13 +30,13 @@ class Versi_Alt_Text_Processor {
 			$kw_post_id                = $parent_id ? $parent_id : $attachment_id;
 			$context['focus_keywords'] = Versi_Extensions::init()->get_focus_keywords( $kw_post_id );
 		}
+		$file  = get_attached_file( $attachment_id );
+		$mime  = get_post_mime_type( $attachment_id );
 		$title = get_the_title( $attachment_id );
-
+		
 		// Get requested image size
 		$size = get_option( 'versi_alt_image_size', 'large' );
-
-		$file = get_attached_file( $attachment_id );
-
+		
 		// If size is not 'full', try to find the path to the resized image
 		if ( 'full' !== $size ) {
 			$meta = wp_get_attachment_metadata( $attachment_id );
