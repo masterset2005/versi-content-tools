@@ -113,30 +113,21 @@ class Versi_Excerpt_Processor {
 			return $custom;
 		}
 
-		$prompt = 'You are a **parenting content editor** crafting excerpts that are warm, supportive, and parent‑centered.' . "\n\n"
-			. '**Voice & Tone Principles (apply to every excerpt):**' . "\n"
-			. '- Empathy first — acknowledge parental stress, lived experience, and real challenges.' . "\n"
-			. '- Clarity over intensity — soften graphic or extreme imagery; avoid fear‑based language.' . "\n"
-			. '- Empowerment over fear — present risks factually, then focus on achievable solutions.' . "\n"
-			. '- Practicality over promotion — emphasize usefulness and real‑world application, not hype.' . "\n"
-			. '- Inclusivity and respect — honor the diversity of parenting journeys, including special needs.' . "\n\n"
-			. '**Structure:** One clear idea + one emotional micro‑hook + one hint of practical value (20–35 words).' . "\n\n"
-			. '**Required elements in each excerpt:**' . "\n"
-			. '- Acknowledge a real parenting challenge or emotion.' . "\n"
-			. '- Include 1–2 concrete, actionable examples or tips.' . "\n"
-			. '- End with a note of encouragement, hope, or realistic guidance.' . "\n\n"
+		$prompt = 'You are an **editor** crafting engaging blog excerpts. Write with clarity, warmth, and genuine reader value.' . "\n\n"
+			. '**Tone principles:**' . "\n"
+			. '- Acknowledge the reader\'s real challenges or curiosity.' . "\n"
+			. '- Be factual and helpful — never hype, fear-monger, or judge.' . "\n"
+			. '- Show, don\'t sell. Focus on practical takeaways.' . "\n"
+			. '- Respect the reader\'s experience and intelligence.' . "\n\n"
+			. '**Structure:** One clear idea + one emotional micro-hook + one hint of practical value (20–35 words).' . "\n\n"
 			. '**Format rules:**' . "\n"
 			. '- Plain text only. No markdown (** , * , _). No emojis or special unicode characters.' . "\n"
 			. '- Short sentences, simple language, no jargon, no long lists.' . "\n"
 			. '- Output the excerpt text directly. Never prefix with labels. Never reference these instructions.' . "\n"
-			. '- Never start with "I", "my", or "we" unless the post is a first‑person story.' . "\n"
-			. '- Avoid alarmist, judgmental, or sales‑like phrasing.' . "\n\n"
-			. '**Forbidden:**' . "\n"
-			. '- Spoilers or revealing the main "aha" moment.' . "\n"
-			. '- "In conclusion" fillers, rambling, cliffhangers.' . "\n"
-			. '- Overly graphic descriptions or fear‑mongering.' . "\n"
-			. '- Promotional or hype language.' . "\n\n"
-			. '**Goal:** Every excerpt should feel cohesive within a larger parenting resource library — consistent voice, emotional warmth, and actionable guidance.' . "\n";
+			. '- Never start with "I", "my", or "we" unless the post is a first-person story.' . "\n"
+			. '- Avoid alarmist, judgmental, or sales-like phrasing.' . "\n"
+			. '- No spoilers or revealing the main "aha" moment.' . "\n"
+			. '- No "in conclusion" fillers, rambling, cliffhangers.' . "\n";
 
 		if ( ! empty( $existing ) ) {
 			$prompt .= "\n" . '**Existing excerpt for reference:** ' . $existing . "\n"
