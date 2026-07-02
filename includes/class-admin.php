@@ -1213,13 +1213,34 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		<?php
 	}
 
-	/**
-	 * Render the Live Process tab: mode buttons, overwrite warning, processing area.
-	 *
-	 * @param string $workload 'alt' or 'excerpt'.
-	 * @return void
-	 */
-	private function render_live_tab( $workload ) {
+		// Helper to format error message with potential link.
+		public function format_error( $error ) {
+			if ( preg_match( '/https?:\/\/[^\s]+/', $error, $matches ) ) {
+				$url = esc_url( $matches[0] );
+				return str_replace( $url, '<a href="' . $url . '" target="_blank">' . $url . '</a>', esc_html( $error ) );
+			}
+			return esc_html( $error );
+		}
+
+		/**
+		 * Render results entry (with retry button).
+		 */
+		private function render_result_entry( $result, $workload ) {
+			$status_color = 'success' === $result['status'] ? '#16a34a' : ( 'error' === $result['status'] ? '#dc2626' : '#6b7280' );
+			?>
+			<div class="versi-entry" style="border-left:4px solid <?php echo esc_attr( $status_color ); ?>;">
+				<span>#<?php echo esc_html( $result['id'] ); ?></span>
+				<strong><?php echo esc_html( $result['title'] ); ?></strong>
+				<span style="color:<?php echo esc_attr( $status_color ); ?>;"><?php echo esc_html( $result['status'] ); ?></span>
+				<?php if ( ! empty( $result['error'] ) ) : ?>
+					<span style="color:#dc2626;"><?php echo wp_kses_post( $this->format_error( $result['error'] ) ); ?></span>
+					<button class="button button-small versi-retry-btn" data-id="<?php echo esc_attr( $result['id'] ); ?>" data-workload="<?php echo esc_attr( $workload ); ?>">
+						<?php esc_html_e( 'Retry', 'versi-content-tools' ); ?>
+					</button>
+				<?php endif; ?>
+			</div>
+			<?php
+		}
 		$base_url = admin_url( 'upload.php?page=versi-processing&versi_workload=' . $workload . '&versi_mode_tab=live' );
 
 		if ( 'alt' === $workload ) {
@@ -2264,12 +2285,23 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					if (resp.data.complete) {
 						if (combined.length > 0) {
 							const totalPosts = new Set(combined.map(i => i.post_id)).size;
-							let html = '<div class="versi-audit-summary"><?php echo esc_js( __( 'Found', 'versi-content-tools' ) ); ?> <strong>' + combined.length + '</strong> <?php echo esc_js( __( 'unlinked image(s) across', 'versi-content-tools' ) ); ?> <strong>' + totalPosts + '</strong> <?php echo esc_js( __( 'post(s).', 'versi-content-tools' ) ); ?></div>';
-							html += '<div style="margin-bottom:10px;"><button class="button" id="versi-bulk-link-btn"><?php echo esc_js( __( 'Link Selected', 'versi-content-tools' ) ); ?></button></div>';
-							html += '<table class="wp-list-table widefat fixed striped"><thead><tr><th style="width:40px;"><input type="checkbox" id="versi-select-all"></th><th><?php echo esc_js( __( 'Image', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Found In', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Action', 'versi-content-tools' ) ); ?></th></tr></thead><tbody>';
-							combined.forEach(item => {
-								html += '<tr><td><input type="checkbox" class="versi-link-check" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"></td><td><a href="' + item.att_edit_link + '" target="_blank">#' + item.attachment_id + '</a><br><small style="color:#666;">' + item.att_path + '</small></td><td><a href="' + item.post_edit_link + '" target="_blank">' + item.post_title + '</a></td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_js( __( 'Link', 'versi-content-tools' ) ); ?></button></td></tr>';
-							});
+						let html = '<div class="versi-audit-summary"><?php echo esc_js( __( 'Found', 'versi-content-tools' ) ); ?> <strong>' + combined.length + '</strong> <?php echo esc_js( __( 'unlinked image(s) across', 'versi-content-tools' ) ); ?> <strong>' + totalPosts + '</strong> <?php echo esc_js( __( 'post(s).', 'versi-content-tools' ) ); ?></div>';
+						html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;">';
+						html += '	<div style="display:flex;gap:8px;align-items:center;">';
+						html += '		<button class="button" id="versi-bulk-link-btn"><?php echo esc_js( __( 'Link Selected', 'versi-content-tools' ) ); ?></button>';
+						html += '		<button class="button" id="versi-audit-export-csv"><?php echo esc_js( __( 'Export CSV', 'versi-content-tools' ) ); ?></button>';
+						html += '	</div>';
+						html += '	<div>';
+						html += '		<select id="versi-audit-filter" style="font-size:12px;padding:2px 5px;border-radius:4px;">';
+						html += '			<option value="all"><?php echo esc_js( __( 'All Results', 'versi-content-tools' ) ); ?></option>';
+						html += '			<option value="verified"><?php echo esc_js( __( 'Verified Only', 'versi-content-tools' ) ); ?></option>';
+						html += '		</select>';
+						html += '	</div>';
+						html += '</div>';
+						html += '<table class="wp-list-table widefat fixed striped"><thead><tr><th style="width:40px;"><input type="checkbox" id="versi-select-all"></th><th><?php echo esc_js( __( 'Image', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Found In', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Action', 'versi-content-tools' ) ); ?></th></tr></thead><tbody>';
+						combined.forEach(item => {
+							html += '<tr><td><input type="checkbox" class="versi-link-check" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"></td><td><a href="' + item.att_edit_link + '" target="_blank">#' + item.attachment_id + '</a><br><small style="color:#666;">' + item.att_path + '</small></td><td><a href="' + item.post_edit_link + '" target="_blank">' + item.post_title + '</a></td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_js( __( 'Link', 'versi-content-tools' ) ); ?></button></td></tr>';
+						});
 							html += '</tbody></table>';
 							$results.html(html);
 						} else {
