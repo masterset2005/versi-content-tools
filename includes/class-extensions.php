@@ -310,9 +310,7 @@ class Versi_Extensions {
 					<label for="versi_seo_prompt"><?php esc_html_e( 'Custom Prompt', 'versi-content-tools' ); ?></label>
 				</th>
 				<td>
-					<textarea id="versi_seo_prompt" name="versi_seo_prompt" rows="8" class="large-text code">
-					<?php echo esc_textarea( get_option( 'versi_seo_prompt', '' ) ); ?>
-					</textarea>
+					<textarea id="versi_seo_prompt" name="versi_seo_prompt" rows="8" class="large-text code"><?php echo esc_textarea( get_option( 'versi_seo_prompt', '' ) ); ?></textarea>
 					<p class="description"><?php esc_html_e( 'Custom system instruction for SEO keyword generation. Leave empty for the built-in default.', 'versi-content-tools' ); ?></p>
 					<details style="margin-top:8px;">
 						<summary><?php esc_html_e( 'Available variables', 'versi-content-tools' ); ?></summary>

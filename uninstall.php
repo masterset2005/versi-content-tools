@@ -48,6 +48,8 @@ $versi_options = array(
 	'versi_ext_yoast_auto_focus',
 	'versi_ext_rankmath_auto_focus',
 	'versi_ext_seopress_auto_focus',
+	// SEO extension.
+	'versi_seo_prompt',
 );
 
 foreach ( $versi_options as $versi_opt ) {

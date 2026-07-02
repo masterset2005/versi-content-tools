@@ -63,6 +63,15 @@ function versi_init() {
 			delete_option( 'versi_text_model' );
 		}
 
+		// Strip leading whitespace from textarea prompts saved with HTML indentation.
+		$prompt_options = array( 'versi_alt_single_prompt', 'versi_alt_system_prompt', 'versi_alt_compare_prompt', 'versi_excerpt_prompt', 'versi_seo_prompt' );
+		foreach ( $prompt_options as $opt ) {
+			$val = get_option( $opt, '' );
+			if ( '' !== $val && $val !== trim( $val ) ) {
+				update_option( $opt, trim( $val ) );
+			}
+		}
+
 		update_option( 'versi_version', VERSI_VERSION, false );
 	}
 

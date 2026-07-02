@@ -600,9 +600,7 @@ class Versi_Admin {
 								<label for="versi_alt_single_prompt"><?php esc_html_e( 'Single-Pass Prompt', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
-								<textarea id="versi_alt_single_prompt" name="versi_alt_single_prompt" rows="12" class="large-text code">
-								<?php echo esc_textarea( get_option( 'versi_alt_single_prompt', '' ) ); ?>
-								</textarea>
+								<textarea id="versi_alt_single_prompt" name="versi_alt_single_prompt" rows="12" class="large-text code"><?php echo esc_textarea( get_option( 'versi_alt_single_prompt', '' ) ); ?></textarea>
 								<p class="description"><?php esc_html_e( 'Combined system instruction for Single-Pass mode. Use the variables below.', 'versi-content-tools' ); ?></p>
 								<details style="margin-top:8px;">
 									<summary><?php esc_html_e( 'Available variables', 'versi-content-tools' ); ?></summary>
@@ -629,9 +627,7 @@ class Versi_Admin {
 								<label for="versi_alt_system_prompt"><?php esc_html_e( 'Vision Prompt (Two-Pass)', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
-								<textarea id="versi_alt_system_prompt" name="versi_alt_system_prompt" rows="12" class="large-text code">
-								<?php echo esc_textarea( get_option( 'versi_alt_system_prompt', '' ) ); ?>
-								</textarea>
+								<textarea id="versi_alt_system_prompt" name="versi_alt_system_prompt" rows="12" class="large-text code"><?php echo esc_textarea( get_option( 'versi_alt_system_prompt', '' ) ); ?></textarea>
 								<p class="description"><?php esc_html_e( 'System instruction for the vision model in Two-Pass mode.', 'versi-content-tools' ); ?></p>
 								<details style="margin-top:8px;">
 									<summary><?php esc_html_e( 'Available variables', 'versi-content-tools' ); ?></summary>
@@ -662,9 +658,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 								<label for="versi_alt_compare_prompt"><?php esc_html_e( 'Synthesizer Prompt (Two-Pass)', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
-								<textarea id="versi_alt_compare_prompt" name="versi_alt_compare_prompt" rows="8" class="large-text code">
-								<?php echo esc_textarea( get_option( 'versi_alt_compare_prompt', '' ) ); ?>
-								</textarea>
+								<textarea id="versi_alt_compare_prompt" name="versi_alt_compare_prompt" rows="8" class="large-text code"><?php echo esc_textarea( get_option( 'versi_alt_compare_prompt', '' ) ); ?></textarea>
 								<p class="description"><?php esc_html_e( 'System instruction for the text-only Synthesizer step.', 'versi-content-tools' ); ?></p>
 								<details style="margin-top:8px;">
 									<summary><?php esc_html_e( 'Available variables', 'versi-content-tools' ); ?></summary>
@@ -742,9 +736,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 								<label for="versi_excerpt_prompt"><?php esc_html_e( 'Custom Prompt', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
-								<textarea id="versi_excerpt_prompt" name="versi_excerpt_prompt" rows="8" class="large-text code">
-								<?php echo esc_textarea( get_option( 'versi_excerpt_prompt', '' ) ); ?>
-								</textarea>
+								<textarea id="versi_excerpt_prompt" name="versi_excerpt_prompt" rows="8" class="large-text code"><?php echo esc_textarea( get_option( 'versi_excerpt_prompt', '' ) ); ?></textarea>
 								<p class="description"><?php esc_html_e( 'Custom system instruction for excerpt generation. Leave empty for the built-in default.', 'versi-content-tools' ); ?></p>
 								<details style="margin-top:8px;">
 									<summary><?php esc_html_e( 'Available variables', 'versi-content-tools' ); ?></summary>
