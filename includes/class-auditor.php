@@ -44,10 +44,10 @@ class Versi_Auditor {
 
 			foreach ( $found_in as $post ) {
 				$potential_links[] = array(
-					'attachment_id'   => $attachment->ID,
-					'attachment_url'  => $attachment->guid,
-					'post_id'         => $post->ID,
-					'post_title'      => $post->post_title,
+					'attachment_id'  => $attachment->ID,
+					'attachment_url' => $attachment->guid,
+					'post_id'        => $post->ID,
+					'post_title'     => $post->post_title,
 				);
 			}
 		}

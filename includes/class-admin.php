@@ -171,17 +171,17 @@ class Versi_Admin {
 
 		// Fallback model preferences (used when primary is rate-limited).
 		foreach ( array( 'versi_alt_vision_fallback', 'versi_alt_text_fallback', 'versi_excerpt_text_fallback', 'versi_seo_text_fallback' ) as $opt ) {
-		register_setting(
-			'versi_settings',
-			'versi_alt_image_size',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => 'large',
-			)
-		);
+			register_setting(
+				'versi_settings',
+				'versi_alt_image_size',
+				array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'large',
+				)
+			);
 
-		register_setting(
+			register_setting(
 				'versi_settings',
 				$opt,
 				array(
@@ -649,11 +649,11 @@ class Versi_Admin {
 							<td>
 								<select id="versi_alt_image_size" name="versi_alt_image_size" aria-label="<?php esc_attr_e( 'Image Size for AI', 'versi-content-tools' ); ?>" class="regular-text">
 									<?php
-									$sizes = array(
-										'full'      => __( 'Full Size (Original)', 'versi-content-tools' ),
-										'large'     => __( 'Large', 'versi-content-tools' ),
+									$sizes    = array(
+										'full'         => __( 'Full Size (Original)', 'versi-content-tools' ),
+										'large'        => __( 'Large', 'versi-content-tools' ),
 										'medium_large' => __( 'Medium Large', 'versi-content-tools' ),
-										'medium'    => __( 'Medium', 'versi-content-tools' ),
+										'medium'       => __( 'Medium', 'versi-content-tools' ),
 									);
 									$selected = get_option( 'versi_alt_image_size', 'large' );
 									foreach ( $sizes as $value => $label ) {
@@ -2626,8 +2626,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			++$counted;
 		}
 
-		$job['offset']     += $counted;
-		$job['updated_at']  = time();
+		$job['offset']    += $counted;
+		$job['updated_at'] = time();
 
 		if ( $job['processed'] >= $job['total'] ) {
 			$job['is_running'] = false;

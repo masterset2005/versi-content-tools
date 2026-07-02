@@ -34,14 +34,14 @@ class Versi_Alt_Text_Processor {
 
 		// Get requested image size
 		$size = get_option( 'versi_alt_image_size', 'large' );
-		
+
 		$file = get_attached_file( $attachment_id );
-		
+
 		// If size is not 'full', try to find the path to the resized image
 		if ( 'full' !== $size ) {
 			$meta = wp_get_attachment_metadata( $attachment_id );
 			if ( isset( $meta['sizes'][ $size ] ) ) {
-				$path_parts = pathinfo( $file );
+				$path_parts   = pathinfo( $file );
 				$resized_file = $path_parts['dirname'] . '/' . $meta['sizes'][ $size ]['file'];
 				if ( file_exists( $resized_file ) ) {
 					$file = $resized_file;
@@ -107,7 +107,10 @@ class Versi_Alt_Text_Processor {
 					'error',
 					null,
 					$error_msg,
-					null, null, false, '',
+					null,
+					null,
+					false,
+					'',
 					$error_info['should_retry'],
 					$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
 				);
@@ -148,7 +151,10 @@ class Versi_Alt_Text_Processor {
 					'error',
 					null,
 					$error_msg,
-					null, null, false, '',
+					null,
+					null,
+					false,
+					'',
 					$error_info['should_retry'],
 					$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
 				);
