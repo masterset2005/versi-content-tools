@@ -1472,6 +1472,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				$results.empty();
 				$status.text('<?php echo esc_js( __( 'Starting...', 'versi-content-tools' ) ); ?>');
 				$stopLink.show();
+				$('#versi-pause-btn').show();
 				resultsData = [];
 				running = true;
 				stopRequested = false;
@@ -1489,12 +1490,28 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				}
 			});
 
+			let isPaused = false;
+			$('#versi-pause-btn').on('click', function() {
+				isPaused = !isPaused;
+				const $btn = $(this);
+				if (isPaused) {
+					$btn.html('<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg> <?php echo esc_js( __( 'Resume', 'versi-content-tools' ) ); ?>');
+				} else {
+					$btn.html('<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6"/></svg> <?php echo esc_js( __( 'Pause', 'versi-content-tools' ) ); ?>');
+					if (running && !stopRequested) {
+						if ('bulk_review' === mode) fetchReviewBatch();
+						else fetchBatch();
+					}
+				}
+			});
+
 			$stopLink.on('click', function(e) {
 				e.preventDefault();
 				if (!running) return;
 				stopRequested = true;
 				running = false;
 				$stopLink.hide();
+				$('#versi-pause-btn').hide();
 				let ok = 0, errs = 0;
 				resultsData.forEach(r => {
 					if (r.status === 'success') ok++;
@@ -1509,6 +1526,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 			function updateSummary() {
 				$stopLink.hide();
+				$('#versi-pause-btn').hide();
 				if (etaTimer) clearInterval(etaTimer);
 				let ok = 0, errs = 0;
 				resultsData.forEach(r => {
@@ -1737,6 +1755,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 						processBatch(ids, () => {
 							if (stopRequested) return;
+							if (isPaused) {
+								$status.text('<?php echo esc_js( __( 'Paused.', 'versi-content-tools' ) ); ?>');
+								return;
+							}
 							offset += ids.length;
 							saveJobState('paused');
 							setTimeout(fetchBatch, 100);
@@ -1787,6 +1809,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						done += items.length;
 						offset += items.length;
 						saveJobState('paused');
+						if (isPaused) {
+							$status.text('<?php echo esc_js( __( 'Paused.', 'versi-content-tools' ) ); ?>');
+							return;
+						}
 						setTimeout(fetchReviewBatch, 100);
 					},
 					error() {
