@@ -18,6 +18,13 @@ class Versi_Extensions {
 	use Versi_Singleton;
 
 	/**
+	 * Populated by generate_focus_keywords() when the last call was rate-limited.
+	 *
+	 * @var array{retry_after: float}|null
+	 */
+	public static ?array $last_rate_limit = null;
+
+	/**
 	 * Discovered integrations.
 	 *
 	 * @var array
@@ -301,6 +308,16 @@ class Versi_Extensions {
 						}
 						?>
 					</select>
+					<br>
+					<select id="versi_seo_text_fallback" name="versi_seo_text_fallback" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
+						<option value=""><?php esc_html_e( '- No Fallback -', 'versi-content-tools' ); ?></option>
+						<?php
+						$saved_fb = get_option( 'versi_seo_text_fallback', '' );
+						if ( '' !== $saved_fb ) {
+							echo '<option value="' . esc_attr( $saved_fb ) . '" selected>' . esc_html( $saved_fb ) . '</option>';
+						}
+						?>
+					</select>
 				</td>
 			</tr>
 		</table>
@@ -321,9 +338,7 @@ class Versi_Extensions {
 					</details>
 					<details style="margin-top:8px;">
 						<summary><?php esc_html_e( 'Default prompt (click to expand)', 'versi-content-tools' ); ?></summary>
-						<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
-							<?php echo esc_textarea( self::default_prompt() ); ?>
-						</pre>
+						<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;"><?php echo esc_textarea( self::default_prompt() ); ?></pre>
 					</details>
 				</td>
 			</tr>
@@ -458,9 +473,18 @@ class Versi_Extensions {
 			->using_system_instruction( $system );
 		$builder = Versi_Processor::init()->apply_text_preference( $builder, 'seo' );
 
+		self::$last_rate_limit = null;
 		$generated = $builder->generate_text();
 
-		if ( is_wp_error( $generated ) || empty( trim( $generated ) ) ) {
+		if ( is_wp_error( $generated ) ) {
+			$retry = Versi_Processor::init()->parse_rate_limit( $generated->get_error_message() );
+			if ( false !== $retry ) {
+				self::$last_rate_limit = array( 'retry_after' => (float) $retry );
+			}
+			return '';
+		}
+
+		if ( empty( trim( $generated ) ) ) {
 			return '';
 		}
 

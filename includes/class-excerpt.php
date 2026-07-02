@@ -67,16 +67,21 @@ class Versi_Excerpt_Processor {
 		$generated = $builder->generate_text();
 
 		if ( is_wp_error( $generated ) ) {
+			$error_msg  = sprintf(
+			/* translators: %s: AI provider error message */
+				__( 'AI generation failed: %s', 'versi-content-tools' ),
+				$generated->get_error_message()
+			);
+			$retry      = $shared->parse_rate_limit( $generated->get_error_message() );
 			return $shared->result(
 				$post_id,
 				$post->post_title,
 				'error',
 				null,
-				sprintf(
-				/* translators: %s: AI provider error message */
-					__( 'AI generation failed: %s', 'versi-content-tools' ),
-					$generated->get_error_message()
-				)
+				$error_msg,
+				null, null, false, '',
+				false !== $retry,
+				false !== $retry ? (float) $retry : 0
 			);
 		}
 
@@ -107,13 +112,8 @@ class Versi_Excerpt_Processor {
 	 * @param int    $target_length Target word count.
 	 * @return string
 	 */
-	public function build_prompt( $existing = '', $target_length = 55 ) {
-		$custom = get_option( 'versi_excerpt_prompt', '' );
-		if ( ! empty( trim( $custom ) ) ) {
-			return $custom;
-		}
-
-		$prompt = 'You are an **editor** crafting engaging blog excerpts. Write with clarity, warmth, and genuine reader value.' . "\n\n"
+	public function default_prompt(): string {
+		return 'You are an **editor** crafting engaging blog excerpts. Write with clarity, warmth, and genuine reader value.' . "\n\n"
 			. '**Tone principles:**' . "\n"
 			. '- Acknowledge the reader\'s real challenges or curiosity.' . "\n"
 			. '- Be factual and helpful — never hype, fear-monger, or judge.' . "\n"
@@ -128,6 +128,22 @@ class Versi_Excerpt_Processor {
 			. '- Avoid alarmist, judgmental, or sales-like phrasing.' . "\n"
 			. '- No spoilers or revealing the main "aha" moment.' . "\n"
 			. '- No "in conclusion" fillers, rambling, cliffhangers.' . "\n";
+	}
+
+	/**
+	 * Build the system prompt for excerpt generation.
+	 *
+	 * @param string $existing      Current excerpt (may be empty).
+	 * @param int    $target_length Target word count.
+	 * @return string
+	 */
+	public function build_prompt( $existing = '', $target_length = 55 ) {
+		$custom = get_option( 'versi_excerpt_prompt', '' );
+		if ( ! empty( trim( $custom ) ) ) {
+			return $custom;
+		}
+
+		$prompt = $this->default_prompt();
 
 		if ( ! empty( $existing ) ) {
 			$prompt .= "\n" . '**Existing excerpt for reference:** ' . $existing . "\n"

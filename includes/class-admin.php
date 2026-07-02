@@ -167,6 +167,19 @@ class Versi_Admin {
 			)
 		);
 
+		// Fallback model preferences (used when primary is rate-limited).
+		foreach ( array( 'versi_alt_vision_fallback', 'versi_alt_text_fallback', 'versi_excerpt_text_fallback', 'versi_seo_text_fallback' ) as $opt ) {
+			register_setting(
+				'versi_settings',
+				$opt,
+				array(
+					'type'              => 'string',
+					'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
+					'default'           => '',
+				)
+			);
+		}
+
 		register_setting(
 			'versi_settings',
 			'versi_excerpt_min_length',
@@ -558,6 +571,16 @@ class Versi_Admin {
 									}
 									?>
 								</select>
+								<br>
+								<select id="versi_alt_vision_fallback" name="versi_alt_vision_fallback" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
+									<option value=""><?php esc_html_e( '- No Fallback -', 'versi-content-tools' ); ?></option>
+									<?php
+									$saved_fb = get_option( 'versi_alt_vision_fallback', '' );
+									if ( '' !== $saved_fb ) {
+										echo '<option value="' . esc_attr( $saved_fb ) . '" selected>' . esc_html( $saved_fb ) . '</option>';
+									}
+									?>
+								</select>
 							</td>
 						</tr>
 						<tr>
@@ -571,6 +594,16 @@ class Versi_Admin {
 									$saved = get_option( 'versi_alt_text_model', '' );
 									if ( '' !== $saved ) {
 										echo '<option value="' . esc_attr( $saved ) . '" selected>' . esc_html( $saved ) . '</option>';
+									}
+									?>
+								</select>
+								<br>
+								<select id="versi_alt_text_fallback" name="versi_alt_text_fallback" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
+									<option value=""><?php esc_html_e( '- No Fallback -', 'versi-content-tools' ); ?></option>
+									<?php
+									$saved_fb = get_option( 'versi_alt_text_fallback', '' );
+									if ( '' !== $saved_fb ) {
+										echo '<option value="' . esc_attr( $saved_fb ) . '" selected>' . esc_html( $saved_fb ) . '</option>';
 									}
 									?>
 								</select>
@@ -616,9 +649,7 @@ class Versi_Admin {
 								</details>
 								<details style="margin-top:8px;">
 									<summary><?php esc_html_e( 'Default prompt (click to expand)', 'versi-content-tools' ); ?></summary>
-									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
-									<?php echo esc_textarea( Versi_Alt_Text_Processor::init()->default_single_prompt() ); ?>
-									</pre>
+									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;"><?php echo esc_textarea( Versi_Alt_Text_Processor::init()->default_single_prompt() ); ?></pre>
 								</details>
 							</td>
 						</tr>
@@ -647,9 +678,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 								</details>
 								<details style="margin-top:8px;">
 									<summary><?php esc_html_e( 'Default prompt (click to expand)', 'versi-content-tools' ); ?></summary>
-									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
-									<?php echo esc_textarea( Versi_Alt_Text_Processor::init()->default_system_prompt() ); ?>
-									</pre>
+									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;"><?php echo esc_textarea( Versi_Alt_Text_Processor::init()->default_system_prompt() ); ?></pre>
 								</details>
 							</td>
 						</tr>
@@ -675,9 +704,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 								</details>
 								<details style="margin-top:8px;">
 									<summary><?php esc_html_e( 'Default prompt (click to expand)', 'versi-content-tools' ); ?></summary>
-									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
-									<?php echo esc_textarea( Versi_Alt_Text_Processor::init()->default_compare_prompt() ); ?>
-									</pre>
+									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;"><?php echo esc_textarea( Versi_Alt_Text_Processor::init()->default_compare_prompt() ); ?></pre>
 								</details>
 							</td>
 						</tr>
@@ -729,6 +756,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 									}
 									?>
 								</select>
+								<br>
+								<select id="versi_excerpt_text_fallback" name="versi_excerpt_text_fallback" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
+									<option value=""><?php esc_html_e( '- No Fallback -', 'versi-content-tools' ); ?></option>
+									<?php
+									$saved_fb = get_option( 'versi_excerpt_text_fallback', '' );
+									if ( '' !== $saved_fb ) {
+										echo '<option value="' . esc_attr( $saved_fb ) . '" selected>' . esc_html( $saved_fb ) . '</option>';
+									}
+									?>
+								</select>
 							</td>
 						</tr>
 						<tr>
@@ -750,9 +787,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 								</details>
 								<details style="margin-top:8px;">
 									<summary><?php esc_html_e( 'Default prompt (click to expand)', 'versi-content-tools' ); ?></summary>
-									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
-									<?php echo esc_textarea( Versi_Excerpt_Processor::init()->build_prompt() ); ?>
-									</pre>
+									<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;"><?php echo esc_textarea( Versi_Excerpt_Processor::init()->default_prompt() ); ?></pre>
 								</details>
 							</td>
 						</tr>
@@ -1341,6 +1376,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					} else {
 						$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
 					}
+				} else if (r.status === 'error' && r.rate_limited) {
+					$body.text(makeBodyText(r, false));
+					$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
 				} else if (r.status === 'error') {
 					$body.text(makeBodyText(r, false));
 					$entry.css('background', '#fcf0f1').css('border-left', '3px solid #d63638');
@@ -1392,7 +1430,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				$status.text('Processing — ' + (done + 1) + ' / ' + total + eta);
 			}
 
-			function processId(id, cb) {
+			function processId(id, cb, retryCount) {
+				if (retryCount === undefined) retryCount = 0;
+				const maxRetries = 5;
+				let retrying = false;
 				const itemStart = Date.now();
 				updateEtaStatus();
 
@@ -1408,6 +1449,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					success(response) {
 						if (stopRequested) return;
 						const r = response.data;
+						if (r.rate_limited && retryCount < maxRetries) {
+							retrying = true;
+							const waitMs = Math.max((parseFloat(r.retry_after) || 5) * 1000, 5000);
+							$status.text('<?php echo esc_js( __( 'Rate limited — retrying', 'versi-content-tools' ) ); ?> #' + id + ' in ' + Math.ceil(waitMs / 1000) + 's...');
+							setTimeout(() => processId(id, cb, retryCount + 1), waitMs);
+							return;
+						}
+						if (r.rate_limited) {
+							r.error = (r.error || '<?php echo esc_js( __( 'AI generation failed.', 'versi-content-tools' ) ); ?>') + ' <?php echo esc_js( __( '(rate limit exceeded after retries)', 'versi-content-tools' ) ); ?>';
+						}
 						resultsData.push(r);
 						addEntry(r);
 					},
@@ -1417,6 +1468,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						addEntry({ id: id, title: '', status: 'error', error: '<?php echo esc_js( __( 'Request failed', 'versi-content-tools' ) ); ?>' });
 					},
 					complete() {
+						if (stopRequested) return;
+						if (retrying) return;
 						done++;
 						const elapsed = Date.now() - itemStart;
 						itemDurations.push(elapsed);
@@ -1916,6 +1969,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$previous  = $ext->get_focus_keywords( $id );
 		$generated = $ext->generate_focus_keywords( $id );
 		$status    = ! empty( $generated );
+		$rl        = Versi_Extensions::$last_rate_limit;
 
 		$result = Versi_Processor::init()->result(
 			$id,
@@ -1925,7 +1979,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$status ? null : __( 'AI generation failed.', 'versi-content-tools' ),
 			null,
 			$generated,
-			$status
+			$status,
+			'',
+			null !== $rl,
+			null !== $rl ? $rl['retry_after'] : 0
 		);
 		wp_send_json_success( $result );
 	}
@@ -2407,9 +2464,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$this->process_single_batch( $job );
 
 		if ( $job['is_running'] ) {
+			$delay = ! empty( $job['retry_after'] ) ? $job['retry_after'] : 30;
+			unset( $job['retry_after'] );
+
 			// Guard against duplicate scheduling.
 			if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
-				wp_schedule_single_event( time() + 30, 'versi_process_batch' );
+				wp_schedule_single_event( time() + $delay, 'versi_process_batch' );
 			}
 
 			// If the event wasn't stored (e.g. filter blocked it, cron option
@@ -2417,7 +2477,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
 				$this->process_single_batch( $job );
 				if ( $job['is_running'] ) {
-					wp_schedule_single_event( time() + 30, 'versi_process_batch' );
+					wp_schedule_single_event( time() + $delay, 'versi_process_batch' );
 				}
 			}
 		}
@@ -2458,6 +2518,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return false;
 		}
 
+		$counted = 0;
 		foreach ( $ids_result['ids'] as $id ) {
 			if ( 'alt' === $workload ) {
 				$result = $alt_proc->process_single( $id );
@@ -2470,13 +2531,20 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			}
 			++$job['processed'];
 
+			if ( ! empty( $result['rate_limited'] ) ) {
+				--$job['processed'];
+				$job['retry_after'] = ! empty( $result['retry_after'] ) ? max( (int) ceil( $result['retry_after'] ), 5 ) : 30;
+				break;
+			}
+
 			if ( 'error' === $result['status'] ) {
 				++$job['failed'];
 			}
+			++$counted;
 		}
 
-		$job['offset']     = $job['offset'] + count( $ids_result['ids'] );
-		$job['updated_at'] = time();
+		$job['offset']     += $counted;
+		$job['updated_at']  = time();
 
 		if ( $job['processed'] >= $job['total'] ) {
 			$job['is_running'] = false;
@@ -2508,6 +2576,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$previous  = $ext->get_focus_keywords( $id );
 		$generated = $ext->generate_focus_keywords( $id );
 		$status    = ! empty( $generated );
+		$rl        = Versi_Extensions::$last_rate_limit;
 
 		return Versi_Processor::init()->result(
 			$id,
@@ -2517,7 +2586,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$status ? null : __( 'AI generation failed.', 'versi-content-tools' ),
 			null,
 			$generated,
-			$status
+			$status,
+			'',
+			null !== $rl,
+			null !== $rl ? $rl['retry_after'] : 0
 		);
 	}
 

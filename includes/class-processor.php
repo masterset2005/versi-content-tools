@@ -24,7 +24,12 @@ class Versi_Processor {
 		if ( '' === trim( $models ) ) {
 			return array();
 		}
-		return array_map( 'trim', explode( ',', $models ) );
+		$primary = array_map( 'trim', explode( ',', $models ) );
+		$fallback = get_option( 'versi_alt_vision_fallback', '' );
+		if ( '' !== trim( $fallback ) ) {
+			$primary[] = trim( $fallback );
+		}
+		return $primary;
 	}
 
 	/**
@@ -39,12 +44,25 @@ class Versi_Processor {
 			'excerpt' => 'versi_excerpt_text_model',
 			'seo'     => 'versi_seo_text_model',
 		);
+		$fallback_map = array(
+			'alt'     => 'versi_alt_text_fallback',
+			'excerpt' => 'versi_excerpt_text_fallback',
+			'seo'     => 'versi_seo_text_fallback',
+		);
 		$option_name = $option_map[ $workload ] ?? 'versi_alt_text_model';
 		$models      = get_option( $option_name, '' );
 		if ( '' === trim( $models ) ) {
 			return array();
 		}
-		return array_map( 'trim', explode( ',', $models ) );
+		$primary   = array_map( 'trim', explode( ',', $models ) );
+		$fb_option = $fallback_map[ $workload ] ?? '';
+		if ( '' !== $fb_option ) {
+			$fallback = get_option( $fb_option, '' );
+			if ( '' !== trim( $fallback ) ) {
+				$primary[] = trim( $fallback );
+			}
+		}
+		return $primary;
 	}
 
 	/**
@@ -414,7 +432,7 @@ class Versi_Processor {
 	 * @param string $thumbnail Thumbnail URL.
 	 * @return array
 	 */
-	public function result( $id, $title, $status, $previous = null, $error = null, $reason = null, $generated = null, $changed = false, $thumbnail = '' ) {
+	public function result( $id, $title, $status, $previous = null, $error = null, $reason = null, $generated = null, $changed = false, $thumbnail = '', $rate_limited = false, $retry_after = 0 ) {
 		$out = array(
 			'id'     => $id,
 			'title'  => $title,
@@ -432,8 +450,34 @@ class Versi_Processor {
 		if ( null !== $generated ) {
 			$out['generated'] = $generated;
 		}
-		$out['changed']   = (bool) $changed;
-		$out['thumbnail'] = $thumbnail;
+		$out['changed']      = (bool) $changed;
+		$out['thumbnail']    = $thumbnail;
+		$out['rate_limited'] = (bool) $rate_limited;
+		$out['retry_after']  = (float) $retry_after;
 		return $out;
+	}
+
+	/**
+	 * Detect rate-limit errors and extract retry-after seconds.
+	 *
+	 * Inspects common patterns from AI providers (Gemini, OpenAI, etc.).
+	 *
+	 * @param string $message WP_Error message from the AI client.
+	 * @return float|false Retry-after seconds, or false if not rate-limited.
+	 */
+	public function parse_rate_limit( $message ) {
+		// Gemini: "Please retry in 17.226775895s."
+		if ( preg_match( '/Please retry in\s+([\d.]+)\s*s/i', $message, $m ) ) {
+			return (float) $m[1];
+		}
+		// OpenAI: "Rate limit exceeded. Retry after 20s."
+		if ( preg_match( '/(?:retry|try again)(?:\s+after)?\s+in?\s+([\d.]+)\s*s(?:econds?)?/i', $message, $m ) ) {
+			return (float) $m[1];
+		}
+		// Generic 429 / too-many-requests without a time.
+		if ( preg_match( '/\b(?:429|Too Many Requests|rate.limit|quota.exceeded|resource.exhausted)\b/i', $message ) ) {
+			return 5.0;
+		}
+		return false;
 	}
 }
