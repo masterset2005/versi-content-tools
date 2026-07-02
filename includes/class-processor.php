@@ -352,17 +352,17 @@ class Versi_Processor {
 		);
 
 		if ( 'missing' === $mode ) {
-			add_action( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
+			add_filter( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
 		} elseif ( 'short' === $mode ) {
-			add_action( 'posts_where', array( $this, 'filter_short_excerpt' ) );
+			add_filter( 'posts_where', array( $this, 'filter_short_excerpt' ) );
 		}
 
 		$query = new WP_Query( $args );
 
 		if ( 'missing' === $mode ) {
-			remove_action( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
+			remove_filter( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
 		} elseif ( 'short' === $mode ) {
-			remove_action( 'posts_where', array( $this, 'filter_short_excerpt' ) );
+			remove_filter( 'posts_where', array( $this, 'filter_short_excerpt' ) );
 		}
 
 		return array(

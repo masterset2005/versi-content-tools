@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPL v2 or later
 
 AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
@@ -87,6 +87,19 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 1.5.0 =
+* New: Bulk Review mode — AI evaluates existing alt text / excerpts in batches of 30, flags bad items with reasons and regenerate buttons
+* New: Content Cleanup workload tab — bulk-edit alt in post_content + strip self-linking image wrappers (database writes)
+* New: Fix Short Excerpts mode with configurable min length
+* New: Strip Self-Linking Images the_content filter toggle
+* New: GPL disclaimer on About tab
+* Fix: Focus keywords no longer leak as "(Keywords: ...)" appendix in excerpts
+* Fix: Corrected add_filter/add_action mixup on posts_where hooks (PHPStan error)
+* Fix: Nonce mismatches in background job cancel/poll notification
+* Security: Directory hardening (index.php stubs), escaped thumbnail output, JS .prop() injection hardening
+* Tweak: Neutralized default excerpt prompt for site-neutral use; custom prompt textarea for niche overrides
+* Tweak: Available variables + Default prompt display on Extensions tab
 
 = 1.4.0 =
 * New: Content Cleanup workload tab (alt attributes in content + strip self-linking images — writes to DB)
