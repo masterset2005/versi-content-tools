@@ -28,9 +28,31 @@ class Versi_Auditor {
 	public function get_unlinked_count() {
 		global $wpdb;
 		$count = $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' AND post_parent = 0"
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE %s AND post_parent = 0",
+				'image/%'
+			)
 		);
 		return (int) $count;
+	}
+
+	/**
+	 * Get a map of all image filenames currently used in published posts.
+	 *
+	 * @return array
+	 */
+	private function get_used_image_filenames() {
+		global $wpdb;
+		$posts          = $wpdb->get_results( "SELECT post_content FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish'" );
+		$used_filenames = array();
+		foreach ( $posts as $post ) {
+			if ( preg_match_all( '/\b([\w-]+\.(?:jpg|jpeg|png|gif|webp|svg))\b/i', $post->post_content, $matches ) ) {
+				foreach ( $matches[1] as $filename ) {
+					$used_filenames[ strtolower( $filename ) ] = true;
+				}
+			}
+		}
+		return $used_filenames;
 	}
 
 	/**
@@ -46,7 +68,8 @@ class Versi_Auditor {
 		// Get a batch of unlinked image attachments.
 		$unlinked_attachments = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT ID, guid FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' AND post_parent = 0 ORDER BY ID ASC LIMIT %d OFFSET %d",
+				"SELECT ID, guid FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE %s AND post_parent = 0 ORDER BY ID ASC LIMIT %d OFFSET %d",
+				'image/%',
 				$limit,
 				$offset
 			)
@@ -56,31 +79,30 @@ class Versi_Auditor {
 			return array();
 		}
 
+		$used_filenames  = $this->get_used_image_filenames();
 		$potential_links = array();
 
 		foreach ( $unlinked_attachments as $attachment ) {
-			// Get filename from URL.
-			$filename = basename( $attachment->guid );
+			$filename = strtolower( basename( $attachment->guid ) );
 
-			// Look for this filename in post_content.
-			$found_in = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND post_content LIKE %s",
-					'%' . $wpdb->esc_like( $filename ) . '%'
-				)
-			);
-
-			if ( empty( $found_in ) ) {
-				continue;
-			}
-
-			foreach ( $found_in as $post ) {
-				$potential_links[] = array(
-					'attachment_id'  => $attachment->ID,
-					'attachment_url' => $attachment->guid,
-					'post_id'        => $post->ID,
-					'post_title'     => $post->post_title,
+			if ( isset( $used_filenames[ $filename ] ) ) {
+				// We found the filename in our used-images index.
+				// Now find which post(s) it is in.
+				$found_in = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND post_content LIKE %s",
+						'%' . $wpdb->esc_like( basename( $attachment->guid ) ) . '%'
+					)
 				);
+
+				foreach ( $found_in as $post ) {
+					$potential_links[] = array(
+						'attachment_id'  => $attachment->ID,
+						'attachment_url' => $attachment->guid,
+						'post_id'        => $post->ID,
+						'post_title'     => $post->post_title,
+					);
+				}
 			}
 		}
 
