@@ -215,4 +215,107 @@ class Versi_Excerpt_Processor {
 
 		return compact( 'total', 'missing', 'has_excerpt', 'short' );
 	}
+
+	/**
+	 * Bulk review excerpts for quality issues. Sends a batch of items to the
+	 * AI in a single call and returns flagged items with reasons.
+	 *
+	 * @param int[] $ids Array of post IDs to review.
+	 * @return array[] Each item: {id, title, excerpt, status, reason}
+	 */
+	public function bulk_review( $ids ) {
+		$shared = Versi_Processor::init();
+		$items  = array();
+
+		foreach ( $ids as $id ) {
+			$post    = get_post( $id );
+			$excerpt = $post ? $shared->sanitize_input( $post->post_excerpt ) : '';
+			$title   = $post ? $post->post_title : '';
+			if ( '' === $excerpt ) {
+				$items[] = array(
+					'id'      => (int) $id,
+					'excerpt' => '',
+					'title'   => $title,
+					'status'  => 'info',
+					'reason'  => 'Missing excerpt (will be generated)',
+				);
+				continue;
+			}
+			$items[] = array(
+				'id'      => (int) $id,
+				'excerpt' => $excerpt,
+				'title'   => $title,
+			);
+		}
+
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			foreach ( $items as &$item ) {
+				if ( ! isset( $item['status'] ) ) {
+					$item['status'] = 'info';
+					$item['reason'] = 'AI Client not available — review skipped.';
+				}
+			}
+			return $items;
+		}
+
+		$lines = array();
+		foreach ( $items as $i => $item ) {
+			if ( isset( $item['status'] ) ) {
+				continue;
+			}
+			$lines[] = 'ITEM ' . ( $i + 1 ) . ":\nID: " . $item['id'] . "\nExcerpt: " . $item['excerpt'];
+		}
+
+		if ( empty( $lines ) ) {
+			return $items;
+		}
+
+		$prompt  = "Review each blog post excerpt below for quality.\n\n";
+		$prompt .= implode( "\n---\n", $lines );
+		$prompt .= "\n\n---\n";
+		$prompt .= "For each ITEM, respond with one line:\n";
+		$prompt .= "ITEM <num> | GOOD\n";
+		$prompt .= "ITEM <num> | BAD | <reason>\n\n";
+		$prompt .= 'Flag as BAD if: contains a URL, contains "(Keywords:" appendix, contains markdown/HTML/emojis, is very short (<10 words), is overly long, reads as generic/spammy, or is meaningless.';
+
+		$system = 'You are an excerpt quality reviewer. Evaluate excerpt quality for blogs. Respond ONLY with the pipe-delimited format requested. No preamble. No commentary.';
+
+		$builder = wp_ai_client_prompt( $prompt )
+			->using_system_instruction( $system );
+		$builder = $shared->apply_text_preference( $builder, 'excerpt' );
+
+		$result = $builder->generate_text();
+
+		if ( is_wp_error( $result ) ) {
+			foreach ( $items as &$item ) {
+				if ( ! isset( $item['status'] ) ) {
+					$item['status'] = 'info';
+					$item['reason'] = 'Review failed: ' . $result->get_error_message();
+				}
+			}
+			return $items;
+		}
+
+		$result_text = $result;
+		preg_match_all( '/ITEM\s+(\d+)\s*\|\s*(GOOD|BAD)\s*(?:\|\s*(.*))?/i', $result_text, $matches, PREG_SET_ORDER );
+
+		foreach ( $matches as $m ) {
+			$idx    = (int) $m[1] - 1;
+			$status = 'good' === strtolower( $m[2] ) ? 'good' : 'bad';
+			$reason = isset( $m[3] ) ? trim( $m[3] ) : '';
+			if ( isset( $items[ $idx ] ) ) {
+				$items[ $idx ]['status'] = $status;
+				$items[ $idx ]['reason'] = $reason;
+			}
+		}
+
+		foreach ( $items as &$item ) {
+			if ( ! isset( $item['status'] ) ) {
+				$item['status'] = 'info';
+				$item['reason'] = 'Could not parse AI review result.';
+			}
+		}
+
+		return $items;
+	}
 }

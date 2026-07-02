@@ -323,4 +323,109 @@ class Versi_Alt_Text_Processor {
 
 		return compact( 'total', 'missing', 'too_long', 'too_short' );
 	}
+
+	/**
+	 * Bulk review alt texts for quality issues. Sends a batch of items to the
+	 * AI in a single call and returns flagged items with reasons.
+	 *
+	 * @param int[] $ids Array of attachment IDs to review.
+	 * @return array[] Each item: {id, alt, status, reason}
+	 */
+	public function bulk_review( $ids ) {
+		$shared = Versi_Processor::init();
+		$items  = array();
+
+		foreach ( $ids as $id ) {
+			$alt   = get_post_meta( $id, '_wp_attachment_image_alt', true );
+			$title = get_the_title( $id );
+			if ( '' === $alt ) {
+				$items[] = array(
+					'id'     => (int) $id,
+					'alt'    => '',
+					'title'  => $title,
+					'status' => 'info',
+					'reason' => 'Missing alt text (will be generated)',
+				);
+				continue;
+			}
+			$items[] = array(
+				'id'    => (int) $id,
+				'alt'   => $shared->sanitize_input( $alt ),
+				'title' => $title,
+			);
+		}
+
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			foreach ( $items as &$item ) {
+				if ( ! isset( $item['status'] ) ) {
+					$item['status'] = 'info';
+					$item['reason'] = 'AI Client not available — review skipped.';
+				}
+			}
+			return $items;
+		}
+
+		// Build a prompt listing all items.
+		$lines = array();
+		foreach ( $items as $i => $item ) {
+			if ( isset( $item['status'] ) ) {
+				continue;
+			}
+			$lines[] = 'ITEM ' . ( $i + 1 ) . ":\nID: " . $item['id'] . "\nAlt: " . $item['alt'];
+		}
+
+		if ( empty( $lines ) ) {
+			return $items;
+		}
+
+		$prompt  = "Review each alt text below for accessibility quality.\n\n";
+		$prompt .= implode( "\n---\n", $lines );
+		$prompt .= "\n\n---\n";
+		$prompt .= "For each ITEM, respond with one line:\n";
+		$prompt .= "ITEM <num> | GOOD\n";
+		$prompt .= "ITEM <num> | BAD | <reason>\n\n";
+		$prompt .= 'Flag as BAD if: contains a URL, starts with "Image of"/"Photo of"/"Picture of", is generic, contains markdown/HTML/emojis, is over 125 chars or under 15 chars, has keyword stuffing, or is meaningless.';
+
+		$system = 'You are an accessibility quality reviewer. Evaluate alt text quality. Respond ONLY with the pipe-delimited format requested. No preamble. No commentary.';
+
+		$builder = wp_ai_client_prompt( $prompt )
+			->using_system_instruction( $system );
+		$builder = $shared->apply_text_preference( $builder, 'alt' );
+
+		$result = $builder->generate_text();
+
+		if ( is_wp_error( $result ) ) {
+			foreach ( $items as &$item ) {
+				if ( ! isset( $item['status'] ) ) {
+					$item['status'] = 'info';
+					$item['reason'] = 'Review failed: ' . $result->get_error_message();
+				}
+			}
+			return $items;
+		}
+
+		// Parse results.
+		$result_text = $result;
+		preg_match_all( '/ITEM\s+(\d+)\s*\|\s*(GOOD|BAD)\s*(?:\|\s*(.*))?/i', $result_text, $matches, PREG_SET_ORDER );
+
+		foreach ( $matches as $m ) {
+			$idx    = (int) $m[1] - 1;
+			$status = 'good' === strtolower( $m[2] ) ? 'good' : 'bad';
+			$reason = isset( $m[3] ) ? trim( $m[3] ) : '';
+			if ( isset( $items[ $idx ] ) ) {
+				$items[ $idx ]['status'] = $status;
+				$items[ $idx ]['reason'] = $reason;
+			}
+		}
+
+		// Mark any unparsed items as info.
+		foreach ( $items as &$item ) {
+			if ( ! isset( $item['status'] ) ) {
+				$item['status'] = 'info';
+				$item['reason'] = 'Could not parse AI review result.';
+			}
+		}
+
+		return $items;
+	}
 }

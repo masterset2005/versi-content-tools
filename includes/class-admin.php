@@ -56,6 +56,8 @@ class Versi_Admin {
 		// AJAX: Content Cleanup.
 		add_action( 'wp_ajax_versi_content_process_single', array( $this, 'ajax_content_process_single' ) );
 		add_action( 'wp_ajax_versi_content_get_ids', array( $this, 'ajax_content_get_ids' ) );
+		add_action( 'wp_ajax_versi_alt_bulk_review', array( $this, 'ajax_alt_bulk_review' ) );
+		add_action( 'wp_ajax_versi_excerpt_bulk_review', array( $this, 'ajax_excerpt_bulk_review' ) );
 
 		// AJAX: shared.
 		add_action( 'wp_ajax_versi_get_models', array( $this, 'ajax_get_models' ) );
@@ -1031,10 +1033,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$base_url = admin_url( 'upload.php?page=versi-processing&versi_workload=' . $workload . '&versi_mode_tab=live' );
 
 		if ( 'alt' === $workload ) {
-			$safe_label = __( 'Generate Missing Alt Text', 'versi-content-tools' );
-			$safe_mode  = 'missing';
-			$dest_label = __( 'Regenerate All Alt Text', 'versi-content-tools' );
-			$dest_mode  = 'regenerate';
+			$safe_label   = __( 'Generate Missing Alt Text', 'versi-content-tools' );
+			$safe_mode    = 'missing';
+			$review_label = __( 'Bulk Review Alt Text', 'versi-content-tools' );
+			$review_mode  = 'bulk_review';
+			$dest_label   = __( 'Regenerate All Alt Text', 'versi-content-tools' );
+			$dest_mode    = 'regenerate';
 		} elseif ( 'content' === $workload ) {
 			$safe_label  = __( 'Update Alt Attributes in Content', 'versi-content-tools' );
 			$safe_mode   = 'update_alt';
@@ -1043,12 +1047,14 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$dest_label  = __( 'Apply Both (Alt + Strip Links)', 'versi-content-tools' );
 			$dest_mode   = 'both';
 		} elseif ( 'excerpt' === $workload ) {
-			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-tools' );
-			$safe_mode   = 'missing';
-			$short_label = __( 'Fix Short Excerpts', 'versi-content-tools' );
-			$short_mode  = 'short';
-			$dest_label  = __( 'Improve All Excerpts', 'versi-content-tools' );
-			$dest_mode   = 'improve';
+			$safe_label   = __( 'Generate Missing Excerpts', 'versi-content-tools' );
+			$safe_mode    = 'missing';
+			$short_label  = __( 'Fix Short Excerpts', 'versi-content-tools' );
+			$short_mode   = 'short';
+			$review_label = __( 'Bulk Review Excerpts', 'versi-content-tools' );
+			$review_mode  = 'bulk_review';
+			$dest_label   = __( 'Improve All Excerpts', 'versi-content-tools' );
+			$dest_mode    = 'improve';
 		} else {
 			$safe_label = __( 'Generate Missing Keywords', 'versi-content-tools' );
 			$safe_mode  = 'missing';
@@ -1061,6 +1067,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<button type="button" class="button button-primary versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $safe_mode ); ?>">
 					<?php echo esc_html( $safe_label ); ?>
 				</button>
+				<?php if ( isset( $review_label ) ) : ?>
+					<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $review_mode ); ?>">
+						<?php echo esc_html( $review_label ); ?>
+					</button>
+				<?php endif; ?>
 				<?php if ( 'excerpt' === $workload ) : ?>
 					<button type="button" class="button versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
 						<?php echo esc_html( $short_label ); ?>
@@ -1212,6 +1223,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				const $btn = $(this);
 				mode = $btn.data('mode');
 
+				if ('bulk_review' === mode && !confirm('<?php echo esc_js( __( 'This will send batches to AI for quality review (no content will be changed). Continue?', 'versi-content-tools' ) ); ?>')) {
+					return;
+				}
+
 				if ($btn.data('destructive') && !confirm('<?php echo esc_js( __( 'This will overwrite existing content. Are you sure?', 'versi-content-tools' ) ); ?>')) {
 					return;
 				}
@@ -1233,7 +1248,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				if (etaTimer) clearInterval(etaTimer);
 				etaTimer = setInterval(updateEtaStatus, 5000);
 
-				fetchBatch();
+				if ('bulk_review' === mode) {
+					fetchReviewBatch();
+				} else {
+					fetchBatch();
+				}
 			});
 
 			$stopLink.on('click', function(e) {
@@ -1480,7 +1499,97 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				});
 			}
 
-			// Redo / Undo
+			// Review batch size is larger (30 items per call).
+			const reviewBatchSize = 30;
+
+			function fetchReviewBatch() {
+				if (!running) return;
+
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						action: getActionName('bulk_review'),
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						offset: offset,
+						batch: reviewBatchSize,
+					},
+					success(response) {
+						if (stopRequested) return;
+
+						const d = response.data;
+						total = d.total;
+						const items = d.items || [];
+
+						if (items.length === 0) {
+							running = false;
+							updateReviewSummary();
+							return;
+						}
+
+						items.forEach(r => {
+							resultsData.push(r);
+							addReviewEntry(r);
+						});
+
+						done += items.length;
+						offset += items.length;
+						saveJobState('paused');
+						setTimeout(fetchReviewBatch, 100);
+					},
+					error() {
+						if (stopRequested) return;
+						running = false;
+						$stopLink.hide();
+						$status.text('<?php echo esc_js( __( 'Failed to fetch review batch.', 'versi-content-tools' ) ); ?>');
+					},
+				});
+			}
+
+			function addReviewEntry(r) {
+				const $entry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
+				const label = r.title ? r.title + ' ' : '';
+				const excerpt = r.alt || r.excerpt || '';
+				const excerptShort = excerpt.length > 100 ? excerpt.substring(0, 100) + '…' : excerpt;
+
+				if (r.status === 'good') {
+					$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
+					const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
+					$body.text('#' + r.id + ' ' + label + '✓ GOOD' + (excerptShort ? '\n  "' + excerptShort + '"' : ''));
+					$entry.append($body);
+				} else if (r.status === 'bad') {
+					$entry.css('background', '#fcf0f1').css('border-left', '3px solid #d63638');
+					const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
+					$body.text('#' + r.id + ' ' + label + '✗ BAD\n  reason: ' + (r.reason || 'Unknown') + '\n  "' + excerptShort + '"');
+					$entry.append($body);
+					$entry.append(
+						'<button class="versi-review-redo-btn" data-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#b32d2e;">regenerate</button>'
+					);
+				} else {
+					$entry.css('background', '#f0f6fc').css('border-left', '3px solid #2271b1');
+					const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
+					$body.text('#' + r.id + ' ' + label + 'ℹ ' + (r.reason || ''));
+					$entry.append($body);
+				}
+
+				$results.append($entry);
+				$results.scrollTop($results[0].scrollHeight);
+			}
+
+			function updateReviewSummary() {
+				$stopLink.hide();
+				if (etaTimer) clearInterval(etaTimer);
+				let good = 0, bad = 0, info = 0;
+				resultsData.forEach(r => {
+					if (r.status === 'good') good++;
+					else if (r.status === 'bad') bad++;
+					else info++;
+				});
+				$status.text('<?php echo esc_js( __( 'Review complete.', 'versi-content-tools' ) ); ?> ' + good + ' good, ' + bad + ' bad' + (info > 0 ? ', ' + info + ' info' : ''));
+				dismissSavedJob();
+			}
+
+			// Redo / Undo / Review redo
 			$results.on('click', '.versi-redo-btn', function() {
 				const $btn = $(this);
 				const $entry = $btn.closest('.versi-entry');
@@ -1538,6 +1647,42 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					},
 					error() {
 						$btn.text('undo').prop('disabled', false);
+						$entry.css('opacity', '1');
+					},
+				});
+			});
+
+			// Review "regenerate" button — processes a single flagged item.
+			$results.on('click', '.versi-review-redo-btn', function() {
+				const $btn = $(this);
+				const $entry = $btn.closest('.versi-entry');
+				const id = $btn.data('id');
+				if (!id) return;
+
+				$btn.text('...').prop('disabled', true);
+				$entry.css('opacity', '0.5');
+
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						action: getActionName('process_single'),
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+						id: id,
+						mode: 'regenerate',
+					},
+					success(response) {
+						const r = response.data;
+						const $newEntry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
+						$newEntry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
+						const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
+						const gen = r.generated || '';
+						$body.text('#' + r.id + ' ' + (r.title || '') + ' → REGENERATED\n  new: "' + (gen.length > 100 ? gen.substring(0, 100) + '…' : gen) + '"');
+						$newEntry.append($body);
+						$entry.replaceWith($newEntry);
+					},
+					error() {
+						$btn.text('regenerate').prop('disabled', false);
 						$entry.css('opacity', '1');
 					},
 				});
@@ -1892,6 +2037,72 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$changed
 		);
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: bulk review alt texts for quality.
+	 *
+	 * @return void
+	 */
+	public function ajax_alt_bulk_review() {
+		$this->ajax_check();
+
+		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
+		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 30;
+
+		$ids_result = Versi_Processor::init()->get_image_ids( 'regenerate', $offset, $batch, 0 );
+		$ids        = $ids_result['ids'];
+		$total      = $ids_result['total'];
+
+		if ( empty( $ids ) ) {
+			wp_send_json_success(
+				array(
+					'items' => array(),
+					'total' => $total,
+				)
+			);
+		}
+
+		$items = Versi_Alt_Text_Processor::init()->bulk_review( $ids );
+		wp_send_json_success(
+			array(
+				'items' => $items,
+				'total' => $total,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: bulk review excerpts for quality.
+	 *
+	 * @return void
+	 */
+	public function ajax_excerpt_bulk_review() {
+		$this->ajax_check();
+
+		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
+		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 30;
+
+		$ids_result = Versi_Processor::init()->get_excerpt_ids( 'improve', $offset, $batch );
+		$ids        = $ids_result['ids'];
+		$total      = $ids_result['total'];
+
+		if ( empty( $ids ) ) {
+			wp_send_json_success(
+				array(
+					'items' => array(),
+					'total' => $total,
+				)
+			);
+		}
+
+		$items = Versi_Excerpt_Processor::init()->bulk_review( $ids );
+		wp_send_json_success(
+			array(
+				'items' => $items,
+				'total' => $total,
+			)
+		);
 	}
 
 	/**
