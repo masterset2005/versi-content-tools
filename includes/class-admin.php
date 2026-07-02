@@ -67,6 +67,8 @@ class Versi_Admin {
 		add_action( 'wp_ajax_versi_save_job', array( $this, 'ajax_save_job' ) );
 		add_action( 'wp_ajax_versi_load_job', array( $this, 'ajax_load_job' ) );
 		add_action( 'wp_ajax_versi_dismiss_job', array( $this, 'ajax_dismiss_job' ) );
+		add_action( 'wp_ajax_versi_run_audit', array( $this, 'ajax_run_audit' ) );
+		add_action( 'wp_ajax_versi_link_attachment', array( $this, 'ajax_link_attachment' ) );
 		add_action( 'versi_process_batch', array( $this, 'process_background_batch' ) );
 	}
 
@@ -447,6 +449,7 @@ class Versi_Admin {
 					<a class="nav-tab" href="#versi-tab-excerpt"><?php esc_html_e( 'Excerpts', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-extensions"><?php esc_html_e( 'Extensions', 'versi-content-tools' ); ?></a>
 					<a class="nav-tab" href="#versi-tab-about"><?php esc_html_e( 'About', 'versi-content-tools' ); ?></a>
+					<a class="nav-tab" href="#versi-auditor-tab"><?php esc_html_e( 'Auditor', 'versi-content-tools' ); ?></a>
 				</h2>
 
 				<div id="versi-tab-general" class="versi-tab">
@@ -1822,6 +1825,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$dest_mode   = 'improve';
 		}
 		?>
+		<div id="versi-auditor-tab" class="versi-tab" style="display:none;">
+			<h3><?php esc_html_e( 'Attachment Auditor', 'versi-content-tools' ); ?></h3>
+			<p><?php esc_html_e( 'Scan for unlinked images referenced in post content.', 'versi-content-tools' ); ?></p>
+			<button type="button" class="button button-primary" id="versi-audit-btn"><?php esc_html_e( 'Run Audit', 'versi-content-tools' ); ?></button>
+			<div id="versi-audit-results" style="margin-top:16px;"></div>
+		</div>
 		<div id="versi-bg-tab">
 			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
 				<div class="notice notice-info">
@@ -1863,6 +1872,42 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_cancel_job' ) ); ?>'
 						});
 						$(this).prop('disabled', true).text('<?php esc_html_e( 'Cancelling...', 'versi-content-tools' ); ?>');
+					});
+				});
+				</script>
+				<script>
+				jQuery(function($) {
+					$('#versi-audit-btn').on('click', function() {
+						$('#versi-audit-results').text('<?php echo esc_js( __( 'Scanning...', 'versi-content-tools' ) ); ?>');
+						$.post(ajaxurl, {
+							action: 'versi_run_audit',
+							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>'
+						}, function(resp) {
+							if (resp.success && resp.data.length > 0) {
+								let html = '<table class="wp-list-table widefat fixed striped"><thead><tr><th>Image ID</th><th>Found In</th><th>Action</th></tr></thead><tbody>';
+								resp.data.forEach(item => {
+									html += '<tr><td><a href="' + item.attachment_url + '" target="_blank">' + item.attachment_id + '</a></td><td>' + item.post_title + '</td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_html_e( 'Link', 'versi-content-tools' ); ?></button></td></tr>';
+								});
+								html += '</tbody></table>';
+								$('#versi-audit-results').html(html);
+							} else {
+								$('#versi-audit-results').text('<?php esc_html_e( 'No unlinked images found.', 'versi-content-tools' ); ?>');
+							}
+						});
+					});
+
+					$(document).on('click', '.versi-link-btn', function() {
+						const $btn = $(this);
+						$.post(ajaxurl, {
+							action: 'versi_link_attachment',
+							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_link_attachment' ) ); ?>',
+							attachment_id: $btn.data('att'),
+							post_id: $btn.data('post')
+						}, function(resp) {
+							if (resp.success) {
+								$btn.text('<?php esc_html_e( 'Linked', 'versi-content-tools' ); ?>').prop('disabled', true);
+							}
+						});
 					});
 				});
 				</script>
@@ -2592,6 +2637,33 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		update_option( 'versi_job_status', $job, false );
 
 		return $job['is_running'];
+	}
+
+	/**
+	 * AJAX: Run attachment audit.
+	 */
+	public function ajax_run_audit() {
+		check_ajax_referer( 'versi_run_audit' );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error();
+		}
+		wp_send_json_success( Versi_Auditor::init()->find_unlinked_images() );
+	}
+
+	/**
+	 * AJAX: Link attachment.
+	 */
+	public function ajax_link_attachment() {
+		check_ajax_referer( 'versi_link_attachment' );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error();
+		}
+		$att_id  = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
+		$post_id = isset( $_POST['post_id'] ) ? (int) $_POST['post_id'] : 0;
+		if ( ! $att_id || ! $post_id ) {
+			wp_send_json_error();
+		}
+		wp_send_json_success( Versi_Auditor::init()->link_attachment( $att_id, $post_id ) );
 	}
 
 	// -------------------------------------------------------------------------
