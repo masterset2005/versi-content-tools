@@ -2207,9 +2207,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					if (resp.success && resp.data.length > 0) {
 						const totalPosts = new Set(resp.data.map(i => i.post_id)).size;
 						let html = '<div class="versi-audit-summary"><?php echo esc_js( __( 'Found', 'versi-content-tools' ) ); ?> <strong>' + resp.data.length + '</strong> <?php echo esc_js( __( 'unlinked image(s) across', 'versi-content-tools' ) ); ?> <strong>' + totalPosts + '</strong> <?php echo esc_js( __( 'post(s).', 'versi-content-tools' ) ); ?></div>';
-						html += '<table class="wp-list-table widefat fixed striped"><thead><tr><th><?php echo esc_js( __( 'Image', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Found In', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Action', 'versi-content-tools' ) ); ?></th></tr></thead><tbody>';
+						html += '<div style="margin-bottom:10px;"><button class="button" id="versi-bulk-link-btn"><?php echo esc_js( __( 'Link Selected', 'versi-content-tools' ) ); ?></button></div>';
+						html += '<table class="wp-list-table widefat fixed striped"><thead><tr><th style="width:40px;"><input type="checkbox" id="versi-select-all"></th><th><?php echo esc_js( __( 'Image', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Found In', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Action', 'versi-content-tools' ) ); ?></th></tr></thead><tbody>';
 						resp.data.forEach(item => {
-							html += '<tr><td><a href="' + item.attachment_url + '" target="_blank">#' + item.attachment_id + '</a></td><td>' + item.post_title + '</td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_js( __( 'Link', 'versi-content-tools' ) ); ?></button></td></tr>';
+							html += '<tr><td><input type="checkbox" class="versi-link-check" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"></td><td><a href="' + item.attachment_url + '" target="_blank">#' + item.attachment_id + '</a></td><td>' + item.post_title + '</td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_js( __( 'Link', 'versi-content-tools' ) ); ?></button></td></tr>';
 						});
 						html += '</tbody></table>';
 						$results.html(html);
@@ -2225,6 +2226,40 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">' + msg + '</div>');
 					$btn.prop('disabled', false);
 				});
+			});
+
+			$(document).on('click', '#versi-select-all', function() {
+				$('.versi-link-check').prop('checked', $(this).prop('checked'));
+			});
+
+			$(document).on('click', '#versi-bulk-link-btn', function() {
+				const $checked = $('.versi-link-check:checked');
+				if ($checked.length === 0) return;
+				
+				const $btn = $(this).prop('disabled', true);
+				let toLink = [];
+				$checked.each(function() {
+					toLink.push({ att: $(this).data('att'), post: $(this).data('post') });
+				});
+				
+				let processed = 0;
+				function processBatch() {
+					if (processed >= toLink.length) {
+						location.reload();
+						return;
+					}
+					const item = toLink[processed];
+					$.post(ajaxurl, {
+						action: 'versi_link_attachment',
+						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_link_attachment' ) ); ?>',
+						attachment_id: item.att,
+						post_id: item.post
+					}, function() {
+						processed++;
+						processBatch();
+					});
+				}
+				processBatch();
 			});
 
 			$(document).on('click', '.versi-link-btn', function() {
@@ -2958,7 +2993,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		try {
 			if ( $is_batch ) {
 				$total = Versi_Auditor::init()->get_unlinked_count();
-				if ( $total === 0 ) {
+				if ( 0 === $total ) {
 					wp_send_json_success(
 						array(
 							'complete' => true,
