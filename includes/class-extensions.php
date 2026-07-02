@@ -309,7 +309,7 @@ class Versi_Extensions {
 						?>
 					</select>
 					<br>
-					<select id="versi_seo_text_fallback" name="versi_seo_text_fallback" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
+					<select id="versi_seo_text_fallback" name="versi_seo_text_fallback" aria-label="<?php esc_attr_e( 'SEO model fallback', 'versi-content-tools' ); ?>" class="regular-text versi-model-select" style="max-width:400px;margin-top:4px;">
 						<option value=""><?php esc_html_e( '- No Fallback -', 'versi-content-tools' ); ?></option>
 						<?php
 						$saved_fb = get_option( 'versi_seo_text_fallback', '' );
@@ -477,9 +477,22 @@ class Versi_Extensions {
 		$generated = $builder->generate_text();
 
 		if ( is_wp_error( $generated ) ) {
-			$retry = Versi_Processor::init()->parse_rate_limit( $generated->get_error_message() );
-			if ( false !== $retry ) {
-				self::$last_rate_limit = array( 'retry_after' => (float) $retry );
+			$error_info = Versi_Processor::init()->classify_error( $generated->get_error_message() );
+			if ( $error_info['should_retry'] ) {
+				$fallback = Versi_Processor::init()->get_text_fallback( 'seo' );
+				if ( '' !== $fallback ) {
+					$fb_builder = wp_ai_client_prompt( $prompt )
+						->using_system_instruction( $system )
+						->using_model_preference( $fallback );
+					$generated  = $fb_builder->generate_text();
+				}
+			}
+		}
+
+		if ( is_wp_error( $generated ) ) {
+			$error_info = Versi_Processor::init()->classify_error( $generated->get_error_message() );
+			if ( $error_info['should_retry'] ) {
+				self::$last_rate_limit = array( 'retry_after' => (float) $error_info['retry_after'] );
 			}
 			return '';
 		}

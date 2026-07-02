@@ -67,12 +67,25 @@ class Versi_Excerpt_Processor {
 		$generated = $builder->generate_text();
 
 		if ( is_wp_error( $generated ) ) {
+			$error_info = $shared->classify_error( $generated->get_error_message() );
+			if ( $error_info['should_retry'] ) {
+				$fallback = $shared->get_text_fallback( 'excerpt' );
+				if ( '' !== $fallback ) {
+					$fb_builder = wp_ai_client_prompt( $prompt )
+						->using_system_instruction( $system )
+						->using_model_preference( $fallback );
+					$generated  = $fb_builder->generate_text();
+				}
+			}
+		}
+
+		if ( is_wp_error( $generated ) ) {
 			$error_msg  = sprintf(
 			/* translators: %s: AI provider error message */
 				__( 'AI generation failed: %s', 'versi-content-tools' ),
 				$generated->get_error_message()
 			);
-			$retry      = $shared->parse_rate_limit( $generated->get_error_message() );
+			$error_info = $shared->classify_error( $generated->get_error_message() );
 			return $shared->result(
 				$post_id,
 				$post->post_title,
@@ -80,8 +93,8 @@ class Versi_Excerpt_Processor {
 				null,
 				$error_msg,
 				null, null, false, '',
-				false !== $retry,
-				false !== $retry ? (float) $retry : 0
+				$error_info['should_retry'],
+				$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
 			);
 		}
 

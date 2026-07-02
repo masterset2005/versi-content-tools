@@ -3,7 +3,7 @@
  * Plugin Name: Versi Content Tools
  * Plugin URI:  https://versihosting.com/
  * Description: AI-powered alt-text generation and excerpt management. Uses the WP AI Client (WordPress 7.0+).
- * Version:     1.6.0
+ * Version:     1.7.0
  * Author:      Sean Thompson
  * Author URI:  https://stprojects.net/
  * License:     GPL v2 or later

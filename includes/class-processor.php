@@ -24,12 +24,16 @@ class Versi_Processor {
 		if ( '' === trim( $models ) ) {
 			return array();
 		}
-		$primary = array_map( 'trim', explode( ',', $models ) );
-		$fallback = get_option( 'versi_alt_vision_fallback', '' );
-		if ( '' !== trim( $fallback ) ) {
-			$primary[] = trim( $fallback );
-		}
-		return $primary;
+		return array_map( 'trim', explode( ',', $models ) );
+	}
+
+	/**
+	 * Get vision model fallback (if any).
+	 *
+	 * @return string
+	 */
+	public function get_vision_fallback() {
+		return trim( get_option( 'versi_alt_vision_fallback', '' ) );
 	}
 
 	/**
@@ -44,25 +48,28 @@ class Versi_Processor {
 			'excerpt' => 'versi_excerpt_text_model',
 			'seo'     => 'versi_seo_text_model',
 		);
-		$fallback_map = array(
-			'alt'     => 'versi_alt_text_fallback',
-			'excerpt' => 'versi_excerpt_text_fallback',
-			'seo'     => 'versi_seo_text_fallback',
-		);
 		$option_name = $option_map[ $workload ] ?? 'versi_alt_text_model';
 		$models      = get_option( $option_name, '' );
 		if ( '' === trim( $models ) ) {
 			return array();
 		}
-		$primary   = array_map( 'trim', explode( ',', $models ) );
-		$fb_option = $fallback_map[ $workload ] ?? '';
-		if ( '' !== $fb_option ) {
-			$fallback = get_option( $fb_option, '' );
-			if ( '' !== trim( $fallback ) ) {
-				$primary[] = trim( $fallback );
-			}
-		}
-		return $primary;
+		return array_map( 'trim', explode( ',', $models ) );
+	}
+
+	/**
+	 * Get text model fallback for a workload.
+	 *
+	 * @param string $workload 'alt', 'excerpt', or 'seo'.
+	 * @return string
+	 */
+	public function get_text_fallback( $workload ) {
+		$map = array(
+			'alt'     => 'versi_alt_text_fallback',
+			'excerpt' => 'versi_excerpt_text_fallback',
+			'seo'     => 'versi_seo_text_fallback',
+		);
+		$opt = $map[ $workload ] ?? '';
+		return '' !== $opt ? trim( get_option( $opt, '' ) ) : '';
 	}
 
 	/**
@@ -366,7 +373,6 @@ class Versi_Processor {
 			'order'            => 'ASC',
 			'fields'           => 'ids',
 			'no_found_rows'    => false,
-			'suppress_filters' => true,
 		);
 
 		if ( 'missing' === $mode ) {
@@ -466,18 +472,56 @@ class Versi_Processor {
 	 * @return float|false Retry-after seconds, or false if not rate-limited.
 	 */
 	public function parse_rate_limit( $message ) {
-		// Gemini: "Please retry in 17.226775895s."
+		$info = $this->classify_error( $message );
+		return $info['retry_after'];
+	}
+
+	/**
+	 * Classify error message for retry/fallback logic.
+	 *
+	 * @param string $message The error message.
+	 * @return array
+	 */
+	public function classify_error( $message ) {
+		// Default: no retry
+		$result = array(
+			'retry_after'  => false,
+			'should_retry' => false,
+			'reason'       => 'unknown',
+		);
+
+		// 1. Rate Limit parsing
+		$retry_after = false;
 		if ( preg_match( '/Please retry in\s+([\d.]+)\s*s/i', $message, $m ) ) {
-			return (float) $m[1];
+			$retry_after = (float) $m[1];
+		} elseif ( preg_match( '/(?:retry|try again)(?:\s+after)?\s+in?\s+([\d.]+)\s*s(?:econds?)?/i', $message, $m ) ) {
+			$retry_after = (float) $m[1];
+		} elseif ( preg_match( '/\b(?:429|Too Many Requests|rate.limit|quota.exceeded|resource.exhausted)\b/i', $message ) ) {
+			$retry_after = 5.0;
 		}
-		// OpenAI: "Rate limit exceeded. Retry after 20s."
-		if ( preg_match( '/(?:retry|try again)(?:\s+after)?\s+in?\s+([\d.]+)\s*s(?:econds?)?/i', $message, $m ) ) {
-			return (float) $m[1];
+
+		if ( false !== $retry_after ) {
+			$result['retry_after']  = $retry_after;
+			$result['should_retry'] = true;
+			$result['reason']       = 'rate_limit';
+			return $result;
 		}
-		// Generic 429 / too-many-requests without a time.
-		if ( preg_match( '/\b(?:429|Too Many Requests|rate.limit|quota.exceeded|resource.exhausted)\b/i', $message ) ) {
-			return 5.0;
+
+		// 2. Transient Errors (503, Timeouts)
+		if ( preg_match( '/\b(?:503|Service Unavailable|timeout|cURL error 28)\b/i', $message ) ) {
+			$result['retry_after']  = 30.0; // Default backoff
+			$result['should_retry'] = true;
+			$result['reason']       = 'transient_error';
+			return $result;
 		}
-		return false;
+
+		// 3. Fatal/Non-retryable (400)
+		if ( preg_match( '/\b(?:400|Bad Request)\b/i', $message ) ) {
+			$result['should_retry'] = false;
+			$result['reason']       = 'bad_request';
+			return $result;
+		}
+
+		return $result;
 	}
 }

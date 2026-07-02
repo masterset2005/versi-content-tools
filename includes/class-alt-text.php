@@ -66,12 +66,26 @@ class Versi_Alt_Text_Processor {
 			$alt_text = $builder->generate_text();
 
 			if ( is_wp_error( $alt_text ) ) {
+				$error_info = $shared->classify_error( $alt_text->get_error_message() );
+				if ( $error_info['should_retry'] ) {
+					$fallback = $shared->get_vision_fallback();
+					if ( '' !== $fallback ) {
+						$fb_builder = wp_ai_client_prompt( $prompt )
+							->using_system_instruction( $system )
+							->with_file( $file, $mime )
+							->using_model_preference( $fallback );
+						$alt_text   = $fb_builder->generate_text();
+					}
+				}
+			}
+
+			if ( is_wp_error( $alt_text ) ) {
 				$error_msg = sprintf(
 				/* translators: %s: AI provider error message */
 					__( 'AI generation failed: %s', 'versi-content-tools' ),
 					$alt_text->get_error_message()
 				);
-				$retry     = $shared->parse_rate_limit( $alt_text->get_error_message() );
+				$error_info = $shared->classify_error( $alt_text->get_error_message() );
 				return $shared->result(
 					$attachment_id,
 					$title,
@@ -79,8 +93,8 @@ class Versi_Alt_Text_Processor {
 					null,
 					$error_msg,
 					null, null, false, '',
-					false !== $retry,
-					false !== $retry ? (float) $retry : 0
+					$error_info['should_retry'],
+					$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
 				);
 			}
 		} else {
@@ -93,12 +107,26 @@ class Versi_Alt_Text_Processor {
 			$alt_text = $builder->generate_text();
 
 			if ( is_wp_error( $alt_text ) ) {
+				$error_info = $shared->classify_error( $alt_text->get_error_message() );
+				if ( $error_info['should_retry'] ) {
+					$fallback = $shared->get_vision_fallback();
+					if ( '' !== $fallback ) {
+						$fb_builder = wp_ai_client_prompt( $prompt )
+							->using_system_instruction( $system )
+							->with_file( $file, $mime )
+							->using_model_preference( $fallback );
+						$alt_text   = $fb_builder->generate_text();
+					}
+				}
+			}
+
+			if ( is_wp_error( $alt_text ) ) {
 				$error_msg = sprintf(
 				/* translators: %s: AI provider error message */
 					__( 'AI generation failed: %s', 'versi-content-tools' ),
 					$alt_text->get_error_message()
 				);
-				$retry     = $shared->parse_rate_limit( $alt_text->get_error_message() );
+				$error_info = $shared->classify_error( $alt_text->get_error_message() );
 				return $shared->result(
 					$attachment_id,
 					$title,
@@ -106,8 +134,8 @@ class Versi_Alt_Text_Processor {
 					null,
 					$error_msg,
 					null, null, false, '',
-					false !== $retry,
-					false !== $retry ? (float) $retry : 0
+					$error_info['should_retry'],
+					$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
 				);
 			}
 
