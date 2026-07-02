@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.8.0
+Stable tag: 1.9.0
 License: GPL v2 or later
 
 AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
@@ -87,6 +87,11 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 1.9.0 =
+* Fix: Auditor scan reliability using tiered verification (Featured Image lookup + ID class lookup + tokenized filename matching)
+* Fix: Optimized SQL queries to prevent timeouts on large media libraries
+* Dev: Full codebase audit against WP coding standards and security practices
 
 = 1.8.0 =
 * New: Image size optimization setting — choose which attachment size (thumbnail, medium, large, full) to send to the AI
