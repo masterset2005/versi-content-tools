@@ -84,9 +84,129 @@ class Versi_Admin {
 	 * @return void
 	 */
 	public function enqueue_scripts( $hook ) {
-		// All JS is currently inlined in render methods.
-		// This method is kept as a placeholder.
-		unset( $hook );
+		$plugin_pages = array( 'media_page_versi-processing', 'settings_page_versi-content-tools' );
+		if ( ! in_array( $hook, $plugin_pages, true ) ) {
+			return;
+		}
+
+		$css_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/css/admin.css' );
+		wp_enqueue_style( 'versi-admin-css', VERSI_PLUGIN_URL . 'assets/css/admin.css', array(), $css_ver );
+
+		if ( 'settings_page_versi-content-tools' === $hook ) {
+			$js_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/js/admin.js' );
+			wp_enqueue_script( 'versi-admin', VERSI_PLUGIN_URL . 'assets/js/admin.js', array( 'jquery' ), $js_ver, true );
+			wp_localize_script(
+				'versi-admin',
+				'versiAdmin',
+				array(
+					'modelsNonce' => wp_create_nonce( 'versi_get_models' ),
+				)
+			);
+		}
+
+		if ( 'media_page_versi-processing' === $hook ) {
+			$js_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/js/processing.js' );
+			wp_enqueue_script( 'versi-processing', VERSI_PLUGIN_URL . 'assets/js/processing.js', array( 'jquery' ), $js_ver, true );
+			wp_localize_script(
+				'versi-processing',
+				'versiProcessing',
+				array(
+					'nonce'     => wp_create_nonce( 'versi_process' ),
+					'batchSize' => get_option( 'versi_batch_size', 5 ),
+					'workload'  => isset( $_GET['versi_workload'] ) ? sanitize_key( wp_unslash( $_GET['versi_workload'] ) ) : '',
+					'l10n'      => array(
+						'pausedJobMsg'     => __( 'You have a paused job (%1$s mode, %2$s/%3$s items processed).', 'versi-content-tools' ),
+						'resuming'         => __( 'Resuming...', 'versi-content-tools' ),
+						'starting'         => __( 'Starting...', 'versi-content-tools' ),
+						'resume'           => __( 'Resume', 'versi-content-tools' ),
+						'pause'            => __( 'Pause', 'versi-content-tools' ),
+						'stopped'          => __( 'Stopped.', 'versi-content-tools' ),
+						'complete'         => __( 'Complete.', 'versi-content-tools' ),
+						'errors'           => __( 'errors: ', 'versi-content-tools' ),
+						'downloadCsv'      => __( 'Download CSV', 'versi-content-tools' ),
+						'rateLimited'      => __( 'Rate limited — retrying', 'versi-content-tools' ),
+						'aiFailed'         => __( 'AI generation failed.', 'versi-content-tools' ),
+						'rateLimitExceeded' => __( '(rate limit exceeded after retries)', 'versi-content-tools' ),
+						'requestFailed'    => __( 'Request failed', 'versi-content-tools' ),
+						'paused'           => __( 'Paused.', 'versi-content-tools' ),
+						'failedFetch'      => __( 'Failed to fetch item list.', 'versi-content-tools' ),
+						'failedReview'     => __( 'Failed to fetch review batch.', 'versi-content-tools' ),
+						'reviewConfirm'    => __( 'This will send batches to AI for quality review (no content will be changed). Continue?', 'versi-content-tools' ),
+						'overwriteConfirm' => __( 'This will overwrite existing content. Are you sure?', 'versi-content-tools' ),
+						'reviewComplete'   => __( 'Review complete.', 'versi-content-tools' ),
+						'processing'       => __( 'Processing', 'versi-content-tools' ),
+						'remaining'        => __( 'remaining', 'versi-content-tools' ),
+						'in'               => __( 'in', 'versi-content-tools' ),
+					),
+				)
+			);
+
+			$js_ver2 = filemtime( VERSI_PLUGIN_DIR . 'assets/js/background.js' );
+			wp_enqueue_script( 'versi-background', VERSI_PLUGIN_URL . 'assets/js/background.js', array( 'jquery' ), $js_ver2, true );
+			wp_localize_script(
+				'versi-background',
+				'versiBackground',
+				array(
+					'nonce'        => wp_create_nonce( 'versi_process' ),
+					'cancelNonce'  => wp_create_nonce( 'versi_cancel_job' ),
+					'statusNonce'  => wp_create_nonce( 'versi_job_status' ),
+					'l10n'         => array(
+						'cancelling'   => __( 'Cancelling...', 'versi-content-tools' ),
+						'complete'     => __( 'Complete!', 'versi-content-tools' ),
+						'startConfirm' => __( 'Start background processing? You can close the browser and check back later.', 'versi-content-tools' ),
+						'started'      => __( 'Started', 'versi-content-tools' ),
+					),
+				)
+			);
+
+			$js_ver3 = filemtime( VERSI_PLUGIN_DIR . 'assets/js/history.js' );
+			wp_enqueue_script( 'versi-history', VERSI_PLUGIN_URL . 'assets/js/history.js', array( 'jquery' ), $js_ver3, true );
+			wp_localize_script(
+				'versi-history',
+				'versiHistory',
+				array(
+					'nonce' => wp_create_nonce( 'versi_process' ),
+					'l10n'  => array(
+						'clearConfirm' => __( 'Clear all processing history?', 'versi-content-tools' ),
+						'downloadCsv'  => __( 'Download CSV', 'versi-content-tools' ),
+					),
+				)
+			);
+
+			$js_ver4 = filemtime( VERSI_PLUGIN_DIR . 'assets/js/audit.js' );
+			wp_enqueue_script( 'versi-audit', VERSI_PLUGIN_URL . 'assets/js/audit.js', array( 'jquery' ), $js_ver4, true );
+			wp_localize_script(
+				'versi-audit',
+				'versiAudit',
+				array(
+					'nonce'       => wp_create_nonce( 'versi_run_audit' ),
+					'processNonce' => wp_create_nonce( 'versi_process' ),
+					'linkNonce'   => wp_create_nonce( 'versi_link_attachment' ),
+					'batchSize'   => Versi_Auditor::BATCH_SIZE,
+					'l10n'        => array(
+						'initializing'   => __( 'Initializing audit...', 'versi-content-tools' ),
+						'noneFound'      => __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ),
+						'failed'         => __( 'Scan failed. Please try again.', 'versi-content-tools' ),
+						'serverError'    => __( 'Server error (500). This often happens due to memory limits on very large sites.', 'versi-content-tools' ),
+						'timeoutError'   => __( 'Server timeout (504/502). The scan took too long to respond.', 'versi-content-tools' ),
+						'statusError'    => __( 'Request failed with status: ', 'versi-content-tools' ),
+						'scanning'       => __( 'Scanning', 'versi-content-tools' ),
+						'found'          => __( 'Found', 'versi-content-tools' ),
+						'unlinkedImages' => __( 'unlinked image(s) across', 'versi-content-tools' ),
+						'acrossPosts'    => __( 'post(s).', 'versi-content-tools' ),
+						'linkSelected'   => __( 'Link Selected', 'versi-content-tools' ),
+						'exportCsv'      => __( 'Export CSV', 'versi-content-tools' ),
+						'allResults'     => __( 'All Results', 'versi-content-tools' ),
+						'verifiedOnly'   => __( 'Verified Only', 'versi-content-tools' ),
+						'image'          => __( 'Image', 'versi-content-tools' ),
+						'foundIn'        => __( 'Found In', 'versi-content-tools' ),
+						'action'         => __( 'Action', 'versi-content-tools' ),
+						'link'           => __( 'Link', 'versi-content-tools' ),
+						'linked'         => __( 'Linked', 'versi-content-tools' ),
+					),
+				)
+			);
+		}
 	}
 
 	/**
@@ -681,59 +801,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			</div>
 		</div>
 
-		<script>
-		(function($) {
-			$('#versi-tabs a').on('click', function(e) {
-				e.preventDefault();
-				$('#versi-tabs a').removeClass('nav-tab-active');
-				$(this).addClass('nav-tab-active');
-				$('.versi-tab').hide();
-				const $panel = $($(this).attr('href'));
-				$panel.show();
-				$panel.find('h2, h3').first().attr('tabindex', '-1').focus();
-			});
-
-			function toggleMode() {
-				const mode = $('input[name="versi_alt_processing_mode"]:checked').val();
-				$('tr[data-mode]').addClass('hidden');
-				$('tr[data-mode="' + mode + '"]').removeClass('hidden');
-			}
-			$('input[name="versi_alt_processing_mode"]').on('change', toggleMode);
-			toggleMode();
-
-			$('.versi-model-select').each(function() {
-				const $select = $(this);
-				const savedValue = $select.val();
-
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: 'versi_get_models',
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_get_models' ) ); ?>',
-					},
-					success(response) {
-						if (!response.success || !response.data) return;
-						response.data.forEach(provider => {
-							const $group = $('<optgroup>').attr('label', provider.provider);
-							provider.models.forEach(model => {
-								$group.append($('<option>').val(model.id).text(model.name + ' (' + model.id + ')'));
-							});
-							$select.append($group);
-						});
-						if (savedValue) $select.val(savedValue);
-					},
-					error() {
-						$select.replaceWith('<input type="text" id="' + $select.attr('id') + '" name="' + $select.attr('name') + '" value="' + (savedValue || '') + '" class="regular-text code">');
-					}
-				});
-			});
-		})(jQuery);
-		</script>
-		<style>
-		tr[data-mode].hidden { display: none; }
-		a:focus, button:focus, .button:focus, input:focus, select:focus, textarea:focus { outline: 2px solid #2271b1; outline-offset: 2px; }
-		</style>
+		<?php // Styles and scripts are enqueued via enqueue_scripts(). ?>
 		<?php
 	}
 
@@ -754,58 +822,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$exc_stats        = Versi_Excerpt_Processor::init()->get_stats();
 		$is_proc_workload = in_array( $workload, array( 'alt', 'excerpt', 'seo', 'content' ), true );
 		?>
-		<style>
-		.versi-stat-card {
-			display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);box-shadow:0 1px 3px rgba(0,0,0,0.04);min-width:0;
-		}
-		.versi-stat-card .versi-stat-icon {
-			width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-		}
-		.versi-stat-card .versi-stat-number {
-			font-size:20px;font-weight:700;line-height:1.2;color:#1e1e1e;
-		}
-		.versi-stat-card .versi-stat-label {
-			font-size:12px;color:#4b5563;line-height:1.3;
-		}
-		.versi-mode-card {
-			display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:#374151;text-decoration:none;transition:all 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.04);
-		}
-		.versi-mode-card:hover {
-			border-color:#9ca3af;box-shadow:0 2px 8px rgba(0,0,0,0.08);color:#111827;
-		}
-		.versi-mode-card.versi-mode-primary {
-			background:#2271b1;border-color:#2271b1;color:#fff;font-weight:600;
-		}
-		.versi-mode-card.versi-mode-primary:hover {
-			background:#135e96;border-color:#135e96;
-		}
-		.versi-mode-card.versi-mode-danger {
-			color:#dc2626;border-color:#fca5a5;
-		}
-		.versi-mode-card.versi-mode-danger:hover {
-			background:#fef2f2;border-color:#f87171;
-		}
-		.versi-results-box {
-			background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;max-height:600px;overflow-y:auto;font-family:SF Pro Text, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, monospace;font-size:13px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,0.04);
-		}
-		.versi-results-box .versi-entry {
-			display:flex;align-items:flex-start;gap:8px;padding:6px 10px;margin:2px 0;border-radius:8px;transition:background 0.15s;
-		}
-		.versi-auditor-card {
-			border-radius:12px;border:1px solid #e5e7eb;background:linear-gradient(135deg,#f9fafb 0%,#f3f4f6 100%);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
-		}
-		.versi-auditor-card .versi-auditor-header {
-			padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:12px;
-		}
-		.versi-auditor-card .versi-auditor-header svg { flex-shrink:0; }
-		.versi-auditor-card .versi-auditor-body { padding:20px 24px; }
-		.versi-job-notice {
-			border-radius:12px;border:1px solid #dbeafe;background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
-		}
-		.versi-job-notice .versi-job-header { padding:16px 20px;border-bottom:1px solid #dbeafe; }
-		.versi-job-notice .versi-job-body { padding:16px 20px; }
-		</style>
-		<?php
 		$exc_stats = Versi_Excerpt_Processor::init()->get_stats();
 
 		$base_url    = admin_url( 'upload.php?page=versi-processing' );
@@ -838,34 +854,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</p>
 					<button id="versi-bg-cancel" class="button"><?php esc_html_e( 'Cancel Job', 'versi-content-tools' ); ?></button>
 				</div>
-				<script>
-				jQuery(function($) {
-					$('#versi-bg-cancel').on('click', () => {
-						$.post(ajaxurl, {
-							action: 'versi_cancel_job',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_cancel_job' ) ); ?>',
-						}).always(() => location.reload());
-					});
-
-					function poll() {
-						$.post(ajaxurl, {
-							action: 'versi_job_status',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_job_status' ) ); ?>',
-						}, r => {
-							if (r.success && r.data) {
-								if (r.data.is_running) {
-									$('#versi-bg-progress').text(r.data.processed + ' / ' + r.data.total);
-									$('#versi-bg-stall-warn').toggle(r.data.stalled === true);
-									setTimeout(poll, 3000);
-								} else {
-									location.reload();
-								}
-							}
-						});
-					}
-					setTimeout(poll, 3000);
-				});
-				</script>
 			<?php endif; ?>
 
 			<!-- Workload tabs -->
@@ -1167,711 +1155,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<div id="versi-status" style="margin:0 0 10px 0;font-size:13px;color:#4b5563;"></div>
 				<div id="versi-results" aria-live="polite" role="status" class="versi-results-box"></div>
 			</div>
-			<style>
-			@keyframes pulse { 0%, 100% { opacity:1; } 50% { opacity:0.4; } }
-			</style>
 		</div>
 
-		<script>
-		jQuery(function($) {
-			const $modeBtns = $('.versi-start-btn');
-			const $warning = $('.versi-overwrite-warning');
-			const $processingArea = $('#versi-processing-area');
-			const $resumeNotice = $('#versi-resume-notice');
-			const $stopLink = $('#versi-stop-link');
-			const $status = $('#versi-status');
-			const $results = $('#versi-results');
-			const $orText = $('.versi-or-text');
-			const $resumeText = $('#versi-resume-text');
-			const catId = 0;
-			const batchSize = <?php echo absint( get_option( 'versi_batch_size', 5 ) ); ?>;
-			const fetchSize = Math.min(batchSize * 4, 200);
-			const workload = '<?php echo esc_js( $workload ); ?>';
-			let running = false;
-			let mode = '';
-			let total = 0;
-			let done = 0;
-			let offset = 0;
-			let resultsData = [];
-			let stopRequested = false;
-			let startTime = 0;
-			let batchTimes = [];
-			let etaTimer = null;
-
-			// Check for saved job
-			$.ajax({
-				url: ajaxurl,
-				method: 'POST',
-				data: {
-					action: 'versi_load_job',
-					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-				},
-				success: function(response) {
-					if (!response.success || !response.data.exists) return;
-					var job = response.data.data;
-					if (job.workload !== workload) return;
-
-					mode = job.mode;
-					offset = job.offset;
-					total = job.total;
-					done = job.done;
-					
-					$resumeNotice.show();
-					/* translators: 1: mode, 2: done count, 3: total count */
-					var msg = <?php echo wp_json_encode( __( 'You have a paused job (%1$s mode, %2$s/%3$s items processed).', 'versi-content-tools' ) ); // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment ?>;
-					$resumeText.text(msg.replace('%1$s', mode).replace('%2$s', done).replace('%3$s', total));
-				}
-			});
-
-			$('#versi-resume-btn').on('click', function() {
-				$resumeNotice.hide();
-				$processingArea.show();
-				$('#versi-processing-area h2').focus();
-				$orText.hide();
-				$status.text('<?php echo esc_js( __( 'Resuming...', 'versi-content-tools' ) ); ?>');
-				$stopLink.show();
-				running = true;
-				startTime = Date.now();
-				batchTimes = [];
-				if (etaTimer) clearInterval(etaTimer);
-				etaTimer = setInterval(updateEtaStatus, 5000);
-				fetchBatch();
-			});
-
-			$('#versi-dismiss-btn').on('click', function() {
-				$resumeNotice.hide();
-				dismissSavedJob();
-			});
-
-			function saveJobState(status) {
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: 'versi_save_job',
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						workload: workload,
-						mode: mode,
-						offset: offset,
-						total: total,
-						done: done,
-						status: status,
-					},
-				});
-			}
-
-			function dismissSavedJob() {
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: 'versi_dismiss_job',
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-					},
-				});
-			}
-
-			$modeBtns.on('click', function() {
-				const $btn = $(this);
-				mode = $btn.data('mode');
-
-				if ('bulk_review' === mode && !confirm('<?php echo esc_js( __( 'This will send batches to AI for quality review (no content will be changed). Continue?', 'versi-content-tools' ) ); ?>')) {
-					return;
-				}
-
-				if ($btn.data('destructive') && !confirm('<?php echo esc_js( __( 'This will overwrite existing content. Are you sure?', 'versi-content-tools' ) ); ?>')) {
-					return;
-				}
-
-				dismissSavedJob();
-				$processingArea.show();
-				$('#versi-processing-area h2').focus();
-				$resumeNotice.hide();
-				$orText.hide();
-				$results.empty();
-				$status.text('<?php echo esc_js( __( 'Starting...', 'versi-content-tools' ) ); ?>');
-				$stopLink.show();
-				$('#versi-pause-btn').show();
-				resultsData = [];
-				running = true;
-				stopRequested = false;
-				done = 0;
-				offset = 0;
-				startTime = Date.now();
-				batchTimes = [];
-				if (etaTimer) clearInterval(etaTimer);
-				etaTimer = setInterval(updateEtaStatus, 5000);
-
-				if ('bulk_review' === mode) {
-					fetchReviewBatch();
-				} else {
-					fetchBatch();
-				}
-			});
-
-			let isPaused = false;
-			$('#versi-pause-btn').on('click', function() {
-				isPaused = !isPaused;
-				const $btn = $(this);
-				if (isPaused) {
-					$btn.html('<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg> <?php echo esc_js( __( 'Resume', 'versi-content-tools' ) ); ?>');
-				} else {
-					$btn.html('<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6"/></svg> <?php echo esc_js( __( 'Pause', 'versi-content-tools' ) ); ?>');
-					if (running && !stopRequested) {
-						if ('bulk_review' === mode) fetchReviewBatch();
-						else fetchBatch();
-					}
-				}
-			});
-
-			$stopLink.on('click', function(e) {
-				e.preventDefault();
-				if (!running) return;
-				stopRequested = true;
-				running = false;
-				$stopLink.hide();
-				$('#versi-pause-btn').hide();
-				let ok = 0, errs = 0;
-				resultsData.forEach(r => {
-					if (r.status === 'success') ok++;
-					else if (r.status === 'error') errs++;
-				});
-				const summary = '<?php echo esc_js( __( 'Stopped.', 'versi-content-tools' ) ); ?> ' + done + ' / ' + total +
-					' (ok: ' + ok + (errs > 0 ? ', errors: ' + errs : '') + ')';
-				$status.text(summary);
-				saveJobState('paused');
-				if (etaTimer) clearInterval(etaTimer);
-			});
-
-			function downloadResultsCSV() {
-				if (resultsData.length === 0) return;
-				let csv = 'ID,Title,Status,Previous Value,Generated Value,Error/Reason,Changed\n';
-				resultsData.forEach(function(r) {
-					csv += '"' + (r.id || '') + '","' + (r.title || '').replace(/"/g, '""') + '","' + (r.status || '') + '","' + (r.previous || '').replace(/"/g, '""') + '","' + (r.generated || '').replace(/"/g, '""') + '","' + ((r.error || r.reason || '') + '').replace(/"/g, '""') + '","' + (r.changed ? 'Yes' : 'No') + '"\n';
-				});
-				const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-				const link = document.createElement('a');
-				link.href = URL.createObjectURL(blob);
-				link.download = 'versi-' + workload + '-' + new Date().toISOString().slice(0,19).replace(/[:]/g, '-') + '.csv';
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				URL.revokeObjectURL(link.href);
-			}
-
-			function saveResults() {
-				if (resultsData.length === 0) return;
-				$.post(ajaxurl, {
-					action: 'versi_save_results',
-					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-					workload: workload,
-					mode: mode,
-					results: resultsData,
-				});
-			}
-
-			function updateSummary() {
-				$stopLink.hide();
-				$('#versi-pause-btn').hide();
-				if (etaTimer) clearInterval(etaTimer);
-				let ok = 0, errs = 0;
-				resultsData.forEach(r => {
-					if (r.status === 'success') ok++;
-					else if (r.status === 'error') errs++;
-				});
-				$status.text('<?php echo esc_js( __( 'Complete.', 'versi-content-tools' ) ); ?> ' + ok + ' ok' + (errs > 0 ? ', ' + errs + ' errors' : ''));
-				saveResults();
-				dismissSavedJob();
-				const exportBtn = $('<button type="button" class="button" style="margin-top:10px;"><?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?></button>');
-				exportBtn.on('click', downloadResultsCSV);
-				$('#versi-processing-area').append(exportBtn);
-			}
-
-			function getActionName(prefix) {
-				if (workload === 'alt') return 'versi_alt_' + prefix;
-				if (workload === 'excerpt') return 'versi_excerpt_' + prefix;
-				if (workload === 'content') return 'versi_content_' + prefix;
-				return 'versi_seo_' + prefix;
-			}
-
-			function truncateText(text, maxLen) {
-				if (!text || text.length <= maxLen) return text;
-				return text.substring(0, maxLen) + '…';
-			}
-
-			function makeBodyText(r, full) {
-				const maxLen = full ? Infinity : 150;
-				const label = r.title ? r.title + ' ' : '';
-				if (r.status === 'success') {
-					const cur = r.previous ? truncateText(r.previous, maxLen) : '';
-					const gen = truncateText(r.generated || '', maxLen);
-					if (r.changed && cur) {
-						return '#' + r.id + ' ' + label + '→ REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"';
-					} else if (r.changed) {
-						return '#' + r.id + ' ' + label + '+ ADDED\n  value: "' + gen + '"';
-					} else {
-						return '#' + r.id + ' ' + label + '✓ KEPT\n  value: "' + gen + '"';
-					}
-				} else if (r.status === 'error') {
-					return '#' + r.id + ' ' + label + '✗ ' + (r.error || 'Error');
-				}
-				return '#' + r.id + ' ' + label + '— ' + (r.reason || 'Skipped');
-			}
-
-			function createEntryElement(r) {
-				const $entry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
-
-				if (workload === 'alt') {
-					const thumbUrl = r.thumbnail || '';
-					if (thumbUrl) {
-						const $img = $('<span style="width:40px;height:40px;flex-shrink:0;border-radius:2px;display:inline-block;overflow:hidden;">').append(
-							$('<img>').css({ width: '40px', height: '40px', objectFit: 'cover' }).prop('src', thumbUrl)
-						);
-						$entry.append($img);
-					} else {
-						$entry.append('<span style="width:40px;height:40px;flex-shrink:0;background:#f0f0f1;border-radius:2px;display:inline-block;"></span>');
-					}
-				}
-
-				const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
-
-				if (r.status === 'success') {
-					const curFull = r.previous || '';
-					const genFull = r.generated || '';
-					const needsExpand = curFull.length > 150 || genFull.length > 150;
-					const shortText = makeBodyText(r, false);
-					$body.text(shortText);
-
-					if (needsExpand) {
-						$body.append(' <a href="#" class="versi-expand" data-full="' + encodeURIComponent(makeBodyText(r, true)) + '" data-short="' + encodeURIComponent(shortText) + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
-					}
-
-					if (r.changed) {
-						$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
-					} else {
-						$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
-					}
-				} else if (r.status === 'error' && r.rate_limited) {
-					$body.text(makeBodyText(r, false));
-					$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
-				} else if (r.status === 'error') {
-					$body.text(makeBodyText(r, false));
-					$entry.css('background', '#fcf0f1').css('border-left', '3px solid #d63638');
-				} else {
-					$body.text(makeBodyText(r, false));
-					$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
-				}
-
-				$entry.append($body);
-
-				if (r.status === 'success' && r.previous !== undefined) {
-					$entry.append(
-						'<button class="versi-redo-btn" data-attachment-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">redo</button>' +
-						'<button class="versi-undo-btn" data-attachment-id="' + r.id + '" data-previous="' + (r.previous || '').replace(/"/g, '&quot;') + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">undo</button>'
-					);
-				}
-
-				$entry.data('attachment-id', r.id);
-				return $entry;
-			}
-
-			function addEntry(r) {
-				const $entry = createEntryElement(r);
-				$results.append($entry);
-				$results.scrollTop($results[0].scrollHeight);
-			}
-
-			function formatEta(ms) {
-				if (ms <= 0) return '';
-				const totalSec = Math.ceil(ms / 1000);
-				let min = Math.floor(totalSec / 60);
-				const sec = totalSec % 60;
-				if (min >= 60) {
-					const hr = Math.floor(min / 60);
-					min = min % 60;
-					return hr + 'h ' + min + 'm remaining';
-				}
-				if (min > 0) return min + 'm ' + sec + 's remaining';
-				return sec + 's remaining';
-			}
-
-			function updateEtaStatus() {
-				const remaining = total - done;
-				let eta = '';
-				if (batchTimes.length > 0 && remaining > 0) {
-					const avgMs = batchTimes.reduce((a, b) => a + b, 0) / batchTimes.length;
-					const itemsPerMs = fetchSize / avgMs;
-					const etaMs = Math.round(remaining / itemsPerMs);
-					eta = ' — ' + formatEta(etaMs);
-				}
-				$status.text('Processing — ' + (done + 1) + ' / ' + total + eta);
-			}
-
-			function processId(id, cb, retryCount) {
-				if (retryCount === undefined) retryCount = 0;
-				const maxRetries = 5;
-				let retrying = false;
-				updateEtaStatus();
-
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: getActionName('process_single'),
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						id: id,
-						mode: mode,
-					},
-					success(response) {
-						if (stopRequested) return;
-						const r = response.data;
-						if (r.rate_limited && retryCount < maxRetries) {
-							retrying = true;
-							const waitMs = Math.max((parseFloat(r.retry_after) || 5) * 1000, 5000);
-							$status.text('<?php echo esc_js( __( 'Rate limited — retrying', 'versi-content-tools' ) ); ?> #' + id + ' in ' + Math.ceil(waitMs / 1000) + 's...');
-							setTimeout(() => processId(id, cb, retryCount + 1), waitMs);
-							return;
-						}
-						if (r.rate_limited) {
-							r.error = (r.error || '<?php echo esc_js( __( 'AI generation failed.', 'versi-content-tools' ) ); ?>') + ' <?php echo esc_js( __( '(rate limit exceeded after retries)', 'versi-content-tools' ) ); ?>';
-						}
-						resultsData.push(r);
-						addEntry(r);
-					},
-					error() {
-						if (stopRequested) return;
-						resultsData.push({ id: id, status: 'error' });
-						addEntry({ id: id, title: '', status: 'error', error: '<?php echo esc_js( __( 'Request failed', 'versi-content-tools' ) ); ?>' });
-					},
-					complete() {
-						if (stopRequested) return;
-						if (retrying) return;
-						done++;
-						cb();
-					},
-				});
-			}
-
-			function processBatch(ids, cb) {
-				if (!running || ids.length === 0) {
-					cb();
-					return;
-				}
-
-				const batchStart = Date.now();
-				const origCb = cb;
-				cb = function () {
-					const elapsed = Date.now() - batchStart;
-					batchTimes.push(elapsed);
-					if (batchTimes.length > 30) batchTimes.shift();
-					origCb();
-				};
-
-				let i = 0;
-				let active = 0;
-				const maxConcurrent = Math.min(batchSize, ids.length);
-
-				function startNext() {
-					while (active < maxConcurrent && i < ids.length && running) {
-						const idx = i++;
-						active++;
-						processId(ids[idx], () => {
-							active--;
-							if (i < ids.length && running) {
-								startNext();
-							} else if (active === 0) {
-								cb();
-							}
-						});
-					}
-					if (active === 0) {
-						cb();
-					}
-				}
-				startNext();
-			}
-
-			function fetchBatch() {
-				if (!running) {
-					return;
-				}
-
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: getActionName('get_ids'),
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						mode: mode,
-						catId: catId,
-						offset: offset,
-						batch: fetchSize,
-					},
-					success(response) {
-						if (stopRequested) return;
-
-						const d = response.data;
-						total = d.total;
-						const ids = d.ids || [];
-
-						if (ids.length === 0) {
-							running = false;
-							updateSummary();
-							return;
-						}
-
-						processBatch(ids, () => {
-							if (stopRequested) return;
-							if (isPaused) {
-								$status.text('<?php echo esc_js( __( 'Paused.', 'versi-content-tools' ) ); ?>');
-								return;
-							}
-							offset += ids.length;
-							saveJobState('paused');
-							setTimeout(fetchBatch, 100);
-						});
-					},
-					error() {
-						if (stopRequested) return;
-						running = false;
-						$stopLink.hide();
-						$status.text('<?php echo esc_js( __( 'Failed to fetch item list.', 'versi-content-tools' ) ); ?>');
-					},
-				});
-			}
-
-			// Review batch size is larger (30 items per call).
-			const reviewBatchSize = 30;
-
-			function fetchReviewBatch() {
-				if (!running) return;
-
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: getActionName('bulk_review'),
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						offset: offset,
-						batch: reviewBatchSize,
-					},
-					success(response) {
-						if (stopRequested) return;
-
-						const d = response.data;
-						total = d.total;
-						const items = d.items || [];
-
-						if (items.length === 0) {
-							running = false;
-							updateReviewSummary();
-							return;
-						}
-
-						items.forEach(r => {
-							resultsData.push(r);
-							addReviewEntry(r);
-						});
-
-						done += items.length;
-						offset += items.length;
-						saveJobState('paused');
-						if (isPaused) {
-							$status.text('<?php echo esc_js( __( 'Paused.', 'versi-content-tools' ) ); ?>');
-							return;
-						}
-						setTimeout(fetchReviewBatch, 100);
-					},
-					error() {
-						if (stopRequested) return;
-						running = false;
-						$stopLink.hide();
-						$status.text('<?php echo esc_js( __( 'Failed to fetch review batch.', 'versi-content-tools' ) ); ?>');
-					},
-				});
-			}
-
-			function addReviewEntry(r) {
-				const $entry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
-				const label = r.title ? r.title + ' ' : '';
-				const excerpt = r.alt || r.excerpt || '';
-				const excerptShort = excerpt.length > 100 ? excerpt.substring(0, 100) + '…' : excerpt;
-
-				if (r.status === 'good') {
-					$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
-					const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
-					$body.text('#' + r.id + ' ' + label + '✓ GOOD' + (excerptShort ? '\n  "' + excerptShort + '"' : ''));
-					$entry.append($body);
-				} else if (r.status === 'bad') {
-					$entry.css('background', '#fcf0f1').css('border-left', '3px solid #d63638');
-					const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
-					$body.text('#' + r.id + ' ' + label + '✗ BAD\n  reason: ' + (r.reason || 'Unknown') + '\n  "' + excerptShort + '"');
-					$entry.append($body);
-					$entry.append(
-						'<button class="versi-review-redo-btn" data-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#b32d2e;">regenerate</button>'
-					);
-				} else {
-					$entry.css('background', '#f0f6fc').css('border-left', '3px solid #2271b1');
-					const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
-					$body.text('#' + r.id + ' ' + label + 'ℹ ' + (r.reason || ''));
-					$entry.append($body);
-				}
-
-				$results.append($entry);
-				$results.scrollTop($results[0].scrollHeight);
-			}
-
-			function downloadReviewCSV() {
-				if (resultsData.length === 0) return;
-				let csv = 'ID,Title,Status,Content,Reason\n';
-				resultsData.forEach(function(r) {
-					csv += '"' + (r.id || '') + '","' + (r.title || '').replace(/"/g, '""') + '","' + (r.status || '') + '","' + ((r.alt || r.excerpt || '') + '').replace(/"/g, '""') + '","' + (r.reason || '').replace(/"/g, '""') + '"\n';
-				});
-				const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-				const link = document.createElement('a');
-				link.href = URL.createObjectURL(blob);
-				link.download = 'versi-' + workload + '-review-' + new Date().toISOString().slice(0,19).replace(/[:]/g, '-') + '.csv';
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				URL.revokeObjectURL(link.href);
-			}
-
-			function updateReviewSummary() {
-				$stopLink.hide();
-				if (etaTimer) clearInterval(etaTimer);
-				let good = 0, bad = 0, info = 0;
-				resultsData.forEach(r => {
-					if (r.status === 'good') good++;
-					else if (r.status === 'bad') bad++;
-					else info++;
-				});
-				$status.text('<?php echo esc_js( __( 'Review complete.', 'versi-content-tools' ) ); ?> ' + good + ' good, ' + bad + ' bad' + (info > 0 ? ', ' + info + ' info' : ''));
-				saveResults();
-				dismissSavedJob();
-				const exportBtn = $('<button type="button" class="button" style="margin-top:10px;"><?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?></button>');
-				exportBtn.on('click', downloadReviewCSV);
-				$('#versi-processing-area').append(exportBtn);
-			}
-
-			// Redo / Undo / Review redo
-			$results.on('click', '.versi-redo-btn', function() {
-				const $btn = $(this);
-				const $entry = $btn.closest('.versi-entry');
-				const id = $entry.data('attachment-id');
-				if (!id) return;
-
-				$btn.text('...').prop('disabled', true);
-				$entry.css('opacity', '0.5');
-
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: getActionName('process_single'),
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						id: id,
-						mode: mode,
-					},
-					success(response) {
-						$entry.replaceWith(createEntryElement(response.data));
-					},
-					error() {
-						$btn.text('redo').prop('disabled', false);
-						$entry.css('opacity', '1');
-					},
-				});
-			});
-
-			$results.on('click', '.versi-undo-btn', function() {
-				const $btn = $(this);
-				const $entry = $btn.closest('.versi-entry');
-				const id = $btn.data('attachment-id');
-				const prev = $btn.data('previous');
-				if (!id) return;
-
-				$btn.text('...').prop('disabled', true);
-				$entry.css('opacity', '0.5');
-
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: getActionName('undo'),
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						id: id,
-						alt: prev,
-					},
-					success(response) {
-						const r = response.data;
-						$entry.css('opacity', '1');
-						$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
-						$entry.find('.versi-redo-btn').remove();
-						$entry.find('.versi-undo-btn').remove();
-						$entry.find('div:last').text('#' + r.id + ' (Reverted to: "' + r.alt.substring(0, 100) + '")');
-					},
-					error() {
-						$btn.text('undo').prop('disabled', false);
-						$entry.css('opacity', '1');
-					},
-				});
-			});
-
-			// Review "regenerate" button — processes a single flagged item.
-			$results.on('click', '.versi-review-redo-btn', function() {
-				const $btn = $(this);
-				const $entry = $btn.closest('.versi-entry');
-				const id = $btn.data('id');
-				if (!id) return;
-
-				$btn.text('...').prop('disabled', true);
-				$entry.css('opacity', '0.5');
-
-				$.ajax({
-					url: ajaxurl,
-					method: 'POST',
-					data: {
-						action: getActionName('process_single'),
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-						id: id,
-						mode: 'regenerate',
-					},
-					success(response) {
-						const r = response.data;
-						const $newEntry = $('<div class="versi-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
-						$newEntry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
-						const $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
-						const gen = r.generated || '';
-						$body.text('#' + r.id + ' ' + (r.title || '') + ' → REGENERATED\n  new: "' + (gen.length > 100 ? gen.substring(0, 100) + '…' : gen) + '"');
-						$newEntry.append($body);
-						$entry.replaceWith($newEntry);
-					},
-					error() {
-						$btn.text('regenerate').prop('disabled', false);
-						$entry.css('opacity', '1');
-					},
-				});
-			});
-
-			$results.on('click', '.versi-expand', function(e) {
-				e.preventDefault();
-				const $link = $(this);
-				const $body = $link.parent();
-				const isExpanded = $link.data('expanded');
-				if (!isExpanded) {
-					$body.empty();
-					$body.text(decodeURIComponent($link.data('full')));
-					const $newLink = $('<a href="#" class="versi-expand" data-full="' + $link.data('full') + '" data-expanded="1" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show less</a>');
-					$body.append(' ', $newLink);
-				} else {
-					$body.empty();
-					$body.text(decodeURIComponent($link.data('short')));
-					const $newLink = $('<a href="#" class="versi-expand" data-full="' + $link.data('full') + '" data-short="' + $link.data('short') + '" style="font-size:11px;color:#2271b1;text-decoration:underline;white-space:nowrap;">show more</a>');
-					$body.append(' ', $newLink);
-				}
-			});
-		});
-	</script>
 		<?php
 	}
 
@@ -1889,37 +1174,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	private function render_history_tab() {
 		$history = get_option( 'versi_processing_history', array() );
 		?>
-		<style>
-		.versi-history-card {
-			border-radius:12px;border:1px solid #e5e7eb;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
-		}
-		.versi-history-card .versi-history-header {
-			padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px;
-		}
-		.versi-history-card .versi-history-body { padding:16px 20px; }
-		.versi-history-empty {
-			text-align:center;padding:40px 20px;color:#6b7280;font-size:14px;
-		}
-		.versi-history-table {
-			width:100%;border-collapse:collapse;font-size:13px;
-		}
-		.versi-history-table th {
-			text-align:left;padding:10px 12px;border-bottom:2px solid #e5e7eb;font-weight:600;color:#374151;background:#f9fafb;
-		}
-		.versi-history-table td {
-			padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;
-		}
-		.versi-history-table tr:hover td { background:#f9fafb; }
-		.versi-history-badge {
-			display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
-		}
-		.versi-history-badge.alt { background:#eff6ff;color:#2563eb; }
-		.versi-history-badge.excerpt { background:#f0fdf4;color:#16a34a; }
-		.versi-history-badge.seo { background:#fefce8;color:#ca8a04; }
-		.versi-history-badge.content { background:#fef2f2;color:#dc2626; }
-		.versi-history-badge.auditor { background:#f3f4f6;color:#6b7280; }
-		.versi-history-badge.review { background:#f0f9ff;color:#0369a1; }
-		</style>
 		<div class="versi-history-card">
 			<div class="versi-history-header">
 				<svg aria-hidden="true" focusable="false" width="20" height="20" fill="none" stroke="#6366f1" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -1999,60 +1253,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<?php endif; ?>
 			</div>
 		</div>
-		<script>
-		jQuery(function($) {
-			$('#versi-clear-history').on('click', function() {
-				if (!confirm('<?php echo esc_js( __( 'Clear all processing history?', 'versi-content-tools' ) ); ?>')) return;
-				$.post(ajaxurl, {
-					action: 'versi_clear_history',
-					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-				}, function() { location.reload(); });
-			});
-
-			$(document).on('click', '.versi-history-download', function() {
-				const $btn = $(this).prop('disabled', true).text('...');
-				const runId = $btn.data('run-id');
-				$.post(ajaxurl, {
-					action: 'versi_get_history_run',
-					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-					run_id: runId,
-				}, function(resp) {
-					if (!resp.success) { $btn.prop('disabled', false).text('<?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?>'); return; }
-					const run = resp.data;
-					const results = run.results || [];
-					if (results.length === 0) { $btn.prop('disabled', false).text('<?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?>'); return; }
-
-					let csv = '';
-					if (run.workload === 'auditor') {
-						csv = 'Attachment ID,Attachment URL,Path,Post ID,Post Title\n';
-						results.forEach(function(r) {
-							csv += '"' + (r.attachment_id || '') + '","' + (r.attachment_url || '').replace(/"/g, '""') + '","' + (r.att_path || '').replace(/"/g, '""') + '","' + (r.post_id || '') + '","' + (r.post_title || '').replace(/"/g, '""') + '"\n';
-						});
-					} else if (run.workload === 'review' || run.mode === 'bulk_review') {
-						csv = 'ID,Title,Status,Content,Reason\n';
-						results.forEach(function(r) {
-							csv += '"' + (r.id || '') + '","' + (r.title || '').replace(/"/g, '""') + '","' + (r.status || '') + '","' + ((r.alt || r.excerpt || '') + '').replace(/"/g, '""') + '","' + (r.reason || '').replace(/"/g, '""') + '"\n';
-						});
-					} else {
-						csv = 'ID,Title,Status,Previous Value,Generated Value,Error/Reason,Changed\n';
-						results.forEach(function(r) {
-							csv += '"' + (r.id || '') + '","' + (r.title || '').replace(/"/g, '""') + '","' + (r.status || '') + '","' + (r.previous || '').replace(/"/g, '""') + '","' + (r.generated || '').replace(/"/g, '""') + '","' + ((r.error || r.reason || '') + '').replace(/"/g, '""') + '","' + (r.changed ? 'Yes' : 'No') + '"\n';
-						});
-					}
-
-					const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-					const link = document.createElement('a');
-					link.href = URL.createObjectURL(blob);
-					link.download = 'versi-' + run.workload + '-' + run.id + '.csv';
-					document.body.appendChild(link);
-					link.click();
-					document.body.removeChild(link);
-					URL.revokeObjectURL(link.href);
-					$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?>');
-				});
-			});
-		});
-		</script>
 		<?php
 	}
 
@@ -2102,35 +1302,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					</p>
 					<button id="versi-bg-cancel-tab" class="button"><?php esc_html_e( 'Cancel Job', 'versi-content-tools' ); ?></button>
 				</div>
-				<script>
-				jQuery(function($) {
-					function poll() {
-						$.post(ajaxurl, {
-							action: 'versi_job_status',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_job_status' ) ); ?>'
-						}, resp => {
-							if (resp.success && resp.data) {
-								$('#versi-bg-progress-tab').text(resp.data.processed + ' / ' + resp.data.total);
-								$('#versi-bg-stall-warn-tab').toggle(resp.data.stalled === true);
-								if (resp.data.is_running) {
-									setTimeout(poll, 3000);
-								} else {
-									$('#versi-bg-tab .notice-info').removeClass('notice-info').addClass('notice-success')
-										.append('<p><em><?php esc_html_e( 'Complete!', 'versi-content-tools' ); ?></em></p>');
-								}
-							}
-						});
-					}
-					poll();
-					$('#versi-bg-cancel-tab').on('click', function() {
-						$.post(ajaxurl, {
-							action: 'versi_cancel_job',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_cancel_job' ) ); ?>'
-						});
-						$(this).prop('disabled', true).text('<?php esc_html_e( 'Cancelling...', 'versi-content-tools' ); ?>');
-					});
-				});
-				</script>
 			<?php else : ?>
 				<p><?php esc_html_e( 'No active background job. Start a new one:', 'versi-content-tools' ); ?></p>
 				<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
@@ -2146,26 +1317,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						<?php echo esc_html( $dest_label ); ?>
 					</button>
 				</div>
-				<script>
-				jQuery(function($) {
-					$('.versi-bg-start-btn').on('click', function() {
-						const $btn = $(this);
-						const btnMode = $btn.data('mode');
-						const btnWorkload = $btn.data('workload');
-						if (!confirm('<?php echo esc_js( __( 'Start background processing? You can close the browser and check back later.', 'versi-content-tools' ) ); ?>')) {
-							return;
-						}
-						$.post(ajaxurl, {
-							action: 'versi_create_job',
-							_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-							mode: btnMode,
-							workload: btnWorkload,
-						});
-						$btn.prop('disabled', true).text('<?php esc_html_e( 'Started', 'versi-content-tools' ); ?>');
-						$('.versi-bg-start-btn').not($btn).prop('disabled', true);
-					});
-				});
-				</script>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -2186,36 +1337,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$exc_url     = add_query_arg( 'versi_workload', 'excerpt', $base_url );
 		$auditor_url = add_query_arg( 'versi_workload', 'auditor', $base_url );
 		?>
-		<style>
-		.versi-dash-grid {
-			display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:20px 0;
-		}
-		.versi-dash-card {
-			border-radius:12px;border:1px solid #e5e7eb;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:box-shadow 0.15s;
-		}
-		.versi-dash-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-		.versi-dash-card-header {
-			padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px;
-		}
-		.versi-dash-card-body { padding:16px 20px; }
-		.versi-dash-number { font-size:28px;font-weight:700;color:#1e1e1e;line-height:1.2; }
-		.versi-dash-label { font-size:13px;color:#4b5563;margin:2px 0 8px; }
-		.versi-dash-order {
-			list-style:none;margin:0;padding:0;counter-reset:step;
-		}
-		.versi-dash-order li {
-			counter-increment:step;padding:12px 16px;margin:4px 0;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;display:flex;align-items:center;gap:12px;font-size:13px;
-		}
-		.versi-dash-order li::before {
-			content:counter(step);width:26px;height:26px;border-radius:50%;background:#2271b1;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-		}
-		.versi-dash-status {
-			display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
-		}
-		.versi-dash-status.ok { background:#f0fdf4;color:#166534; }
-		.versi-dash-status.warn { background:#fef2f2;color:#991b1b; }
-		.versi-dash-status.neutral { background:#f3f4f6;color:#4b5563; }
-		</style>
 		<div class="versi-dash-grid">
 			<div class="versi-dash-card">
 				<div class="versi-dash-card-header">
@@ -2306,193 +1427,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<div id="versi-audit-results" style="margin-top:16px;"></div>
 			</div>
 		</div>
-		<style>
-		.versi-scan-spinner {
-			display:inline-block;width:16px;height:16px;border:2px solid #d1d5db;border-top-color:#2271b1;border-radius:50%;animation:versi-spin 0.6s linear infinite;vertical-align:middle;margin-right:8px;
-		}
-		@keyframes versi-spin { to { transform:rotate(360deg); } }
-		.versi-scan-status {
-			display:flex;align-items:center;gap:8px;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:13px;color:#0369a1;
-		}
-		.versi-audit-summary {
-			padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;margin-bottom:12px;
-		}
-		</style>
-		<script>
-		jQuery(function($) {
-			$('#versi-audit-btn').on('click', function() {
-				const $btn = $(this).prop('disabled', true);
-				const $results = $('#versi-audit-results');
-				$results.html('<div class="versi-scan-status"><span class="versi-scan-spinner"></span><?php echo esc_js( __( 'Initializing audit...', 'versi-content-tools' ) ); ?></div>');
-				
-				$.post(ajaxurl, {
-					action: 'versi_run_audit',
-					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>'
-				}, function(resp) {
-					if (!resp.success) {
-						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">' + (resp.data?.message || 'Unknown error') + '</div>');
-						$btn.prop('disabled', false);
-						return;
-					}
-					
-					if (resp.data.complete) {
-						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ) ); ?></div>');
-						$btn.prop('disabled', false);
-						return;
-					}
-					
-					processAuditBatch(0, resp.data.total, []);
-				}).fail(function(jqXHR) {
-					var msg = '<?php echo esc_js( __( 'Scan failed. Please try again.', 'versi-content-tools' ) ); ?>';
-					if (jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.message) {
-						msg = jqXHR.responseJSON.data.message;
-					} else if ( jqXHR.status === 500 ) {
-						msg = '<?php echo esc_js( __( 'Server error (500). This often happens due to memory limits on very large sites.', 'versi-content-tools' ) ); ?>';
-					} else if ( jqXHR.status === 504 || jqXHR.status === 502 ) {
-						msg = '<?php echo esc_js( __( 'Server timeout (504/502). The scan took too long to respond.', 'versi-content-tools' ) ); ?>';
-					} else if ( jqXHR.status ) {
-						msg = '<?php echo esc_js( __( 'Request failed with status: ', 'versi-content-tools' ) ); ?>' + jqXHR.status;
-					}
-					$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">' + msg + '</div>');
-					$btn.prop('disabled', false);
-				});
-			});
-
-			let auditResults = [];
-
-			function processAuditBatch(offset, total, accumulatedResults) {
-				const $results = $('#versi-audit-results');
-				const $btn = $('#versi-audit-btn');
-				
-				$results.html('<div class="versi-scan-status"><span class="versi-scan-spinner"></span><?php echo esc_js( __( 'Scanning', 'versi-content-tools' ) ); ?> ' + offset + ' / ' + total + '...</div>');
-				
-				$.post(ajaxurl, {
-					action: 'versi_audit_progress',
-					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_run_audit' ) ); ?>',
-					offset: offset,
-					limit: <?php echo Versi_Auditor::BATCH_SIZE; ?>
-				}, function(resp) {
-					if (!resp.success) {
-						$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">' + (resp.data?.message || 'Scan failed') + '</div>');
-						$btn.prop('disabled', false);
-						return;
-					}
-					
-					const newResults = resp.data.results;
-					const combined = accumulatedResults.concat(newResults);
-					
-					if (resp.data.complete) {
-						auditResults = combined;
-						if (combined.length > 0) {
-							const totalPosts = new Set(combined.map(i => i.post_id)).size;
-						let html = '<div class="versi-audit-summary"><?php echo esc_js( __( 'Found', 'versi-content-tools' ) ); ?> <strong>' + combined.length + '</strong> <?php echo esc_js( __( 'unlinked image(s) across', 'versi-content-tools' ) ); ?> <strong>' + totalPosts + '</strong> <?php echo esc_js( __( 'post(s).', 'versi-content-tools' ) ); ?></div>';
-						html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;">';
-						html += '	<div style="display:flex;gap:8px;align-items:center;">';
-						html += '		<button class="button" id="versi-bulk-link-btn"><?php echo esc_js( __( 'Link Selected', 'versi-content-tools' ) ); ?></button>';
-						html += '		<button class="button" id="versi-audit-export-csv"><?php echo esc_js( __( 'Export CSV', 'versi-content-tools' ) ); ?></button>';
-						html += '	</div>';
-						html += '	<div>';
-						html += '		<select id="versi-audit-filter" style="font-size:12px;padding:2px 5px;border-radius:4px;">';
-						html += '			<option value="all"><?php echo esc_js( __( 'All Results', 'versi-content-tools' ) ); ?></option>';
-						html += '			<option value="verified"><?php echo esc_js( __( 'Verified Only', 'versi-content-tools' ) ); ?></option>';
-						html += '		</select>';
-						html += '	</div>';
-						html += '</div>';
-						html += '<table class="wp-list-table widefat fixed striped"><thead><tr><th style="width:40px;"><input type="checkbox" id="versi-select-all"></th><th><?php echo esc_js( __( 'Image', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Found In', 'versi-content-tools' ) ); ?></th><th><?php echo esc_js( __( 'Action', 'versi-content-tools' ) ); ?></th></tr></thead><tbody>';
-						combined.forEach(item => {
-							html += '<tr><td><input type="checkbox" class="versi-link-check" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"></td><td><a href="' + item.att_edit_link + '" target="_blank">#' + item.attachment_id + '</a><br><small style="color:#666;">' + item.att_path + '</small></td><td><a href="' + item.post_edit_link + '" target="_blank">' + item.post_title + '</a></td><td><button class="button button-small versi-link-btn" data-att="' + item.attachment_id + '" data-post="' + item.post_id + '"><?php esc_js( __( 'Link', 'versi-content-tools' ) ); ?></button></td></tr>';
-						});
-							html += '</tbody></table>';
-							$results.html(html);
-						} else {
-							$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ) ); ?></div>');
-						}
-						$btn.prop('disabled', false);
-						// Auto-save to history.
-						if (auditResults.length > 0) {
-							$.post(ajaxurl, {
-								action: 'versi_save_results',
-								_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
-								workload: 'auditor',
-								mode: 'audit',
-								results: auditResults,
-							});
-						}
-					} else {
-						processAuditBatch(resp.data.scanned, total, combined);
-					}
-				}).fail(function(jqXHR) {
-					$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">Request failed: ' + jqXHR.status + '</div>');
-					$btn.prop('disabled', false);
-				});
-			}
-
-
-			$(document).on('click', '#versi-audit-export-csv', function() {
-				if (auditResults.length === 0) return;
-				let csv = 'Attachment ID,Attachment URL,Path,Post ID,Post Title\n';
-				auditResults.forEach(function(item) {
-					csv += '"' + (item.attachment_id || '') + '","' + (item.attachment_url || '').replace(/"/g, '""') + '","' + (item.att_path || '').replace(/"/g, '""') + '","' + (item.post_id || '') + '","' + (item.post_title || '').replace(/"/g, '""') + '"\n';
-				});
-				const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-				const link = document.createElement('a');
-				link.href = URL.createObjectURL(blob);
-				link.download = 'versi-auditor-' + new Date().toISOString().slice(0,19).replace(/[:]/g, '-') + '.csv';
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				URL.revokeObjectURL(link.href);
-			});
-
-			$(document).on('click', '#versi-select-all', function() {
-				$('.versi-link-check').prop('checked', $(this).prop('checked'));
-			});
-
-			$(document).on('click', '#versi-bulk-link-btn', function() {
-				const $checked = $('.versi-link-check:checked');
-				if ($checked.length === 0) return;
-				
-				const $btn = $(this).prop('disabled', true);
-				let toLink = [];
-				$checked.each(function() {
-					toLink.push({ att: $(this).data('att'), post: $(this).data('post') });
-				});
-				
-				let processed = 0;
-				function processBatch() {
-					if (processed >= toLink.length) {
-						location.reload();
-						return;
-					}
-					const item = toLink[processed];
-					$.post(ajaxurl, {
-						action: 'versi_link_attachment',
-						_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_link_attachment' ) ); ?>',
-						attachment_id: item.att,
-						post_id: item.post
-					}, function() {
-						processed++;
-						processBatch();
-					});
-				}
-				processBatch();
-			});
-
-			$(document).on('click', '.versi-link-btn', function() {
-				const $btn = $(this);
-				$.post(ajaxurl, {
-					action: 'versi_link_attachment',
-					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_link_attachment' ) ); ?>',
-					attachment_id: $btn.data('att'),
-					post_id: $btn.data('post')
-				}, function(resp) {
-					if (resp.success) {
-						$btn.text('<?php echo esc_js( __( 'Linked', 'versi-content-tools' ) ); ?>').prop('disabled', true);
-					}
-				});
-			});
-		});
-		</script>
 		<?php
 	}
 

@@ -1,0 +1,129 @@
+/* Settings page */
+tr[data-mode].hidden { display: none; }
+a:focus, button:focus, .button:focus, input:focus, select:focus, textarea:focus { outline: 2px solid #2271b1; outline-offset: 2px; }
+
+/* Processing page */
+@keyframes pulse { 0%, 100% { opacity:1; } 50% { opacity:0.4; } }
+
+.versi-stat-card {
+	display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);box-shadow:0 1px 3px rgba(0,0,0,0.04);min-width:0;
+}
+.versi-stat-card .versi-stat-icon {
+	width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.versi-stat-card .versi-stat-number {
+	font-size:20px;font-weight:700;line-height:1.2;color:#1e1e1e;
+}
+.versi-stat-card .versi-stat-label {
+	font-size:12px;color:#4b5563;line-height:1.3;
+}
+.versi-mode-card {
+	display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:#374151;text-decoration:none;transition:all 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.04);
+}
+.versi-mode-card:hover {
+	border-color:#9ca3af;box-shadow:0 2px 8px rgba(0,0,0,0.08);color:#111827;
+}
+.versi-mode-card.versi-mode-primary {
+	background:#2271b1;border-color:#2271b1;color:#fff;font-weight:600;
+}
+.versi-mode-card.versi-mode-primary:hover {
+	background:#135e96;border-color:#135e96;
+}
+.versi-mode-card.versi-mode-danger {
+	color:#dc2626;border-color:#fca5a5;
+}
+.versi-mode-card.versi-mode-danger:hover {
+	background:#fef2f2;border-color:#f87171;
+}
+.versi-results-box {
+	background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;max-height:600px;overflow-y:auto;font-family:SF Pro Text, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, monospace;font-size:13px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+.versi-results-box .versi-entry {
+	display:flex;align-items:flex-start;gap:8px;padding:6px 10px;margin:2px 0;border-radius:8px;transition:background 0.15s;
+}
+.versi-auditor-card {
+	border-radius:12px;border:1px solid #e5e7eb;background:linear-gradient(135deg,#f9fafb 0%,#f3f4f6 100%);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+.versi-auditor-card .versi-auditor-header {
+	padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:12px;
+}
+.versi-auditor-card .versi-auditor-header svg { flex-shrink:0; }
+.versi-auditor-card .versi-auditor-body { padding:20px 24px; }
+.versi-job-notice {
+	border-radius:12px;border:1px solid #dbeafe;background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+.versi-job-notice .versi-job-header { padding:16px 20px;border-bottom:1px solid #dbeafe; }
+.versi-job-notice .versi-job-body { padding:16px 20px; }
+
+/* Dashboard */
+.versi-dash-grid {
+	display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:20px 0;
+}
+.versi-dash-card {
+	border-radius:12px;border:1px solid #e5e7eb;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:box-shadow 0.15s;
+}
+.versi-dash-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+.versi-dash-card-header {
+	padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px;
+}
+.versi-dash-card-body { padding:16px 20px; }
+.versi-dash-number { font-size:28px;font-weight:700;color:#1e1e1e;line-height:1.2; }
+.versi-dash-label { font-size:13px;color:#4b5563;margin:2px 0 8px; }
+.versi-dash-order {
+	list-style:none;margin:0;padding:0;counter-reset:step;
+}
+.versi-dash-order li {
+	counter-increment:step;padding:12px 16px;margin:4px 0;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;display:flex;align-items:center;gap:12px;font-size:13px;
+}
+.versi-dash-order li::before {
+	content:counter(step);width:26px;height:26px;border-radius:50%;background:#2271b1;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.versi-dash-status {
+	display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
+}
+.versi-dash-status.ok { background:#f0fdf4;color:#166534; }
+.versi-dash-status.warn { background:#fef2f2;color:#991b1b; }
+.versi-dash-status.neutral { background:#f3f4f6;color:#4b5563; }
+
+/* History */
+.versi-history-card {
+	border-radius:12px;border:1px solid #e5e7eb;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+.versi-history-card .versi-history-header {
+	padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px;
+}
+.versi-history-card .versi-history-body { padding:16px 20px; }
+.versi-history-empty {
+	text-align:center;padding:40px 20px;color:#6b7280;font-size:14px;
+}
+.versi-history-table {
+	width:100%;border-collapse:collapse;font-size:13px;
+}
+.versi-history-table th {
+	text-align:left;padding:10px 12px;border-bottom:2px solid #e5e7eb;font-weight:600;color:#374151;background:#f9fafb;
+}
+.versi-history-table td {
+	padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;
+}
+.versi-history-table tr:hover td { background:#f9fafb; }
+.versi-history-badge {
+	display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
+}
+.versi-history-badge.alt { background:#eff6ff;color:#2563eb; }
+.versi-history-badge.excerpt { background:#f0fdf4;color:#16a34a; }
+.versi-history-badge.seo { background:#fefce8;color:#ca8a04; }
+.versi-history-badge.content { background:#fef2f2;color:#dc2626; }
+.versi-history-badge.auditor { background:#f3f4f6;color:#6b7280; }
+.versi-history-badge.review { background:#f0f9ff;color:#0369a1; }
+
+/* Auditor */
+.versi-scan-spinner {
+	display:inline-block;width:16px;height:16px;border:2px solid #d1d5db;border-top-color:#2271b1;border-radius:50%;animation:versi-spin 0.6s linear infinite;vertical-align:middle;margin-right:8px;
+}
+@keyframes versi-spin { to { transform:rotate(360deg); } }
+.versi-scan-status {
+	display:flex;align-items:center;gap:8px;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:13px;color:#0369a1;
+}
+.versi-audit-summary {
+	padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;margin-bottom:12px;
+}
