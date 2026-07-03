@@ -1379,6 +1379,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			const $resumeText = $('#versi-resume-text');
 			const catId = 0;
 			const batchSize = <?php echo absint( get_option( 'versi_batch_size', 5 ) ); ?>;
+			const fetchSize = Math.min(batchSize * 4, 200);
 			const workload = '<?php echo esc_js( $workload ); ?>';
 			let running = false;
 			let mode = '';
@@ -1388,7 +1389,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			let resultsData = [];
 			let stopRequested = false;
 			let startTime = 0;
-			let itemDurations = [];
+			let batchTimes = [];
 			let etaTimer = null;
 
 			// Check for saved job
@@ -1425,7 +1426,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				$stopLink.show();
 				running = true;
 				startTime = Date.now();
-				itemDurations = [];
+				batchTimes = [];
 				if (etaTimer) clearInterval(etaTimer);
 				etaTimer = setInterval(updateEtaStatus, 5000);
 				fetchBatch();
@@ -1491,7 +1492,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				done = 0;
 				offset = 0;
 				startTime = Date.now();
-				itemDurations = [];
+				batchTimes = [];
 				if (etaTimer) clearInterval(etaTimer);
 				etaTimer = setInterval(updateEtaStatus, 5000);
 
@@ -1691,9 +1692,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			function updateEtaStatus() {
 				const remaining = total - done;
 				let eta = '';
-				if (itemDurations.length > 0 && remaining > 0) {
-					const avg = itemDurations.reduce((a, b) => a + b, 0) / itemDurations.length;
-					eta = ' — ' + formatEta(avg * remaining);
+				if (batchTimes.length > 0 && remaining > 0) {
+					const avgMs = batchTimes.reduce((a, b) => a + b, 0) / batchTimes.length;
+					const itemsPerMs = fetchSize / avgMs;
+					const etaMs = Math.round(remaining / itemsPerMs);
+					eta = ' — ' + formatEta(etaMs);
 				}
 				$status.text('Processing — ' + (done + 1) + ' / ' + total + eta);
 			}
@@ -1702,7 +1705,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				if (retryCount === undefined) retryCount = 0;
 				const maxRetries = 5;
 				let retrying = false;
-				const itemStart = Date.now();
 				updateEtaStatus();
 
 				$.ajax({
@@ -1739,9 +1741,6 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						if (stopRequested) return;
 						if (retrying) return;
 						done++;
-						const elapsed = Date.now() - itemStart;
-						itemDurations.push(elapsed);
-						if (itemDurations.length > 10) itemDurations.shift();
 						cb();
 					},
 				});
@@ -1752,6 +1751,15 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					cb();
 					return;
 				}
+
+				const batchStart = Date.now();
+				const origCb = cb;
+				cb = function () {
+					const elapsed = Date.now() - batchStart;
+					batchTimes.push(elapsed);
+					if (batchTimes.length > 30) batchTimes.shift();
+					origCb();
+				};
 
 				let i = 0;
 				let active = 0;
@@ -1791,7 +1799,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						mode: mode,
 						catId: catId,
 						offset: offset,
-						batch: batchSize,
+						batch: fetchSize,
 					},
 					success(response) {
 						if (stopRequested) return;
