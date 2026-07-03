@@ -382,6 +382,53 @@ class Versi_Extensions {
 	}
 
 	/**
+	 * Get WooCommerce product context for prompt injection.
+	 *
+	 * @param int $product_id Product / parent post ID.
+	 * @return string Formatted context or empty string.
+	 */
+	public function get_product_context( int $product_id ): string {
+		if ( ! defined( 'WC_VERSION' ) ) {
+			return '';
+		}
+		if ( ! $this->is_toggle_active( 'woocommerce', 'product_context' ) ) {
+			return '';
+		}
+
+		$product = wc_get_product( $product_id );
+		if ( ! $product ) {
+			return '';
+		}
+
+		$parts = array();
+
+		$sku = $product->get_sku();
+		if ( $sku ) {
+			$parts[] = "SKU: {$sku}";
+		}
+
+		$price = $product->get_price();
+		if ( '' !== $price && false !== $price ) {
+			$parts[] = 'Price: ' . wp_strip_all_tags( wc_price( $price ) );
+		}
+
+		$desc = $product->get_short_description();
+		if ( $desc ) {
+			$desc = wp_strip_all_tags( $desc );
+			$desc = mb_substr( $desc, 0, 500 );
+			if ( mb_strlen( $desc ) >= 5 ) {
+				$parts[] = "Description: {$desc}";
+			}
+		}
+
+		if ( empty( $parts ) ) {
+			return '';
+		}
+
+		return implode( ' | ', $parts );
+	}
+
+	/**
 	 * Collect the {focus_keywords} string from all active integrations.
 	 *
 	 * @param int $post_id Post / attachment parent ID.

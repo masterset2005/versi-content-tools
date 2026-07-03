@@ -686,6 +686,7 @@ class Versi_Admin {
 {filename_label}     - Label extracted from the image filename (e.g., a name, event, or subject)
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 {focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
+{product_context} - WooCommerce product SKU, price, description (requires Extensions integration)
 									</pre>
 								</details>
 								<details style="margin-top:8px;">
@@ -713,6 +714,7 @@ class Versi_Admin {
 {filename_label}     - Label extracted from the image filename (e.g., a name, event, or subject)
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 {focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
+{product_context} - WooCommerce product SKU, price, description (requires Extensions integration)
 
 Usage: Include these placeholders in your prompt text.
 Example: "The image is about {article_title}. Visual: {visual_desc}"
@@ -743,6 +745,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 {filename_label}     - Label extracted from the image filename (e.g., a name, event, or subject)
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 {focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
+{product_context} - WooCommerce product SKU, price, description (requires Extensions integration)
 									</pre>
 								</details>
 								<details style="margin-top:8px;">
@@ -826,6 +829,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 {target_length}   - Target word count from the setting above
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 {focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
+{product_context} - WooCommerce product SKU, price, description (requires Extensions integration)
 									</pre>
 								</details>
 								<details style="margin-top:8px;">

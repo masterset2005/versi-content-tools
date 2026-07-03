@@ -58,6 +58,13 @@ class Versi_Excerpt_Processor {
 			if ( $keywords ) {
 				$system .= "\n\n**SEO focus keyphrases:** {$keywords}\nNaturally incorporate these keyphrases into the excerpt text. Do NOT list, label, or append them separately — never output \"Keywords:\" or \"Keyphrases:\" or any similar prefix.";
 			}
+
+			if ( 'product' === get_post_type( $post_id ) ) {
+				$product_ctx = Versi_Extensions::init()->get_product_context( $post_id );
+				if ( $product_ctx ) {
+					$system .= "\n\n**Product context:** {$product_ctx}\nUse this context to inform the excerpt, but stay focused on the article itself.";
+				}
+			}
 		}
 
 		$builder = wp_ai_client_prompt( $prompt )

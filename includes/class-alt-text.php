@@ -24,11 +24,13 @@ class Versi_Alt_Text_Processor {
 		$shared                    = Versi_Processor::init();
 		$context                   = $shared->get_attachment_context( $attachment_id );
 		$context['focus_keywords'] = '';
+		$context['product_context'] = '';
 		if ( class_exists( 'Versi_Extensions' ) ) {
 			$attachment                = get_post( $attachment_id );
 			$parent_id                 = $attachment ? (int) $attachment->post_parent : 0;
 			$kw_post_id                = $parent_id ? $parent_id : $attachment_id;
 			$context['focus_keywords'] = Versi_Extensions::init()->get_focus_keywords( $kw_post_id );
+			$context['product_context'] = Versi_Extensions::init()->get_product_context( $kw_post_id );
 		}
 		$file  = get_attached_file( $attachment_id );
 		$mime  = get_post_mime_type( $attachment_id );
@@ -242,8 +244,8 @@ class Versi_Alt_Text_Processor {
 		}
 
 		$system = str_replace(
-			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}', '{filename_label}' ),
-			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '', $context['author_style'], $context['focus_keywords'], $context['filename_label'] ),
+			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}', '{filename_label}', '{product_context}' ),
+			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '', $context['author_style'], $context['focus_keywords'], $context['filename_label'], $context['product_context'] ),
 			$system
 		);
 
@@ -262,8 +264,8 @@ class Versi_Alt_Text_Processor {
 		if ( ! empty( trim( $custom ) ) ) {
 			$system = $custom;
 			$system = str_replace(
-				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}', '{filename_label}' ),
-				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt, $context['author_style'], $context['focus_keywords'], $context['filename_label'] ),
+				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}', '{filename_label}', '{product_context}' ),
+				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt, $context['author_style'], $context['focus_keywords'], $context['filename_label'], $context['product_context'] ),
 				$system
 			);
 		} else {
