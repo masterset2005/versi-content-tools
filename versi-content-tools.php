@@ -24,15 +24,19 @@ define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 /**
  * Include core classes.
  */
-require_once VERSI_PLUGIN_DIR . 'includes/trait-singleton.php';
-require_once VERSI_PLUGIN_DIR . 'includes/class-processor.php';
-require_once VERSI_PLUGIN_DIR . 'includes/class-auditor.php';
-require_once VERSI_PLUGIN_DIR . 'includes/class-alt-text.php';
-require_once VERSI_PLUGIN_DIR . 'includes/class-excerpt.php';
-require_once VERSI_PLUGIN_DIR . 'includes/class-extensions.php';
-require_once VERSI_PLUGIN_DIR . 'includes/class-abilities.php';
-require_once VERSI_PLUGIN_DIR . 'includes/class-admin.php';
-require_once VERSI_PLUGIN_DIR . 'includes/class-cli.php';
+if ( file_exists( VERSI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
+	require_once VERSI_PLUGIN_DIR . 'vendor/autoload.php';
+} else {
+	require_once VERSI_PLUGIN_DIR . 'includes/trait-singleton.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-processor.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-auditor.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-alt-text.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-excerpt.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-extensions.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-abilities.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-admin.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-cli.php';
+}
 
 /**
  * Deactivation: clean up any pending cron events.

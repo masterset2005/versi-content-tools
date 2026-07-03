@@ -63,8 +63,11 @@ foreach ( $versi_options as $versi_opt ) {
 	delete_option( $versi_opt );
 }
 
-// Delete user meta for generated notices.
-$versi_users = get_users( array( 'fields' => 'ID' ) );
-foreach ( $versi_users as $versi_user_id ) {
-	delete_user_meta( $versi_user_id, 'versi_last_generated_alt' );
+// Delete history run data (stored as separate options keyed by run ID).
+$history = get_option( 'versi_processing_history', array() );
+foreach ( $history as $entry ) {
+	delete_option( 'versi_history_run_' . $entry['id'] );
 }
+
+// Delete user meta for generated notices (bulk delete, single query).
+delete_metadata( 'user', 0, 'versi_last_generated_alt', '', true );

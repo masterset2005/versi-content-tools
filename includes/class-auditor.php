@@ -5,9 +5,7 @@
  * @package VersiContentTools
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Class Versi_Auditor

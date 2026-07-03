@@ -95,249 +95,51 @@ class Versi_Admin {
 	 * @return void
 	 */
 	public function register_settings() {
-		register_setting(
-			'versi_settings',
-			'versi_batch_size',
-			array(
-				'type'              => 'integer',
-				'sanitize_callback' => array( $this, 'sanitize_batch_size' ),
-				'default'           => 5,
-			)
+		$settings = array(
+			// Shared.
+			'versi_batch_size'            => array( 'type' => 'integer', 'sanitize' => array( $this, 'sanitize_batch_size' ), 'default' => 5 ),
+			'versi_match_author_tone'     => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
+			'versi_debug_mode'            => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
+			'versi_content_limit'         => array( 'type' => 'integer', 'sanitize' => array( $this, 'sanitize_content_limit' ), 'default' => 500 ),
+			// Alt-text.
+			'versi_alt_processing_mode'   => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_processing_mode' ), 'default' => 'two-pass' ),
+			'versi_alt_vision_model'      => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
+			'versi_alt_vision_fallback'   => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
+			'versi_alt_text_model'        => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
+			'versi_alt_text_fallback'     => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
+			'versi_alt_image_size'        => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => 'large' ),
+			'versi_alt_system_prompt'     => array( 'type' => 'string', 'sanitize' => 'sanitize_textarea_field', 'default' => '' ),
+			'versi_alt_compare_prompt'    => array( 'type' => 'string', 'sanitize' => 'sanitize_textarea_field', 'default' => '' ),
+			'versi_alt_single_prompt'     => array( 'type' => 'string', 'sanitize' => 'sanitize_textarea_field', 'default' => '' ),
+			'versi_alt_auto_generate'     => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
+			'versi_alt_show_generated'    => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
+			'versi_alt_update_content'    => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
+			'versi_strip_self_links'      => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
+			'versi_alt_cat_filter'        => array( 'type' => 'integer', 'sanitize' => 'absint', 'default' => 0 ),
+			// Excerpt.
+			'versi_excerpt_text_model'    => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
+			'versi_excerpt_text_fallback' => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
+			'versi_excerpt_auto_generate' => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
+			'versi_excerpt_prompt'        => array( 'type' => 'string', 'sanitize' => 'sanitize_textarea_field', 'default' => '' ),
+			'versi_excerpt_length'        => array( 'type' => 'integer', 'sanitize' => array( $this, 'sanitize_excerpt_length' ), 'default' => 55 ),
+			'versi_excerpt_min_length'    => array( 'type' => 'integer', 'sanitize' => 'absint', 'default' => 50 ),
+			// SEO.
+			'versi_seo_text_model'        => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
+			'versi_seo_text_fallback'     => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
+			'versi_seo_prompt'            => array( 'type' => 'string', 'sanitize' => 'sanitize_textarea_field', 'default' => '' ),
 		);
 
-		register_setting(
-			'versi_settings',
-			'versi_match_author_tone',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '0',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_debug_mode',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '0',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_vision_model',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
-				'default'           => '',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_text_model',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
-				'default'           => '',
-			)
-		);
-
-		// Workload-specific model settings.
-		register_setting(
-			'versi_settings',
-			'versi_alt_vision_model',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
-				'default'           => '',
-			)
-		);
-		register_setting(
-			'versi_settings',
-			'versi_alt_text_model',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
-				'default'           => '',
-			)
-		);
-		register_setting(
-			'versi_settings',
-			'versi_excerpt_text_model',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
-				'default'           => '',
-			)
-		);
-
-		// Fallback model preferences (used when primary is rate-limited).
-		foreach ( array( 'versi_alt_vision_fallback', 'versi_alt_text_fallback', 'versi_excerpt_text_fallback', 'versi_seo_text_fallback' ) as $opt ) {
+		foreach ( $settings as $option => $cfg ) {
 			register_setting(
 				'versi_settings',
-				'versi_alt_image_size',
+				$option,
 				array(
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-					'default'           => 'large',
-				)
-			);
-
-			register_setting(
-				'versi_settings',
-				$opt,
-				array(
-					'type'              => 'string',
-					'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
-					'default'           => '',
+					'type'              => $cfg['type'],
+					'sanitize_callback' => $cfg['sanitize'],
+					'default'           => $cfg['default'],
 				)
 			);
 		}
-
-		register_setting(
-			'versi_settings',
-			'versi_excerpt_min_length',
-			array(
-				'type'              => 'integer',
-				'sanitize_callback' => 'absint',
-				'default'           => 50,
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_content_limit',
-			array(
-				'type'              => 'integer',
-				'sanitize_callback' => array( $this, 'sanitize_content_limit' ),
-				'default'           => 500,
-			)
-		);
-
-		// Alt-text settings.
-		register_setting(
-			'versi_settings',
-			'versi_alt_processing_mode',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => array( $this, 'sanitize_processing_mode' ),
-				'default'           => 'two-pass',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_alt_system_prompt',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_textarea_field',
-				'default'           => '',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_alt_compare_prompt',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_textarea_field',
-				'default'           => '',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_alt_single_prompt',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_textarea_field',
-				'default'           => '',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_alt_auto_generate',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '0',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_alt_show_generated',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '0',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_alt_update_content',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '0',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_strip_self_links',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '0',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_alt_cat_filter',
-			array(
-				'type'              => 'integer',
-				'sanitize_callback' => 'absint',
-				'default'           => 0,
-			)
-		);
-
-		// Excerpt settings.
-		register_setting(
-			'versi_settings',
-			'versi_excerpt_auto_generate',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '0',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_excerpt_prompt',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_textarea_field',
-				'default'           => '',
-			)
-		);
-
-		register_setting(
-			'versi_settings',
-			'versi_excerpt_length',
-			array(
-				'type'              => 'integer',
-				'sanitize_callback' => array( $this, 'sanitize_excerpt_length' ),
-				'default'           => 55,
-			)
-		);
 	}
 
 	/**
@@ -2274,7 +2076,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$dest_label = __( 'Regenerate All Keywords', 'versi-content-tools' );
 			$dest_mode  = 'regenerate';
 		} else {
-			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-//content-tools' );
+			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-tools' );
 			$safe_mode   = 'missing';
 			$short_label = __( 'Fix Short Excerpts', 'versi-content-tools' );
 			$short_mode  = 'short';
@@ -3176,9 +2978,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$response                  = $job;
 		$response['cron_disabled'] = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
 
-		// Report stalled if updated_at hasn't moved in 30+ seconds.
+		// Report stalled if updated_at hasn't moved in 120+ seconds (accounting for slow AI responses).
 		if ( ! empty( $job['is_running'] ) && ! empty( $job['updated_at'] ) ) {
-			$response['stalled'] = ( time() - (int) $job['updated_at'] ) > 30;
+			$response['stalled'] = ( time() - (int) $job['updated_at'] ) > 120;
 		}
 
 		wp_send_json_success( $response );
@@ -3356,28 +3158,38 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			}
 		}
 
+		$run_id = wp_generate_uuid4();
+
+		// Store full results in a dedicated option keyed by run ID.
+		update_option( 'versi_history_run_' . $run_id, $sanitized, false );
+
+		// Store only summary in the history list.
 		$entry = array(
-			'id'        => uniqid( '', true ),
+			'id'        => $run_id,
 			'workload'  => $workload,
 			'mode'      => $mode,
 			'timestamp' => time(),
 			'summary'   => $summary,
-			'results'   => $sanitized,
+			'count'     => count( $sanitized ),
 		);
 
 		$history   = get_option( 'versi_processing_history', array() );
 		$history[] = $entry;
 
-		// Keep max 50 entries.
+		// Keep max 50 entries; clean up old run data.
 		if ( count( $history ) > 50 ) {
+			$old = array_slice( $history, 0, count( $history ) - 50 );
 			$history = array_slice( $history, count( $history ) - 50 );
+			foreach ( $old as $old_entry ) {
+				delete_option( 'versi_history_run_' . $old_entry['id'] );
+			}
 		}
 
 		update_option( 'versi_processing_history', $history, false );
 
 		wp_send_json_success(
 			array(
-				'run_id' => $entry['id'],
+				'run_id' => $run_id,
 			)
 		);
 	}
@@ -3401,7 +3213,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				'mode'      => $entry['mode'],
 				'timestamp' => $entry['timestamp'],
 				'summary'   => $entry['summary'],
-				'count'     => count( $entry['results'] ),
+				'count'     => $entry['count'],
 			);
 		}
 
@@ -3422,15 +3234,12 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			wp_send_json_error( 'No run ID provided' );
 		}
 
-		$history = get_option( 'versi_processing_history', array() );
-
-		foreach ( $history as $entry ) {
-			if ( $entry['id'] === $run_id ) {
-				wp_send_json_success( $entry );
-			}
+		$results = get_option( 'versi_history_run_' . $run_id, false );
+		if ( false === $results ) {
+			wp_send_json_error( 'Run not found' );
 		}
 
-		wp_send_json_error( 'Run not found' );
+		wp_send_json_success( $results );
 	}
 
 	/**
@@ -3441,6 +3250,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	public function ajax_clear_history() {
 		$this->ajax_check();
 
+		$history = get_option( 'versi_processing_history', array() );
+		foreach ( $history as $entry ) {
+			delete_option( 'versi_history_run_' . $entry['id'] );
+		}
 		delete_option( 'versi_processing_history' );
 		wp_send_json_success( array( 'cleared' => true ) );
 	}
@@ -3451,30 +3264,28 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return void
 	 */
 	public function process_background_batch() {
+		$lock = get_transient( 'versi_batch_lock' );
+		if ( $lock ) {
+			return;
+		}
+		set_transient( 'versi_batch_lock', 1, 120 );
+
 		$job = get_option( 'versi_job_status', false );
 		if ( ! $job || empty( $job['is_running'] ) ) {
+			delete_transient( 'versi_batch_lock' );
 			return;
 		}
 
-		// One batch (default 5 items) per cron fire — steady, not fast.
 		$this->process_single_batch( $job );
 
+		delete_transient( 'versi_batch_lock' );
+
 		if ( $job['is_running'] ) {
-			$delay = ! empty( $job['retry_after'] ) ? $job['retry_after'] : 30;
+			$delay = ! empty( $job['retry_after'] ) ? $job['retry_after'] : 5;
 			unset( $job['retry_after'] );
 
-			// Guard against duplicate scheduling.
 			if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
 				wp_schedule_single_event( time() + $delay, 'versi_process_batch' );
-			}
-
-			// If the event wasn't stored (e.g. filter blocked it, cron option
-			// locked), try once more synchronously as a last-resort fallback.
-			if ( ! wp_next_scheduled( 'versi_process_batch' ) ) {
-				$this->process_single_batch( $job );
-				if ( $job['is_running'] ) {
-					wp_schedule_single_event( time() + $delay, 'versi_process_batch' );
-				}
 			}
 		}
 	}
@@ -3514,17 +3325,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return false;
 		}
 
-		$counted = 0;
-		foreach ( $ids_result['ids'] as $id ) {
-			$safe_label   = '';
-			$safe_mode    = '';
-			$review_label = null;
-			$review_mode  = '';
-			$short_label  = '';
-			$short_mode   = '';
-			$dest_label   = '';
-			$dest_mode    = '';
+		$counted  = 0;
+		$min_wait = 0;
 
+		foreach ( $ids_result['ids'] as $id ) {
 			if ( 'alt' === $workload ) {
 				$result = $alt_proc->process_single( $id );
 			} elseif ( 'seo' === $workload ) {
@@ -3534,22 +3338,27 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			} else {
 				$result = $exc_proc->process_single( $id );
 			}
-			++$job['processed'];
 
 			if ( ! empty( $result['rate_limited'] ) ) {
-				--$job['processed'];
-				$job['retry_after'] = ! empty( $result['retry_after'] ) ? max( (int) ceil( $result['retry_after'] ), 5 ) : 30;
-				break;
+				$wait = ! empty( $result['retry_after'] ) ? max( (int) ceil( $result['retry_after'] ), 5 ) : 30;
+				$min_wait = $min_wait ? min( $min_wait, $wait ) : $wait;
+				continue;
 			}
+
+			++$job['processed'];
+			++$counted;
 
 			if ( 'error' === $result['status'] ) {
 				++$job['failed'];
 			}
-			++$counted;
 		}
 
 		$job['offset']    += $counted;
 		$job['updated_at'] = time();
+
+		if ( $min_wait ) {
+			$job['retry_after'] = $min_wait;
+		}
 
 		if ( $job['processed'] >= $job['total'] ) {
 			$job['is_running'] = false;
@@ -3757,49 +3566,35 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			return $content;
 		}
 
-		$content = preg_replace_callback(
-			'/<img[^>]+wp-image-(\d+)[^>]*>/i',
-			function ( $matches ) use ( &$changed ) {
-				$img_tag = $matches[0];
-				$img_id  = (int) $matches[1];
+		if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
+			return $content;
+		}
 
-				if ( ! $img_id ) {
-					return $img_tag;
-				}
+		$processor = new WP_HTML_Tag_Processor( $content );
+		$processed = '';
 
-				$alt_meta = get_post_meta( $img_id, '_wp_attachment_image_alt', true );
-				if ( '' === $alt_meta ) {
-					return $img_tag;
-				}
+		while ( $processor->next_tag( 'img' ) ) {
+			$class = $processor->get_attribute( 'class' );
+			if ( ! $class || ! preg_match( '/wp-image-(\d+)/i', $class, $m ) ) {
+				continue;
+			}
 
-				$alt_esc = esc_attr( $alt_meta );
+			$img_id  = (int) $m[1];
+			$alt_meta = get_post_meta( $img_id, '_wp_attachment_image_alt', true );
+			if ( '' === $alt_meta ) {
+				continue;
+			}
 
-				// If alt attribute already exists with the same value, skip.
-				if ( preg_match( '/alt=(["\'])(.*?)\1/i', $img_tag, $alt_match ) ) {
-					if ( $alt_match[2] === $alt_esc ) {
-						return $img_tag;
-					}
-					// Replace existing alt value.
-					$replaced = preg_replace(
-						'/alt=(["\'])(.*?)\1/i',
-						'alt="' . $alt_esc . '"',
-						$img_tag
-					);
-					if ( $replaced !== $img_tag ) {
-						$changed = true;
-					}
-					return ( false !== $replaced ) ? $replaced : $img_tag;
-				}
+			$existing = $processor->get_attribute( 'alt' );
+			if ( $existing === $alt_meta ) {
+				continue;
+			}
 
-				// No alt attribute exists; add it before the closing >.
-				$changed = true;
-				$new_img = str_replace( '<img', '<img alt="' . $alt_esc . '"', $img_tag );
-				return $new_img;
-			},
-			$content
-		);
+			$processor->set_attribute( 'alt', $alt_meta );
+			$changed = true;
+		}
 
-		return $content;
+		return $processor->get_updated_html();
 	}
 
 	/**
@@ -3839,38 +3634,37 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @return string Updated content.
 	 */
 	public function filter_content_alt_attributes( $content ) {
-		if ( empty( $content ) ) {
+		if ( empty( $content ) || false === stripos( $content, 'wp-image-' ) ) {
 			return $content;
 		}
 
-		return preg_replace_callback(
-			'/<img[^>]+wp-image-(\d+)[^>]*>/i',
-			function ( $matches ) {
-				$attachment_id = (int) $matches[1];
-				if ( ! $attachment_id ) {
-					return $matches[0];
-				}
+		if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
+			return $content;
+		}
 
-				$alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
-				if ( ! is_string( $alt ) || '' === trim( $alt ) ) {
-					return $matches[0];
-				}
+		$processor = new WP_HTML_Tag_Processor( $content );
 
-				$alt_esc = esc_attr( trim( $alt ) );
+		while ( $processor->next_tag( 'img' ) ) {
+			$class = $processor->get_attribute( 'class' );
+			if ( ! $class || ! preg_match( '/wp-image-(\d+)/i', $class, $m ) ) {
+				continue;
+			}
 
-				// Replace existing alt attribute or add one.
-				if ( preg_match( '/\salt=(["\'])(.*?)\1/i', $matches[0] ) ) {
-					return preg_replace(
-						'/\salt=(["\'])(.*?)\1/i',
-						'alt=$1' . $alt_esc . '$1',
-						$matches[0]
-					);
-				}
+			$attachment_id = (int) $m[1];
+			$alt           = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+			if ( ! is_string( $alt ) || '' === trim( $alt ) ) {
+				continue;
+			}
 
-				return str_replace( '<img', '<img alt="' . $alt_esc . '"', $matches[0] );
-			},
-			$content
-		);
+			$existing = $processor->get_attribute( 'alt' );
+			if ( $existing === $alt ) {
+				continue;
+			}
+
+			$processor->set_attribute( 'alt', $alt );
+		}
+
+		return $processor->get_updated_html();
 	}
 
 	/**
