@@ -1214,25 +1214,25 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	}
 
 		// Helper to format error message with potential link.
-		public function format_error( $error ) {
-			if ( preg_match( '/https?:\/\/[^\s]+/', $error, $matches ) ) {
-				$url = esc_url( $matches[0] );
-				return str_replace( $url, '<a href="' . $url . '" target="_blank">' . $url . '</a>', esc_html( $error ) );
-			}
-			return esc_html( $error );
+	public function format_error( $error ) {
+		if ( preg_match( '/https?:\/\/[^\s]+/', $error, $matches ) ) {
+			$url = esc_url( $matches[0] );
+			return str_replace( $url, '<a href="' . $url . '" target="_blank">' . $url . '</a>', esc_html( $error ) );
 		}
+		return esc_html( $error );
+	}
 
 		/**
 		 * Render results entry (with retry button).
 		 */
-		private function render_result_entry( $result, $workload ) {
-			$status_color = 'success' === $result['status'] ? '#16a34a' : ( 'error' === $result['status'] ? '#dc2626' : '#6b7280' );
-			?>
+	private function render_result_entry( $result, $workload ) {
+		$status_color = 'success' === $result['status'] ? '#16a34a' : ( 'error' === $result['status'] ? '#dc2626' : '#6b7280' );
+		?>
 			<div class="versi-entry" style="border-left:4px solid <?php echo esc_attr( $status_color ); ?>;">
 				<span>#<?php echo esc_html( $result['id'] ); ?></span>
 				<strong><?php echo esc_html( $result['title'] ); ?></strong>
 				<span style="color:<?php echo esc_attr( $status_color ); ?>;"><?php echo esc_html( $result['status'] ); ?></span>
-				<?php if ( ! empty( $result['error'] ) ) : ?>
+			<?php if ( ! empty( $result['error'] ) ) : ?>
 					<span style="color:#dc2626;"><?php echo wp_kses_post( $this->format_error( $result['error'] ) ); ?></span>
 					<button class="button button-small versi-retry-btn" data-id="<?php echo esc_attr( $result['id'] ); ?>" data-workload="<?php echo esc_attr( $workload ); ?>">
 						<?php esc_html_e( 'Retry', 'versi-content-tools' ); ?>
@@ -1240,11 +1240,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<?php endif; ?>
 			</div>
 			<?php
-		}
-        /**
-	 * @param string $workload 'alt' or 'excerpt' .
-	 * @return void
-	 */
+	}
+		/**
+		 * @param string $workload 'alt' or 'excerpt' .
+		 * @return void
+		 */
 	private function render_live_tab( $workload ) {
 		$base_url = admin_url( 'upload.php?page=versi-processing&versi_workload=' . $workload . '&versi_mode_tab=live' );
 
@@ -2009,10 +2009,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$dest_label  = __( 'Apply Both (Alt + Strip Links)', 'versi-content-tools' );
 			$dest_mode   = 'both';
 		} elseif ( 'seo' === $workload ) {
-			$safe_label  = __( 'Generate Focus Keywords', 'versi-content-tools' );
-			$safe_mode   = 'generate';
-			$dest_label  = __( 'Regenerate All Keywords', 'versi-content-tools' );
-			$dest_mode   = 'regenerate';
+			$safe_label = __( 'Generate Focus Keywords', 'versi-content-tools' );
+			$safe_mode  = 'generate';
+			$dest_label = __( 'Regenerate All Keywords', 'versi-content-tools' );
+			$dest_mode  = 'regenerate';
 		} else {
 			$safe_label  = __( 'Generate Missing Excerpts', 'versi-content-//content-tools' );
 			$safe_mode   = 'missing';
@@ -3113,11 +3113,13 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 		try {
 			$total = Versi_Auditor::init()->get_unlinked_count();
-			wp_send_json_success( array(
-				'total'    => $total,
-				'complete' => ( 0 === $total ),
-				'results'  => array(),
-			) );
+			wp_send_json_success(
+				array(
+					'total'    => $total,
+					'complete' => ( 0 === $total ),
+					'results'  => array(),
+				)
+			);
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
@@ -3136,17 +3138,19 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$limit  = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : Versi_Auditor::BATCH_SIZE;
 
 		try {
-			$total = Versi_Auditor::init()->get_unlinked_count();
+			$total         = Versi_Auditor::init()->get_unlinked_count();
 			$batch_results = Versi_Auditor::init()->find_unlinked_batch( $offset, $limit );
 			$scanned       = min( $offset + $limit, $total );
 			$complete      = $scanned >= $total;
 
-			wp_send_json_success( array(
-				'complete' => $complete,
-				'results'  => $batch_results,
-				'scanned'  => $scanned,
-				'total'    => $total,
-			) );
+			wp_send_json_success(
+				array(
+					'complete' => $complete,
+					'results'  => $batch_results,
+					'scanned'  => $scanned,
+					'total'    => $total,
+				)
+			);
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}

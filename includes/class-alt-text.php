@@ -284,8 +284,8 @@ class Versi_Alt_Text_Processor {
 		}
 
 		$trimmed = trim( $result );
-		// Check if the result looks cut-off (ends in ellipsis).
-		if ( preg_match( '/(\.\.\.|\…)$/', $trimmed ) ) {
+		// Check if the result looks cut-off (ends in ellipsis, possibly with trailing quotes/whitespace).
+		if ( preg_match( '/(\.\.\.|\…)\s*[\'"]?\s*$/', $trimmed ) ) {
 			return new WP_Error( 'ai_incomplete', 'AI response was cut off.' );
 		}
 

@@ -509,8 +509,8 @@ class Versi_Processor {
 			return $result;
 		}
 
-		// 2. Transient Errors (503, Timeouts).
-		if ( preg_match( '/\b(?:503|Service Unavailable|timeout|cURL error 28)\b/i', $message ) || str_contains( $message, 'Missing the "candidates[0].content" key' ) ) {
+		// 2. Transient Errors (503, Timeouts, incomplete AI responses).
+		if ( preg_match( '/\b(?:503|Service Unavailable|timeout|cURL error 28)\b/i', $message ) || str_contains( $message, 'Missing the "candidates[0].content" key' ) || str_contains( $message, 'ai_incomplete' ) ) {
 			$result['retry_after']  = 30.0; // Default backoff.
 			$result['should_retry'] = true;
 			$result['reason']       = 'transient_error';
