@@ -116,7 +116,7 @@ class Versi_Alt_Text_Processor {
 				);
 			}
 		} else {
-			list( $prompt, $system ) = $this->build_prompt();
+			list( $prompt, $system ) = $this->build_prompt( $context['filename_label'] ?? '' );
 			$builder                 = wp_ai_client_prompt( $prompt )
 				->using_system_instruction( $system )
 				->with_file( $file, $mime );
@@ -201,9 +201,10 @@ class Versi_Alt_Text_Processor {
 	/**
 	 * Build prompt and system instruction for the two-pass vision model.
 	 *
+	 * @param string $filename_label Optional person name extracted from filename.
 	 * @return array{0: string, 1: string}
 	 */
-	public function build_prompt() {
+	public function build_prompt( $filename_label = '' ) {
 		$custom = get_option( 'versi_alt_system_prompt', '' );
 		if ( ! empty( trim( $custom ) ) ) {
 			$system = $custom;
@@ -217,6 +218,10 @@ class Versi_Alt_Text_Processor {
 				. '- Be factual and concise' . "\n"
 				. '- Plain text only. No markdown, no emojis, no special unicode characters';
 			$prompt = 'Describe everything visible in this image.';
+		}
+
+		if ( '' !== $filename_label ) {
+			$prompt .= ' The filename suggests this might be ' . $filename_label . '.';
 		}
 
 		return array( $prompt, $system );
@@ -237,8 +242,8 @@ class Versi_Alt_Text_Processor {
 		}
 
 		$system = str_replace(
-			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}' ),
-			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '', $context['author_style'], $context['focus_keywords'] ),
+			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}', '{filename_label}' ),
+			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '', $context['author_style'], $context['focus_keywords'], $context['filename_label'] ),
 			$system
 		);
 
@@ -257,8 +262,8 @@ class Versi_Alt_Text_Processor {
 		if ( ! empty( trim( $custom ) ) ) {
 			$system = $custom;
 			$system = str_replace(
-				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}' ),
-				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt, $context['author_style'], $context['focus_keywords'] ),
+				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}', '{author_style}', '{focus_keywords}', '{filename_label}' ),
+				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt, $context['author_style'], $context['focus_keywords'], $context['filename_label'] ),
 				$system
 			);
 		} else {
@@ -305,7 +310,8 @@ class Versi_Alt_Text_Processor {
 			. '- Do not infer purpose, meaning, emotions, or context.' . "\n"
 			. '- Do not shorten for accessibility or style.' . "\n"
 			. '- Be factual, neutral, and concise.' . "\n"
-			. '- Plain text only. No markdown, no emojis, no special unicode characters.';
+			. '- Plain text only. No markdown, no emojis, no special unicode characters.' . "\n"
+			. '- **Profiles & People:** If the image is a headshot, profile picture, or portrait, and a name is supplied in the prompt, use it in the description. Structure the description as: [Name] [action/expression] [setting/clothing detail if relevant]. Do not use generic phrases like "A smiling woman" or "Portrait of a man" if the name is available. Do not use "Photo of," "Portrait of," or "Image of."';
 	}
 
 	/**
@@ -316,10 +322,17 @@ class Versi_Alt_Text_Processor {
 	public function default_single_prompt() {
 		return 'You are an **accessibility expert** generating alt text for HTML images.' . "\n\n"
 			. '**Rules:**' . "\n"
-			. '- Focus on the action, setting, and essential context provided in the article.' . "\n"
+			. '- Use the available context to determine what is relevant.' . "\n"
 			. '- Omit demographic details (race, gender, age) unless strictly essential.' . "\n"
 			. '- Do NOT start with "Image of", "Photo of", "Graphic of", or similar descriptors.' . "\n"
 			. '- Be factual, neutral, and concise.' . "\n\n"
+			. '**Profiles & People:**' . "\n"
+			. '- If the image is a headshot, profile picture, or portrait, use the available context to determine who is shown, then use their name in the description.' . "\n"
+			. '- Do NOT use generic phrases like "A smiling woman" or "Portrait of a man" if the name is available.' . "\n"
+			. '- Avoid redundancy: Do NOT use words like "Photo of," "Portrait of," or "Image of."' . "\n"
+			. '- Structure: [Person\'s Name] [action/expression] [setting/clothing detail if relevant].' . "\n"
+			. '  - Example: "Lynda Allen smiling."' . "\n"
+			. '  - Example: "Dr. Doug looking up from an open book."' . "\n\n"
 			. '**Input:** Context below + attached image' . "\n"
 			. '**Output:** One sentence only' . "\n\n"
 			. '**W3C Alt Decision Tree (follow in order):**' . "\n\n"
@@ -332,7 +345,7 @@ class Versi_Alt_Text_Processor {
 			. '- Max **125 characters** — no quotes, no preamble, no explanations' . "\n"
 			. '- **Forbidden starts:** `Image of`, `Photo of`, `Picture of`, `An image shows`, `The image features`' . "\n"
 			. '- **Forbidden labels:** `Informative:`, `Output:`, `Functional:`, `Alt:`' . "\n"
-			. '- **Use context:** Incorporate information from the provided caption, title, and article context to ensure the alt text is highly relevant.' . "\n"
+			. '- **Use context:** Leverage the available context to make the alt text specific and relevant to the surrounding content.' . "\n"
 			. '- Start with a noun phrase' . "\n\n"
 			. '**Context:**' . "\n"
 			. '**Caption:** {caption}' . "\n"
@@ -340,7 +353,8 @@ class Versi_Alt_Text_Processor {
 			. '**Article:** {article_title}' . "\n"
 			. '**Content:** {article_content}' . "\n"
 			. '**Current alt:** {existing_alt}' . "\n"
-			. '**Author style:** {author_style}' . "\n\n"
+			. '**Author style:** {author_style}' . "\n"
+			. '**Filename label:** {filename_label}' . "\n\n"
 			. 'Output a single clean string. No markdown, no emojis. When uncertain, use `[[DECORATIVE_ALT]]`.';
 	}
 
@@ -356,10 +370,11 @@ class Versi_Alt_Text_Processor {
 			. '**Rules:**' . "\n"
 			. '- If decorative or redundant → `[[DECORATIVE_ALT]]`' . "\n"
 			. '- Otherwise → one sentence describing the image using context' . "\n"
-			. '- **Use context:** Incorporate information from the provided caption, title, and article context to ensure the alt text is highly relevant.' . "\n"
+			. '- **Use context:** Leverage the available context to make the alt text specific and relevant to the surrounding content.' . "\n"
 			. '- Match the author writing style from the style samples below' . "\n"
 			. '- **Forbidden labels:** `Informative:`, `Output:`, `Functional:`, `Alt:`' . "\n"
 			. '- **Forbidden starts:** `Image of`, `Photo of`, `Picture of`, `An image shows`, `The image features`' . "\n"
+			. '- **Profiles & People:** If the visual description indicates a headshot or portrait, use the available context to identify who is shown, then structure the alt text as: [Name] [action/expression] [setting/clothing detail if relevant]. Do not use generic phrases like "A smiling woman" if the name is available. Do not use "Photo of," "Portrait of," or "Image of."' . "\n"
 			. '- Max **125 characters** — no quotes, no preamble, no explanations' . "\n\n"
 			. 'Output a single clean string. No markdown, no emojis. When uncertain, use `[[DECORATIVE_ALT]]`.';
 	}

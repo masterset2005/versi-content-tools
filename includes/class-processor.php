@@ -105,7 +105,7 @@ class Versi_Processor {
 	 * Gather context for an attachment: caption, title, article content.
 	 *
 	 * @param int $attachment_id Attachment ID.
-	 * @return array{caption: string, title: string, article_title: string, article_content: string, existing_alt: string, author_style: string}
+	 * @return array{caption: string, title: string, article_title: string, article_content: string, existing_alt: string, author_style: string, filename_label: string}
 	 */
 	public function get_attachment_context( $attachment_id ) {
 		$post      = get_post( $attachment_id );
@@ -117,6 +117,7 @@ class Versi_Processor {
 			'article_content' => '',
 			'existing_alt'    => $this->sanitize_input( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
 			'author_style'    => '',
+			'filename_label'     => $this->extract_filename_label( $attachment_id ),
 		);
 
 		$parent = null;
@@ -233,6 +234,68 @@ class Versi_Processor {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Extract a likely label (e.g., person name) from an attachment filename.
+	 *
+	 * Converts separators to spaces, removes common non-name words
+	 * (headshot, profile, photo, etc.) and standalone digits. Returns
+	 * the result in Title Case when at least two meaningful words remain.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return string Label or empty string.
+	 */
+	public function extract_filename_label( $attachment_id ) {
+		$file = get_attached_file( $attachment_id );
+		if ( ! $file ) {
+			return '';
+		}
+
+		$basename = pathinfo( $file, PATHINFO_FILENAME );
+		// Strip WordPress image size suffixes like -150x150.
+		$basename = preg_replace( '/-\d+x\d+$/', '', $basename );
+		// Replace separators with spaces.
+		$name = preg_replace( '/[_-]+/', ' ', $basename );
+		// Remove standalone digits.
+		$name = preg_replace( '/\b\d+\b/', '', $name );
+		// Collapse whitespace.
+		$name = preg_replace( '/\s+/', ' ', $name );
+		$name = trim( $name );
+
+		// Remove common non-name tokens.
+		$stop_words = array(
+			'headshot', 'profile', 'photo', 'picture', 'portrait',
+			'thumb', 'thumbnail', 'img', 'image', 'dsc', 'pic',
+			'mugshot', 'selfie', 'avatar', 'screenshot',
+		);
+		$parts     = explode( ' ', $name );
+		$filtered  = array();
+		foreach ( $parts as $part ) {
+			$lower = strtolower( $part );
+			if ( in_array( $lower, $stop_words, true ) ) {
+				continue;
+			}
+			if ( strlen( $part ) <= 1 ) {
+				continue;
+			}
+			$filtered[] = $part;
+		}
+
+		if ( empty( $filtered ) ) {
+			return '';
+		}
+
+		$name = implode( ' ', $filtered );
+		$name = mb_convert_case( $name, MB_CASE_TITLE, 'UTF-8' );
+
+		// Require at least two words or a title prefix (Dr, Mr, etc.).
+		$word_count = count( explode( ' ', $name ) );
+		if ( $word_count >= 2 || preg_match( '/^(Dr|Mr|Mrs|Ms|Prof|Rev|Sir|Lady|Lord)\s/i', $name ) ) {
+			return $name;
+		}
+
+		return '';
 	}
 
 	/**

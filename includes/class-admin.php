@@ -679,6 +679,7 @@ class Versi_Admin {
 {article_title}   - Parent post title
 {article_content} - Parent post body content (first <?php echo absint( get_option( 'versi_content_limit', 500 ) ); ?> chars; also available as {article_excerpt})
 {existing_alt}    - Current alt text in database
+{filename_label}     - Label extracted from the image filename (e.g., a name, event, or subject)
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 {focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
 									</pre>
@@ -705,6 +706,7 @@ class Versi_Admin {
 {article_content} - Parent post body content (first <?php echo absint( get_option( 'versi_content_limit', 500 ) ); ?> chars; also available as {article_excerpt})
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
+{filename_label}     - Label extracted from the image filename (e.g., a name, event, or subject)
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 {focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
 
@@ -734,6 +736,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 {article_content} - Parent post body content (first <?php echo absint( get_option( 'versi_content_limit', 500 ) ); ?> chars; also available as {article_excerpt})
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
+{filename_label}     - Label extracted from the image filename (e.g., a name, event, or subject)
 {author_style}    - Author's recent writing samples (requires "Match Author Tone" setting)
 {focus_keywords}  - SEO focus keyphrases (requires Extensions integration)
 									</pre>
