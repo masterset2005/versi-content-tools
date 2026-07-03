@@ -43,6 +43,7 @@ $versi_options = array(
 	'versi_debug_mode',
 	'versi_job_status',
 	'versi_live_job_status',
+	'versi_processing_history',
 	// Extension toggles — read.
 	'versi_ext_smartcrawl_focus',
 	'versi_ext_yoast_focus',

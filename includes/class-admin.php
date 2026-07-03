@@ -70,6 +70,10 @@ class Versi_Admin {
 		add_action( 'wp_ajax_versi_run_audit', array( $this, 'ajax_run_audit' ) );
 		add_action( 'wp_ajax_versi_audit_progress', array( $this, 'ajax_audit_progress' ) );
 		add_action( 'wp_ajax_versi_link_attachment', array( $this, 'ajax_link_attachment' ) );
+		add_action( 'wp_ajax_versi_save_results', array( $this, 'ajax_save_results' ) );
+		add_action( 'wp_ajax_versi_get_history', array( $this, 'ajax_get_history' ) );
+		add_action( 'wp_ajax_versi_get_history_run', array( $this, 'ajax_get_history_run' ) );
+		add_action( 'wp_ajax_versi_clear_history', array( $this, 'ajax_clear_history' ) );
 		add_action( 'versi_process_batch', array( $this, 'process_background_batch' ) );
 	}
 
@@ -1078,6 +1082,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<a href="<?php echo esc_url( $auditor_url ); ?>" class="nav-tab <?php echo 'auditor' === $workload ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Media Auditor', 'versi-content-tools' ); ?>
 				</a>
+				<a href="<?php echo esc_url( add_query_arg( 'versi_workload', 'history', $base_url ) ); ?>" class="nav-tab <?php echo 'history' === $workload ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'History', 'versi-content-tools' ); ?>
+				</a>
 			</h2>
 
 			<?php if ( $is_proc_workload ) : ?>
@@ -1211,6 +1218,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<?php $this->render_dashboard_tab(); ?>
 			<?php elseif ( 'auditor' === $workload ) : ?>
 				<?php $this->render_auditor_tab(); ?>
+			<?php elseif ( 'history' === $workload ) : ?>
+				<?php $this->render_history_tab(); ?>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -1527,6 +1536,33 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				if (etaTimer) clearInterval(etaTimer);
 			});
 
+			function downloadResultsCSV() {
+				if (resultsData.length === 0) return;
+				let csv = 'ID,Title,Status,Previous Value,Generated Value,Error/Reason,Changed\n';
+				resultsData.forEach(function(r) {
+					csv += '"' + (r.id || '') + '","' + (r.title || '').replace(/"/g, '""') + '","' + (r.status || '') + '","' + (r.previous || '').replace(/"/g, '""') + '","' + (r.generated || '').replace(/"/g, '""') + '","' + ((r.error || r.reason || '') + '').replace(/"/g, '""') + '","' + (r.changed ? 'Yes' : 'No') + '"\n';
+				});
+				const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+				const link = document.createElement('a');
+				link.href = URL.createObjectURL(blob);
+				link.download = 'versi-' + workload + '-' + new Date().toISOString().slice(0,19).replace(/[:]/g, '-') + '.csv';
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				URL.revokeObjectURL(link.href);
+			}
+
+			function saveResults() {
+				if (resultsData.length === 0) return;
+				$.post(ajaxurl, {
+					action: 'versi_save_results',
+					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+					workload: workload,
+					mode: mode,
+					results: resultsData,
+				});
+			}
+
 			function updateSummary() {
 				$stopLink.hide();
 				$('#versi-pause-btn').hide();
@@ -1537,7 +1573,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					else if (r.status === 'error') errs++;
 				});
 				$status.text('<?php echo esc_js( __( 'Complete.', 'versi-content-tools' ) ); ?> ' + ok + ' ok' + (errs > 0 ? ', ' + errs + ' errors' : ''));
+				saveResults();
 				dismissSavedJob();
+				const exportBtn = $('<button type="button" class="button" style="margin-top:10px;"><?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?></button>');
+				exportBtn.on('click', downloadResultsCSV);
+				$('#versi-processing-area').append(exportBtn);
 			}
 
 			function getActionName(prefix) {
@@ -1714,17 +1754,27 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				}
 
 				let i = 0;
-				function nextInBatch() {
-					if (!running || i >= ids.length) {
-						cb();
-						return;
+				let active = 0;
+				const maxConcurrent = Math.min(batchSize, ids.length);
+
+				function startNext() {
+					while (active < maxConcurrent && i < ids.length && running) {
+						const idx = i++;
+						active++;
+						processId(ids[idx], () => {
+							active--;
+							if (i < ids.length && running) {
+								startNext();
+							} else if (active === 0) {
+								cb();
+							}
+						});
 					}
-					processId(ids[i], () => {
-						i++;
-						setTimeout(nextInBatch, 300);
-					});
+					if (active === 0) {
+						cb();
+					}
 				}
-				nextInBatch();
+				startNext();
 			}
 
 			function fetchBatch() {
@@ -1857,6 +1907,22 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				$results.scrollTop($results[0].scrollHeight);
 			}
 
+			function downloadReviewCSV() {
+				if (resultsData.length === 0) return;
+				let csv = 'ID,Title,Status,Content,Reason\n';
+				resultsData.forEach(function(r) {
+					csv += '"' + (r.id || '') + '","' + (r.title || '').replace(/"/g, '""') + '","' + (r.status || '') + '","' + ((r.alt || r.excerpt || '') + '').replace(/"/g, '""') + '","' + (r.reason || '').replace(/"/g, '""') + '"\n';
+				});
+				const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+				const link = document.createElement('a');
+				link.href = URL.createObjectURL(blob);
+				link.download = 'versi-' + workload + '-review-' + new Date().toISOString().slice(0,19).replace(/[:]/g, '-') + '.csv';
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				URL.revokeObjectURL(link.href);
+			}
+
 			function updateReviewSummary() {
 				$stopLink.hide();
 				if (etaTimer) clearInterval(etaTimer);
@@ -1867,7 +1933,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					else info++;
 				});
 				$status.text('<?php echo esc_js( __( 'Review complete.', 'versi-content-tools' ) ); ?> ' + good + ' good, ' + bad + ' bad' + (info > 0 ? ', ' + info + ' info' : ''));
+				saveResults();
 				dismissSavedJob();
+				const exportBtn = $('<button type="button" class="button" style="margin-top:10px;"><?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?></button>');
+				exportBtn.on('click', downloadReviewCSV);
+				$('#versi-processing-area').append(exportBtn);
 			}
 
 			// Redo / Undo / Review redo
@@ -1997,6 +2067,181 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 	 * @param string $workload 'alt' or 'excerpt'.
 	 * @return void
 	 */
+	/**
+	 * Render the Processing History tab.
+	 *
+	 * @return void
+	 */
+	private function render_history_tab() {
+		$history = get_option( 'versi_processing_history', array() );
+		?>
+		<style>
+		.versi-history-card {
+			border-radius:12px;border:1px solid #e5e7eb;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+		}
+		.versi-history-card .versi-history-header {
+			padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px;
+		}
+		.versi-history-card .versi-history-body { padding:16px 20px; }
+		.versi-history-empty {
+			text-align:center;padding:40px 20px;color:#6b7280;font-size:14px;
+		}
+		.versi-history-table {
+			width:100%;border-collapse:collapse;font-size:13px;
+		}
+		.versi-history-table th {
+			text-align:left;padding:10px 12px;border-bottom:2px solid #e5e7eb;font-weight:600;color:#374151;background:#f9fafb;
+		}
+		.versi-history-table td {
+			padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;
+		}
+		.versi-history-table tr:hover td { background:#f9fafb; }
+		.versi-history-badge {
+			display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
+		}
+		.versi-history-badge.alt { background:#eff6ff;color:#2563eb; }
+		.versi-history-badge.excerpt { background:#f0fdf4;color:#16a34a; }
+		.versi-history-badge.seo { background:#fefce8;color:#ca8a04; }
+		.versi-history-badge.content { background:#fef2f2;color:#dc2626; }
+		.versi-history-badge.auditor { background:#f3f4f6;color:#6b7280; }
+		.versi-history-badge.review { background:#f0f9ff;color:#0369a1; }
+		</style>
+		<div class="versi-history-card">
+			<div class="versi-history-header">
+				<svg aria-hidden="true" focusable="false" width="20" height="20" fill="none" stroke="#6366f1" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+				<div>
+					<h3 style="margin:0;font-size:15px;font-weight:600;color:#1e1e1e;"><?php esc_html_e( 'Processing History', 'versi-content-tools' ); ?></h3>
+					<p style="margin:2px 0 0;font-size:13px;color:#4b5563;"><?php esc_html_e( 'Recent processing runs and exported results.', 'versi-content-tools' ); ?></p>
+				</div>
+				<?php if ( ! empty( $history ) ) : ?>
+					<button type="button" id="versi-clear-history" class="button" style="margin-left:auto;"><?php esc_html_e( 'Clear History', 'versi-content-tools' ); ?></button>
+				<?php endif; ?>
+			</div>
+			<div class="versi-history-body">
+				<?php if ( empty( $history ) ) : ?>
+					<div class="versi-history-empty">
+						<svg aria-hidden="true" focusable="false" width="40" height="40" fill="none" stroke="#d1d5db" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+						<p style="margin:12px 0 0;"><?php esc_html_e( 'No processing history yet. Results are saved automatically when a processing run completes.', 'versi-content-tools' ); ?></p>
+					</div>
+				<?php else : ?>
+					<table class="versi-history-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Date', 'versi-content-tools' ); ?></th>
+								<th><?php esc_html_e( 'Workload', 'versi-content-tools' ); ?></th>
+								<th><?php esc_html_e( 'Mode', 'versi-content-tools' ); ?></th>
+								<th><?php esc_html_e( 'Results', 'versi-content-tools' ); ?></th>
+								<th><?php esc_html_e( 'Export', 'versi-content-tools' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( array_reverse( $history ) as $run ) : ?>
+								<tr>
+									<td style="white-space:nowrap;">
+										<?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $run['timestamp'] ) ); ?>
+									</td>
+									<td>
+										<span class="versi-history-badge <?php echo esc_attr( $run['workload'] ); ?>">
+											<?php echo esc_html( ucfirst( $run['workload'] ) ); ?>
+										</span>
+									</td>
+									<td style="color:#6b7280;font-size:12px;">
+										<?php echo esc_html( str_replace( '_', ' ', $run['mode'] ) ); ?>
+									</td>
+									<td>
+										<?php
+										$summary = $run['summary'];
+										$parts = array();
+										if ( ! empty( $summary['ok'] ) ) {
+											$parts[] = '<span style="color:#16a34a;font-weight:600;">' . esc_html( $summary['ok'] ) . ' ok</span>';
+										}
+										if ( ! empty( $summary['errors'] ) ) {
+											$parts[] = '<span style="color:#dc2626;font-weight:600;">' . esc_html( $summary['errors'] ) . ' err</span>';
+										}
+										if ( ! empty( $summary['skipped'] ) ) {
+											$parts[] = '<span style="color:#6b7280;">' . esc_html( $summary['skipped'] ) . ' skipped</span>';
+										}
+										if ( ! empty( $summary['good'] ) ) {
+											$parts[] = '<span style="color:#16a34a;font-weight:600;">' . esc_html( $summary['good'] ) . ' good</span>';
+										}
+										if ( ! empty( $summary['bad'] ) ) {
+											$parts[] = '<span style="color:#dc2626;font-weight:600;">' . esc_html( $summary['bad'] ) . ' bad</span>';
+										}
+										echo wp_kses_post( implode( ' &middot; ', $parts ) );
+										?>
+										<span style="color:#9ca3af;font-size:11px;margin-left:6px;">
+											(<?php echo esc_html( count( $run['results'] ) ); ?> <?php esc_html_e( 'items', 'versi-content-tools' ); ?>)
+										</span>
+									</td>
+									<td>
+										<button type="button" class="button button-small versi-history-download" data-run-id="<?php echo esc_attr( $run['id'] ); ?>">
+											<?php esc_html_e( 'Download CSV', 'versi-content-tools' ); ?>
+										</button>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
+		</div>
+		<script>
+		jQuery(function($) {
+			$('#versi-clear-history').on('click', function() {
+				if (!confirm('<?php echo esc_js( __( 'Clear all processing history?', 'versi-content-tools' ) ); ?>')) return;
+				$.post(ajaxurl, {
+					action: 'versi_clear_history',
+					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+				}, function() { location.reload(); });
+			});
+
+			$(document).on('click', '.versi-history-download', function() {
+				const $btn = $(this).prop('disabled', true).text('...');
+				const runId = $btn.data('run-id');
+				$.post(ajaxurl, {
+					action: 'versi_get_history_run',
+					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+					run_id: runId,
+				}, function(resp) {
+					if (!resp.success) { $btn.prop('disabled', false).text('<?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?>'); return; }
+					const run = resp.data;
+					const results = run.results || [];
+					if (results.length === 0) { $btn.prop('disabled', false).text('<?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?>'); return; }
+
+					let csv = '';
+					if (run.workload === 'auditor') {
+						csv = 'Attachment ID,Attachment URL,Path,Post ID,Post Title\n';
+						results.forEach(function(r) {
+							csv += '"' + (r.attachment_id || '') + '","' + (r.attachment_url || '').replace(/"/g, '""') + '","' + (r.att_path || '').replace(/"/g, '""') + '","' + (r.post_id || '') + '","' + (r.post_title || '').replace(/"/g, '""') + '"\n';
+						});
+					} else if (run.workload === 'review' || run.mode === 'bulk_review') {
+						csv = 'ID,Title,Status,Content,Reason\n';
+						results.forEach(function(r) {
+							csv += '"' + (r.id || '') + '","' + (r.title || '').replace(/"/g, '""') + '","' + (r.status || '') + '","' + ((r.alt || r.excerpt || '') + '').replace(/"/g, '""') + '","' + (r.reason || '').replace(/"/g, '""') + '"\n';
+						});
+					} else {
+						csv = 'ID,Title,Status,Previous Value,Generated Value,Error/Reason,Changed\n';
+						results.forEach(function(r) {
+							csv += '"' + (r.id || '') + '","' + (r.title || '').replace(/"/g, '""') + '","' + (r.status || '') + '","' + (r.previous || '').replace(/"/g, '""') + '","' + (r.generated || '').replace(/"/g, '""') + '","' + ((r.error || r.reason || '') + '').replace(/"/g, '""') + '","' + (r.changed ? 'Yes' : 'No') + '"\n';
+						});
+					}
+
+					const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+					const link = document.createElement('a');
+					link.href = URL.createObjectURL(blob);
+					link.download = 'versi-' + run.workload + '-' + run.id + '.csv';
+					document.body.appendChild(link);
+					link.click();
+					document.body.removeChild(link);
+					URL.revokeObjectURL(link.href);
+					$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Download CSV', 'versi-content-tools' ) ); ?>');
+				});
+			});
+		});
+		</script>
+		<?php
+	}
+
 	private function render_background_tab( $workload ) {
 		$job = get_option( 'versi_job_status', false );
 		if ( 'alt' === $workload ) {
@@ -2299,6 +2544,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				});
 			});
 
+			let auditResults = [];
+
 			function processAuditBatch(offset, total, accumulatedResults) {
 				const $results = $('#versi-audit-results');
 				const $btn = $('#versi-audit-btn');
@@ -2321,6 +2568,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					const combined = accumulatedResults.concat(newResults);
 					
 					if (resp.data.complete) {
+						auditResults = combined;
 						if (combined.length > 0) {
 							const totalPosts = new Set(combined.map(i => i.post_id)).size;
 						let html = '<div class="versi-audit-summary"><?php echo esc_js( __( 'Found', 'versi-content-tools' ) ); ?> <strong>' + combined.length + '</strong> <?php echo esc_js( __( 'unlinked image(s) across', 'versi-content-tools' ) ); ?> <strong>' + totalPosts + '</strong> <?php echo esc_js( __( 'post(s).', 'versi-content-tools' ) ); ?></div>';
@@ -2346,6 +2594,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							$results.html('<div class="versi-audit-summary" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;"><?php echo esc_js( __( 'No unlinked images found. All media library images appear to be linked to posts.', 'versi-content-tools' ) ); ?></div>');
 						}
 						$btn.prop('disabled', false);
+						// Auto-save to history.
+						if (auditResults.length > 0) {
+							$.post(ajaxurl, {
+								action: 'versi_save_results',
+								_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'versi_process' ) ); ?>',
+								workload: 'auditor',
+								mode: 'audit',
+								results: auditResults,
+							});
+						}
 					} else {
 						processAuditBatch(resp.data.scanned, total, combined);
 					}
@@ -2355,6 +2613,22 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				});
 			}
 
+
+			$(document).on('click', '#versi-audit-export-csv', function() {
+				if (auditResults.length === 0) return;
+				let csv = 'Attachment ID,Attachment URL,Path,Post ID,Post Title\n';
+				auditResults.forEach(function(item) {
+					csv += '"' + (item.attachment_id || '') + '","' + (item.attachment_url || '').replace(/"/g, '""') + '","' + (item.att_path || '').replace(/"/g, '""') + '","' + (item.post_id || '') + '","' + (item.post_title || '').replace(/"/g, '""') + '"\n';
+				});
+				const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+				const link = document.createElement('a');
+				link.href = URL.createObjectURL(blob);
+				link.download = 'versi-auditor-' + new Date().toISOString().slice(0,19).replace(/[:]/g, '-') + '.csv';
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				URL.revokeObjectURL(link.href);
+			});
 
 			$(document).on('click', '#versi-select-all', function() {
 				$('.versi-link-check').prop('checked', $(this).prop('checked'));
@@ -2987,6 +3261,176 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 		delete_option( 'versi_live_job_status' );
 		wp_send_json_success( array( 'dismissed' => true ) );
+	}
+
+	/**
+	 * AJAX: Save processing results to history.
+	 *
+	 * @return void
+	 */
+	public function ajax_save_results() {
+		$this->ajax_check();
+
+		$workload = isset( $_POST['workload'] ) ? sanitize_key( wp_unslash( $_POST['workload'] ) ) : '';
+		$mode     = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : '';
+		$results  = isset( $_POST['results'] ) ? wp_unslash( $_POST['results'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		if ( empty( $workload ) || ! is_array( $results ) ) {
+			wp_send_json_error( 'Invalid data' );
+		}
+
+		// Sanitize results array.
+		$sanitized = array();
+		foreach ( $results as $r ) {
+			$item = array(
+				'id'        => isset( $r['id'] ) ? absint( $r['id'] ) : 0,
+				'title'     => isset( $r['title'] ) ? sanitize_text_field( wp_unslash( $r['title'] ) ) : '',
+				'status'    => isset( $r['status'] ) ? sanitize_key( $r['status'] ) : '',
+				'previous'  => isset( $r['previous'] ) ? sanitize_textarea_field( wp_unslash( $r['previous'] ) ) : '',
+				'generated' => isset( $r['generated'] ) ? sanitize_textarea_field( wp_unslash( $r['generated'] ) ) : '',
+				'error'     => isset( $r['error'] ) ? sanitize_textarea_field( wp_unslash( $r['error'] ) ) : '',
+				'reason'    => isset( $r['reason'] ) ? sanitize_textarea_field( wp_unslash( $r['reason'] ) ) : '',
+				'changed'   => isset( $r['changed'] ) ? (bool) $r['changed'] : false,
+			);
+
+			// Include auditor-specific fields.
+			if ( 'auditor' === $workload ) {
+				$item['attachment_id']  = isset( $r['attachment_id'] ) ? absint( $r['attachment_id'] ) : 0;
+				$item['attachment_url'] = isset( $r['attachment_url'] ) ? esc_url_raw( wp_unslash( $r['attachment_url'] ) ) : '';
+				$item['att_path']       = isset( $r['att_path'] ) ? sanitize_text_field( wp_unslash( $r['att_path'] ) ) : '';
+				$item['post_id']        = isset( $r['post_id'] ) ? absint( $r['post_id'] ) : 0;
+				$item['post_title']     = isset( $r['post_title'] ) ? sanitize_text_field( wp_unslash( $r['post_title'] ) ) : '';
+			}
+
+			// Include review-specific fields.
+			if ( 'review' === $workload || 'bulk_review' === $mode ) {
+				$item['alt']     = isset( $r['alt'] ) ? sanitize_textarea_field( wp_unslash( $r['alt'] ) ) : '';
+				$item['excerpt'] = isset( $r['excerpt'] ) ? sanitize_textarea_field( wp_unslash( $r['excerpt'] ) ) : '';
+			}
+
+			$sanitized[] = $item;
+		}
+
+		// Build summary.
+		$summary = array(
+			'ok'      => 0,
+			'errors'  => 0,
+			'skipped' => 0,
+		);
+		if ( 'review' === $workload || 'bulk_review' === $mode ) {
+			$summary = array(
+				'good' => 0,
+				'bad'  => 0,
+				'info' => 0,
+			);
+		}
+		foreach ( $sanitized as $r ) {
+			if ( 'success' === $r['status'] || 'good' === $r['status'] ) {
+				if ( isset( $summary['ok'] ) ) {
+					++$summary['ok'];
+				} else {
+					++$summary['good'];
+				}
+			} elseif ( 'error' === $r['status'] || 'bad' === $r['status'] ) {
+				if ( isset( $summary['errors'] ) ) {
+					++$summary['errors'];
+				} elseif ( isset( $summary['bad'] ) ) {
+					++$summary['bad'];
+				}
+			} elseif ( isset( $summary['skipped'] ) ) {
+				++$summary['skipped'];
+			} else {
+				++$summary['info'];
+			}
+		}
+
+		$entry = array(
+			'id'        => uniqid( '', true ),
+			'workload'  => $workload,
+			'mode'      => $mode,
+			'timestamp' => time(),
+			'summary'   => $summary,
+			'results'   => $sanitized,
+		);
+
+		$history   = get_option( 'versi_processing_history', array() );
+		$history[] = $entry;
+
+		// Keep max 50 entries.
+		if ( count( $history ) > 50 ) {
+			$history = array_slice( $history, count( $history ) - 50 );
+		}
+
+		update_option( 'versi_processing_history', $history, false );
+
+		wp_send_json_success(
+			array(
+				'run_id' => $entry['id'],
+			)
+		);
+	}
+
+	/**
+	 * AJAX: Get list of history runs (summary only, no results).
+	 *
+	 * @return void
+	 */
+	public function ajax_get_history() {
+		$this->ajax_check();
+
+		$history = get_option( 'versi_processing_history', array() );
+
+		// Return only summary info (no results) for listing.
+		$runs = array();
+		foreach ( array_reverse( $history ) as $entry ) {
+			$runs[] = array(
+				'id'        => $entry['id'],
+				'workload'  => $entry['workload'],
+				'mode'      => $entry['mode'],
+				'timestamp' => $entry['timestamp'],
+				'summary'   => $entry['summary'],
+				'count'     => count( $entry['results'] ),
+			);
+		}
+
+		wp_send_json_success( $runs );
+	}
+
+	/**
+	 * AJAX: Get a specific history run with full results.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_history_run() {
+		$this->ajax_check();
+
+		$run_id = isset( $_POST['run_id'] ) ? sanitize_text_field( wp_unslash( $_POST['run_id'] ) ) : '';
+
+		if ( empty( $run_id ) ) {
+			wp_send_json_error( 'No run ID provided' );
+		}
+
+		$history = get_option( 'versi_processing_history', array() );
+
+		foreach ( $history as $entry ) {
+			if ( $entry['id'] === $run_id ) {
+				wp_send_json_success( $entry );
+			}
+		}
+
+		wp_send_json_error( 'Run not found' );
+	}
+
+	/**
+	 * AJAX: Clear all processing history.
+	 *
+	 * @return void
+	 */
+	public function ajax_clear_history() {
+		$this->ajax_check();
+
+		delete_option( 'versi_processing_history' );
+		wp_send_json_success( array( 'cleared' => true ) );
 	}
 
 	/**
