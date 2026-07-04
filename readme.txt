@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.9.0
+Stable tag: 1.10.0
 License: GPL v2 or later
 
 AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
@@ -87,6 +87,12 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 1.10.0 =
+* Refactor: God class (class-admin.php) split into focused files — AJAX handlers, settings, and admin page rendering each in their own class
+* Fix: Broken PHP tags in render_processing_page() causing URL variables to render as literal HTML text
+* Fix: Versi_Admin_Settings and Versi_Admin_Ajax now properly initialized on plugin load (hooks were silently not registering)
+* Dev: phpstan clean (0 errors)
 
 = 1.9.0 =
 * Fix: Auditor scan reliability using tiered verification (Featured Image lookup + ID class lookup + tokenized filename matching)

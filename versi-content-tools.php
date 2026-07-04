@@ -3,7 +3,7 @@
  * Plugin Name: Versi Content Tools
  * Plugin URI:  https://versihosting.com/
  * Description: AI-powered alt-text generation and excerpt management. Uses the WP AI Client (WordPress 7.0+).
- * Version:     1.9.0
+ * Version:     1.10.0
  * Author:      Sean Thompson
  * Author URI:  https://stprojects.net/
  * License:     GPL v2 or later
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'VERSI_VERSION', '1.9.0' );
+define( 'VERSI_VERSION', '1.10.0' );
 define( 'VERSI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -35,6 +35,8 @@ if ( file_exists( VERSI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 	require_once VERSI_PLUGIN_DIR . 'includes/class-extensions.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-abilities.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-admin.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-admin-settings.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-admin-ajax.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-cli.php';
 }
 
@@ -85,6 +87,8 @@ function versi_init() {
 	Versi_Excerpt_Processor::init();
 	Versi_Extensions::init();
 	Versi_Abilities::init();
+	Versi_Admin_Settings::init();
 }
 add_action( 'plugins_loaded', 'versi_init' );
 Versi_Admin::init();
+Versi_Admin_Ajax::init();
