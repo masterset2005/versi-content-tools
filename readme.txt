@@ -88,6 +88,15 @@ targets all excerpts.
 
 == Changelog ==
 
+= 1.11.0 =
+* Security: Fixed privilege escalation — all AJAX handlers now require `edit_others_posts` instead of `edit_posts` (Contributors can no longer modify others' content)
+* Security: Fixed IDOR — ownership checks added to all undo/save/link AJAX handlers (attachment and post author verification)
+* Security: Added per-user rate limiting (20 requests per 10 seconds) across all AJAX endpoints
+* Security: Processing history now restricted to administrators (`manage_options`)
+* Security: Mode parameter validated against a whitelist before processing
+* Security: AI error messages sanitized to prevent infrastructure information disclosure
+* Security: Attachment path exposure in auditor reduced to basename only
+
 = 1.10.0 =
 * Refactor: God class (class-admin.php) split into focused files — AJAX handlers, settings, and admin page rendering each in their own class
 * Fix: Broken PHP tags in render_processing_page() causing URL variables to render as literal HTML text

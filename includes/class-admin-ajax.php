@@ -77,7 +77,7 @@ class Versi_Admin_Ajax {
 		if ( ! $post ) {
 			return false;
 		}
-		return (int) $post->post_author === get_current_user_id();
+		return get_current_user_id() === (int) $post->post_author;
 	}
 
 	private function user_can_edit_attachment( $attachment_id ) {
@@ -91,7 +91,7 @@ class Versi_Admin_Ajax {
 		if ( $attachment->post_parent ) {
 			return $this->user_can_edit_post( $attachment->post_parent );
 		}
-		return (int) $attachment->post_author === get_current_user_id();
+		return get_current_user_id() === (int) $attachment->post_author;
 	}
 
 	private function validate_mode( $mode, $valid_modes = array() ) {
