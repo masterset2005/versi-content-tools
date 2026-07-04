@@ -6,7 +6,7 @@ class Versi_Admin_Ajax {
 
 	use Versi_Singleton;
 
-	private function __construct() {
+	public function __construct() {
 		// AJAX: alt-text.
 		add_action( 'wp_ajax_versi_alt_process_single', array( $this, 'ajax_alt_process_single' ) );
 		add_action( 'wp_ajax_versi_alt_get_ids', array( $this, 'ajax_alt_get_ids' ) );
@@ -62,7 +62,7 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'No ID provided' );
 		}
 
-		$result = Versi_Alt_Text_Processor::init()->process_single( $id );
+		$result = Versi_Container::get(Versi_Alt_Text_Processor::class)->process_single( $id );
 		wp_send_json_success( $result );
 	}
 
@@ -74,7 +74,7 @@ class Versi_Admin_Ajax {
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 		$cat_id = isset( $_POST['catId'] ) ? absint( $_POST['catId'] ) : 0;
 
-		$result = Versi_Processor::init()->get_image_ids( $mode, $offset, $batch, $cat_id );
+		$result = Versi_Container::get(Versi_Processor::class)->get_image_ids( $mode, $offset, $batch, $cat_id );
 		wp_send_json_success( $result );
 	}
 
@@ -111,13 +111,13 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'Post not found' );
 		}
 
-		$ext       = Versi_Extensions::init();
+		$ext       = Versi_Container::get(Versi_Extensions::class);
 		$previous  = $ext->get_focus_keywords( $id );
 		$generated = $ext->generate_focus_keywords( $id );
 		$status    = ! empty( $generated );
 		$rl        = Versi_Extensions::$last_rate_limit;
 
-		$result = Versi_Processor::init()->result(
+		$result = Versi_Container::get(Versi_Processor::class)->result(
 			$id,
 			$post->post_title,
 			$status ? 'success' : 'error',
@@ -139,7 +139,7 @@ class Versi_Admin_Ajax {
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 
-		$result = Versi_Processor::init()->get_seo_ids( $offset, $batch );
+		$result = Versi_Container::get(Versi_Processor::class)->get_seo_ids( $offset, $batch );
 		wp_send_json_success( $result );
 	}
 
@@ -149,7 +149,7 @@ class Versi_Admin_Ajax {
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 
-		$result = Versi_Processor::init()->get_post_ids( $offset, $batch );
+		$result = Versi_Container::get(Versi_Processor::class)->get_post_ids( $offset, $batch );
 		wp_send_json_success( $result );
 	}
 
@@ -163,59 +163,7 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'No ID provided' );
 		}
 
-		$post = get_post( $id );
-		if ( ! $post ) {
-			$result = Versi_Processor::init()->result( $id, '', 'error', null, __( 'Post not found.', 'versi-content-tools' ) );
-			wp_send_json_success( $result );
-		}
-
-		$content     = $post->post_content;
-		$changed     = false;
-		$new_content = $content;
-
-		if ( 'update_alt' === $mode || 'both' === $mode ) {
-			$new_content = $this->process_content_update_alt( $new_content, $changed );
-		}
-
-		if ( 'strip_links' === $mode || 'both' === $mode ) {
-			$new_content = $this->process_content_strip_links( $new_content, $changed );
-		}
-
-		$status = 'skipped';
-		$reason = null;
-
-		if ( $changed ) {
-			global $wpdb;
-			$updated = $wpdb->update(
-				$wpdb->posts,
-				array( 'post_content' => $new_content ),
-				array( 'ID' => $id ),
-				array( '%s' ),
-				array( '%d' )
-			);
-			if ( false !== $updated ) {
-				clean_post_cache( $id );
-				$status = 'success';
-			} else {
-				$status = 'error';
-				$reason = __( 'Database update failed.', 'versi-content-tools' );
-			}
-		} elseif ( ! $changed && 'both' === $mode ) {
-			$reason = __( 'No changes needed.', 'versi-content-tools' );
-		} elseif ( ! $changed ) {
-			$reason = __( 'No changes needed.', 'versi-content-tools' );
-		}
-
-		$result = Versi_Processor::init()->result(
-			$id,
-			$post->post_title,
-			$status,
-			null,
-			'error' === $status && ! $reason ? __( 'Processing failed.', 'versi-content-tools' ) : null,
-			$reason,
-			null,
-			$changed
-		);
+		$result = Versi_Container::get(Versi_Batch_Processor::class)->process_content_single( $id, $mode );
 		wp_send_json_success( $result );
 	}
 
@@ -225,7 +173,7 @@ class Versi_Admin_Ajax {
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 30;
 
-		$ids_result = Versi_Processor::init()->get_image_ids( 'regenerate', $offset, $batch, 0 );
+		$ids_result = Versi_Container::get(Versi_Processor::class)->get_image_ids( 'regenerate', $offset, $batch, 0 );
 		$ids        = $ids_result['ids'];
 		$total      = $ids_result['total'];
 
@@ -238,7 +186,7 @@ class Versi_Admin_Ajax {
 			);
 		}
 
-		$items = Versi_Alt_Text_Processor::init()->bulk_review( $ids );
+		$items = Versi_Container::get(Versi_Alt_Text_Processor::class)->bulk_review( $ids );
 		wp_send_json_success(
 			array(
 				'items' => $items,
@@ -253,7 +201,7 @@ class Versi_Admin_Ajax {
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 30;
 
-		$ids_result = Versi_Processor::init()->get_excerpt_ids( 'improve', $offset, $batch );
+		$ids_result = Versi_Container::get(Versi_Processor::class)->get_excerpt_ids( 'improve', $offset, $batch );
 		$ids        = $ids_result['ids'];
 		$total      = $ids_result['total'];
 
@@ -266,7 +214,7 @@ class Versi_Admin_Ajax {
 			);
 		}
 
-		$items = Versi_Excerpt_Processor::init()->bulk_review( $ids );
+		$items = Versi_Container::get(Versi_Excerpt_Processor::class)->bulk_review( $ids );
 		wp_send_json_success(
 			array(
 				'items' => $items,
@@ -284,7 +232,7 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'No ID provided' );
 		}
 
-		$result = Versi_Excerpt_Processor::init()->process_single( $id );
+		$result = Versi_Container::get(Versi_Excerpt_Processor::class)->process_single( $id );
 		wp_send_json_success( $result );
 	}
 
@@ -295,7 +243,7 @@ class Versi_Admin_Ajax {
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 
-		$result = Versi_Processor::init()->get_excerpt_ids( $mode, $offset, $batch );
+		$result = Versi_Container::get(Versi_Processor::class)->get_excerpt_ids( $mode, $offset, $batch );
 		wp_send_json_success( $result );
 	}
 
@@ -382,16 +330,16 @@ class Versi_Admin_Ajax {
 
 		if ( 'alt' === $workload ) {
 			$cat_id = absint( get_option( 'versi_alt_cat_filter', 0 ) );
-			$ids    = Versi_Processor::init()->get_image_ids( $mode, 0, 1, $cat_id );
+			$ids    = Versi_Container::get(Versi_Processor::class)->get_image_ids( $mode, 0, 1, $cat_id );
 			$total  = $ids['total'];
 		} elseif ( 'seo' === $workload ) {
-			$ids   = Versi_Processor::init()->get_seo_ids( 0, 1 );
+			$ids   = Versi_Container::get(Versi_Processor::class)->get_seo_ids( 0, 1 );
 			$total = $ids['total'];
 		} elseif ( 'content' === $workload ) {
-			$ids   = Versi_Processor::init()->get_post_ids( 0, 1 );
+			$ids   = Versi_Container::get(Versi_Processor::class)->get_post_ids( 0, 1 );
 			$total = $ids['total'];
 		} else {
-			$ids   = Versi_Processor::init()->get_excerpt_ids( $mode, 0, 1 );
+			$ids   = Versi_Container::get(Versi_Processor::class)->get_excerpt_ids( $mode, 0, 1 );
 			$total = $ids['total'];
 		}
 
@@ -664,7 +612,7 @@ class Versi_Admin_Ajax {
 		}
 
 		try {
-			$total = Versi_Auditor::init()->get_unlinked_count();
+			$total = Versi_Container::get(Versi_Auditor::class)->get_unlinked_count();
 			wp_send_json_success(
 				array(
 					'total'    => $total,
@@ -687,8 +635,8 @@ class Versi_Admin_Ajax {
 		$limit  = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : Versi_Auditor::BATCH_SIZE;
 
 		try {
-			$total         = Versi_Auditor::init()->get_unlinked_count();
-			$batch_results = Versi_Auditor::init()->find_unlinked_batch( $offset, $limit );
+			$total         = Versi_Container::get(Versi_Auditor::class)->get_unlinked_count();
+			$batch_results = Versi_Container::get(Versi_Auditor::class)->find_unlinked_batch( $offset, $limit );
 			$scanned       = min( $offset + $limit, $total );
 			$complete      = $scanned >= $total;
 
@@ -716,182 +664,11 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( array( 'message' => 'Invalid attachment or post ID.' ) );
 		}
 		try {
-			$result = Versi_Auditor::init()->link_attachment( $att_id, $post_id );
+			$result = Versi_Container::get(Versi_Auditor::class)->link_attachment( $att_id, $post_id );
 			wp_send_json_success( $result );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 	}
 
-	/**
-	 * Process a single post for SEO (used by background job).
-	 *
-	 * @param int $id Post ID.
-	 * @return array Result array.
-	 */
-	public function process_seo_single( $id ) {
-		$post = get_post( $id );
-		if ( ! $post ) {
-			return Versi_Processor::init()->result( $id, '', 'error', null, __( 'Post not found.', 'versi-content-tools' ) );
-		}
-
-		$ext       = Versi_Extensions::init();
-		$previous  = $ext->get_focus_keywords( $id );
-		$generated = $ext->generate_focus_keywords( $id );
-		$status    = ! empty( $generated );
-		$rl        = Versi_Extensions::$last_rate_limit;
-
-		return Versi_Processor::init()->result(
-			$id,
-			$post->post_title,
-			$status ? 'success' : 'error',
-			$previous,
-			$status ? null : __( 'AI generation failed.', 'versi-content-tools' ),
-			null,
-			$generated,
-			$status,
-			'',
-			null !== $rl,
-			null !== $rl ? $rl['retry_after'] : 0
-		);
-	}
-
-	/**
-	 * Process a single post for content cleanup (used by background job).
-	 *
-	 * @param int    $id   Post ID.
-	 * @param string $mode 'update_alt', 'strip_links', or 'both'.
-	 * @return array Result array.
-	 */
-	public function process_content_single( $id, $mode ) {
-		$post = get_post( $id );
-		if ( ! $post ) {
-			return Versi_Processor::init()->result( $id, '', 'error', null, __( 'Post not found.', 'versi-content-tools' ) );
-		}
-
-		$content     = $post->post_content;
-		$changed     = false;
-		$new_content = $content;
-
-		if ( 'update_alt' === $mode || 'both' === $mode ) {
-			$new_content = $this->process_content_update_alt( $new_content, $changed );
-		}
-
-		if ( 'strip_links' === $mode || 'both' === $mode ) {
-			$new_content = $this->process_content_strip_links( $new_content, $changed );
-		}
-
-		if ( ! $changed ) {
-			return Versi_Processor::init()->result(
-				$id,
-				$post->post_title,
-				'skipped',
-				null,
-				null,
-				__( 'No changes needed.', 'versi-content-tools' )
-			);
-		}
-
-		global $wpdb;
-		$updated = $wpdb->update(
-			$wpdb->posts,
-			array( 'post_content' => $new_content ),
-			array( 'ID' => $id ),
-			array( '%s' ),
-			array( '%d' )
-		);
-
-		if ( false === $updated ) {
-			return Versi_Processor::init()->result(
-				$id,
-				$post->post_title,
-				'error',
-				null,
-				__( 'Database update failed.', 'versi-content-tools' )
-			);
-		}
-
-		clean_post_cache( $id );
-
-		return Versi_Processor::init()->result(
-			$id,
-			$post->post_title,
-			'success',
-			null,
-			null,
-			null,
-			null,
-			true
-		);
-	}
-
-	/**
-	 * Update alt attributes in post_content to match current attachment meta.
-	 *
-	 * @param string $content Post content (modified in place).
-	 * @param bool   $changed Set to true if any replacement was made.
-	 * @return string Updated content.
-	 */
-	private function process_content_update_alt( $content, &$changed ) {
-		$changed = false;
-
-		if ( empty( $content ) || false === stripos( $content, 'wp-image-' ) ) {
-			return $content;
-		}
-
-		if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
-			return $content;
-		}
-
-		$processor = new WP_HTML_Tag_Processor( $content );
-		$processed = '';
-
-		while ( $processor->next_tag( 'img' ) ) {
-			$class = $processor->get_attribute( 'class' );
-			if ( ! $class || ! preg_match( '/wp-image-(\d+)/i', $class, $m ) ) {
-				continue;
-			}
-
-			$img_id   = (int) $m[1];
-			$alt_meta = get_post_meta( $img_id, '_wp_attachment_image_alt', true );
-			if ( '' === $alt_meta ) {
-				continue;
-			}
-
-			$existing = $processor->get_attribute( 'alt' );
-			if ( $existing === $alt_meta ) {
-				continue;
-			}
-
-			$processor->set_attribute( 'alt', $alt_meta );
-			$changed = true;
-		}
-
-		return $processor->get_updated_html();
-	}
-
-	/**
-	 * Strip <a> wrappers from images in post_content when the link points
-	 * to an image file.
-	 *
-	 * @param string $content Post content (modified in place).
-	 * @param bool   $changed Set to true if any replacement was made.
-	 * @return string Updated content.
-	 */
-	private function process_content_strip_links( $content, &$changed ) {
-		$changed = false;
-
-		if ( '' === $content || false === stripos( $content, '<a' ) || false === stripos( $content, '<img' ) ) {
-			return $content;
-		}
-
-		$pattern = '~<a\s[^>]*?href=["\']?[^"\'\s]+\.(?:jpg|jpeg|png|gif|webp)["\'\s>][^>]*>\s*(<img[^>]+>)\s*</a>~is';
-		$new     = preg_replace( $pattern, '$1', $content, -1, $count );
-
-		if ( $count > 0 ) {
-			$changed = true;
-		}
-
-		return false !== $new ? $new : $content;
-	}
 }

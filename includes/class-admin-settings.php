@@ -6,8 +6,9 @@ class Versi_Admin_Settings {
 
 	use Versi_Singleton;
 
-	private function __construct() {
+	public function __construct() {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_init', array( $this, 'register_sections' ) );
 	}
 
 	public function register_settings() {

@@ -28,6 +28,7 @@ if ( file_exists( VERSI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 	require_once VERSI_PLUGIN_DIR . 'vendor/autoload.php';
 } else {
 	require_once VERSI_PLUGIN_DIR . 'includes/trait-singleton.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-container.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-processor.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-auditor.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-alt-text.php';
@@ -37,6 +38,7 @@ if ( file_exists( VERSI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 	require_once VERSI_PLUGIN_DIR . 'includes/class-admin.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-admin-settings.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-admin-ajax.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-batch-processor.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-cli.php';
 }
 
@@ -57,17 +59,19 @@ register_deactivation_hook( __FILE__, 'versi_deactivate' );
 function versi_init() {
 	$stored_version = get_option( 'versi_version', '' );
 	if ( VERSI_VERSION !== $stored_version ) {
-		// Migrate legacy global model settings to workload-specific settings.
-		$vision = get_option( 'versi_vision_model' );
-		if ( $vision ) {
-			update_option( 'versi_alt_vision_model', $vision );
-			delete_option( 'versi_vision_model' );
-		}
-		$text = get_option( 'versi_text_model' );
-		if ( $text ) {
-			update_option( 'versi_alt_text_model', $text );
-			update_option( 'versi_excerpt_text_model', $text );
-			delete_option( 'versi_text_model' );
+		// Migrations for upgrades from < 1.9.0.
+		if ( '' === $stored_version || version_compare( $stored_version, '1.9.0', '<' ) ) {
+			$vision = get_option( 'versi_vision_model' );
+			if ( $vision ) {
+				update_option( 'versi_alt_vision_model', $vision );
+				delete_option( 'versi_vision_model' );
+			}
+			$text = get_option( 'versi_text_model' );
+			if ( $text ) {
+				update_option( 'versi_alt_text_model', $text );
+				update_option( 'versi_excerpt_text_model', $text );
+				delete_option( 'versi_text_model' );
+			}
 		}
 
 		// Strip leading whitespace from textarea prompts saved with HTML indentation.
@@ -82,13 +86,15 @@ function versi_init() {
 		update_option( 'versi_version', VERSI_VERSION, false );
 	}
 
-	Versi_Processor::init();
-	Versi_Alt_Text_Processor::init();
-	Versi_Excerpt_Processor::init();
-	Versi_Extensions::init();
-	Versi_Abilities::init();
-	Versi_Admin_Settings::init();
+	Versi_Container::register( Versi_Processor::class );
+	Versi_Container::register( Versi_Alt_Text_Processor::class );
+	Versi_Container::register( Versi_Excerpt_Processor::class );
+	Versi_Container::register( Versi_Extensions::class );
+	Versi_Container::register( Versi_Abilities::class );
+	Versi_Container::register( Versi_Auditor::class );
+	Versi_Container::register( Versi_Admin_Settings::class );
+	Versi_Container::register( Versi_Admin::class );
+	Versi_Container::register( Versi_Admin_Ajax::class );
+	Versi_Container::register( Versi_Batch_Processor::class );
 }
 add_action( 'plugins_loaded', 'versi_init' );
-Versi_Admin::init();
-Versi_Admin_Ajax::init();

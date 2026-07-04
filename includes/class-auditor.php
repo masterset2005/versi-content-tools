@@ -11,7 +11,6 @@ defined( 'ABSPATH' ) || exit;
  * Class Versi_Auditor
  */
 class Versi_Auditor {
-	use Versi_Singleton;
 
 	/**
 	 * Batch size for scanning.

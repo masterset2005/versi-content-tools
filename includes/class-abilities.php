@@ -11,7 +11,6 @@ defined( 'ABSPATH' ) || exit;
  * Register Versi abilities with the WordPress Abilities API.
  */
 class Versi_Abilities {
-	use Versi_Singleton;
 
 	/**
 	 * Register abilities on init.
@@ -74,7 +73,7 @@ class Versi_Abilities {
 		if ( ! $attachment_id ) {
 			return new WP_Error( 'invalid_input', 'Attachment ID required' );
 		}
-		return Versi_Alt_Text_Processor::init()->process_single( $attachment_id );
+		return Versi_Container::get(Versi_Alt_Text_Processor::class)->process_single( $attachment_id );
 	}
 
 	/**
@@ -87,7 +86,7 @@ class Versi_Abilities {
 		if ( ! $post_id ) {
 			return new WP_Error( 'invalid_input', 'Post ID required' );
 		}
-		return Versi_Excerpt_Processor::init()->process_single( $post_id );
+		return Versi_Container::get(Versi_Excerpt_Processor::class)->process_single( $post_id );
 	}
 
 	/**
@@ -100,6 +99,6 @@ class Versi_Abilities {
 		if ( ! $post_id ) {
 			return new WP_Error( 'invalid_input', 'Post ID required' );
 		}
-		return Versi_Extensions::init()->generate_focus_keywords( $post_id );
+		return Versi_Container::get(Versi_Extensions::class)->generate_focus_keywords( $post_id );
 	}
 }

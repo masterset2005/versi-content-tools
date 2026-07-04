@@ -12,7 +12,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Excerpt_Processor {
 
-	use Versi_Singleton;
 
 	/**
 	 * Process a single post: generate excerpt via AI.
@@ -21,7 +20,7 @@ class Versi_Excerpt_Processor {
 	 * @return array
 	 */
 	public function process_single( $post_id ) {
-		$shared = Versi_Processor::init();
+		$shared = Versi_Container::get(Versi_Processor::class);
 		$post   = get_post( $post_id );
 
 		if ( ! $post ) {
@@ -54,13 +53,13 @@ class Versi_Excerpt_Processor {
 		}
 
 		if ( class_exists( 'Versi_Extensions' ) ) {
-			$keywords = Versi_Extensions::init()->get_focus_keywords( $post_id );
+			$keywords = Versi_Container::get(Versi_Extensions::class)->get_focus_keywords( $post_id );
 			if ( $keywords ) {
 				$system .= "\n\n**SEO focus keyphrases:** {$keywords}\nNaturally incorporate these keyphrases into the excerpt text. Do NOT list, label, or append them separately — never output \"Keywords:\" or \"Keyphrases:\" or any similar prefix.";
 			}
 
 			if ( 'product' === get_post_type( $post_id ) ) {
-				$product_ctx = Versi_Extensions::init()->get_product_context( $post_id );
+				$product_ctx = Versi_Container::get(Versi_Extensions::class)->get_product_context( $post_id );
 				if ( $product_ctx ) {
 					$system .= "\n\n**Product context:** {$product_ctx}\nUse this context to inform the excerpt, but stay focused on the article itself.";
 				}
@@ -263,7 +262,7 @@ class Versi_Excerpt_Processor {
 	 * @return array[] Each item: {id, title, excerpt, status, reason}
 	 */
 	public function bulk_review( $ids ) {
-		$shared = Versi_Processor::init();
+		$shared = Versi_Container::get(Versi_Processor::class);
 		$items  = array();
 
 		foreach ( $ids as $id ) {

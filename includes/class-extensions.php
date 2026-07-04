@@ -15,8 +15,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Extensions {
 
-	use Versi_Singleton;
-
 	/**
 	 * Populated by generate_focus_keywords() when the last call was rate-limited.
 	 *
@@ -34,7 +32,7 @@ class Versi_Extensions {
 	/**
 	 * Hook into WordPress.
 	 */
-	private function __construct() {
+	public function __construct() {
 		add_action( 'wp_loaded', array( $this, 'discover' ), 1 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
@@ -219,7 +217,7 @@ class Versi_Extensions {
 			'versi_seo_text_model',
 			array(
 				'type'              => 'string',
-				'sanitize_callback' => array( Versi_Admin::init(), 'sanitize_model_preference' ),
+				'sanitize_callback' => array( Versi_Container::get(Versi_Admin::class), 'sanitize_model_preference' ),
 				'default'           => '',
 			)
 		);
@@ -518,15 +516,15 @@ class Versi_Extensions {
 
 		$builder = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
-		$builder = Versi_Processor::init()->apply_text_preference( $builder, 'seo' );
+		$builder = Versi_Container::get(Versi_Processor::class)->apply_text_preference( $builder, 'seo' );
 
 		self::$last_rate_limit = null;
 		$generated             = $builder->generate_text();
 
 		if ( is_wp_error( $generated ) ) {
-			$error_info = Versi_Processor::init()->classify_error( $generated->get_error_message() );
+			$error_info = Versi_Container::get(Versi_Processor::class)->classify_error( $generated->get_error_message() );
 			if ( $error_info['should_retry'] ) {
-				$fallback = Versi_Processor::init()->get_text_fallback( 'seo' );
+				$fallback = Versi_Container::get(Versi_Processor::class)->get_text_fallback( 'seo' );
 				if ( '' !== $fallback ) {
 					$fb_builder = wp_ai_client_prompt( $prompt )
 						->using_system_instruction( $system )
@@ -537,7 +535,7 @@ class Versi_Extensions {
 		}
 
 		if ( is_wp_error( $generated ) ) {
-			$error_info = Versi_Processor::init()->classify_error( $generated->get_error_message() );
+			$error_info = Versi_Container::get(Versi_Processor::class)->classify_error( $generated->get_error_message() );
 			if ( $error_info['should_retry'] ) {
 				self::$last_rate_limit = array( 'retry_after' => (float) $error_info['retry_after'] );
 			}

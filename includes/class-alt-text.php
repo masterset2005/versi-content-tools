@@ -12,7 +12,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Alt_Text_Processor {
 
-	use Versi_Singleton;
 
 	/**
 	 * Process a single attachment: generate alt text via AI.
@@ -21,7 +20,7 @@ class Versi_Alt_Text_Processor {
 	 * @return array
 	 */
 	public function process_single( $attachment_id ) {
-		$shared                    = Versi_Processor::init();
+		$shared                    = Versi_Container::get(Versi_Processor::class);
 		$context                   = $shared->get_attachment_context( $attachment_id );
 		$context['focus_keywords'] = '';
 		$context['product_context'] = '';
@@ -29,8 +28,8 @@ class Versi_Alt_Text_Processor {
 			$attachment                = get_post( $attachment_id );
 			$parent_id                 = $attachment ? (int) $attachment->post_parent : 0;
 			$kw_post_id                = $parent_id ? $parent_id : $attachment_id;
-			$context['focus_keywords'] = Versi_Extensions::init()->get_focus_keywords( $kw_post_id );
-			$context['product_context'] = Versi_Extensions::init()->get_product_context( $kw_post_id );
+			$context['focus_keywords'] = Versi_Container::get(Versi_Extensions::class)->get_focus_keywords( $kw_post_id );
+			$context['product_context'] = Versi_Container::get(Versi_Extensions::class)->get_product_context( $kw_post_id );
 		}
 		$file  = get_attached_file( $attachment_id );
 		$mime  = get_post_mime_type( $attachment_id );
@@ -282,7 +281,7 @@ class Versi_Alt_Text_Processor {
 		$builder = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
 
-		$builder = Versi_Processor::init()->apply_text_preference( $builder, 'alt' );
+		$builder = Versi_Container::get(Versi_Processor::class)->apply_text_preference( $builder, 'alt' );
 
 		$result = $builder->generate_text();
 
@@ -422,7 +421,7 @@ class Versi_Alt_Text_Processor {
 	 * @return array[] Each item: {id, alt, status, reason}
 	 */
 	public function bulk_review( $ids ) {
-		$shared = Versi_Processor::init();
+		$shared = Versi_Container::get(Versi_Processor::class);
 		$items  = array();
 
 		foreach ( $ids as $id ) {

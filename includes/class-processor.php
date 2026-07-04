@@ -12,7 +12,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Processor {
 
-	use Versi_Singleton;
 
 	/**
 	 * Get vision model preference as an array (for alt-text).

@@ -48,8 +48,8 @@ class Versi_CLI extends WP_CLI_Command {
 			WP_CLI::error( 'Mode must be missing, review, or regenerate.' );
 		}
 
-		$shared   = Versi_Processor::init();
-		$alt_proc = Versi_Alt_Text_Processor::init();
+		$shared   = Versi_Container::get(Versi_Processor::class);
+		$alt_proc = Versi_Container::get(Versi_Alt_Text_Processor::class);
 		$offset   = 0;
 		$batch    = absint( get_option( 'versi_batch_size', 5 ) );
 		$done     = 0;
@@ -119,8 +119,8 @@ class Versi_CLI extends WP_CLI_Command {
 			WP_CLI::error( 'Mode must be missing or improve.' );
 		}
 
-		$shared    = Versi_Processor::init();
-		$excl_proc = Versi_Excerpt_Processor::init();
+		$shared    = Versi_Container::get(Versi_Processor::class);
+		$excl_proc = Versi_Container::get(Versi_Excerpt_Processor::class);
 		$offset    = 0;
 		$batch     = absint( get_option( 'versi_batch_size', 5 ) );
 		$done      = 0;
