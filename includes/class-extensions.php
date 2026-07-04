@@ -343,7 +343,7 @@ class Versi_Extensions {
 		</table>
 		<?php
 		if ( empty( $this->integrations ) ) {
-			echo '<div class="notice notice-info" style="margin-top:20px;"><p>';
+			echo '<div class="notice notice-info is-dismissible" style="margin-top:20px;"><p>';
 			esc_html_e( 'No supported third-party plugins detected. Install Yoast SEO, Rank Math, SEOPress, SmartCrawl, or WooCommerce to enable integrations.', 'versi-content-tools' );
 			echo '</p></div>';
 			return;

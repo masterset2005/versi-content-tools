@@ -52,12 +52,10 @@ class Versi_Admin {
 			return;
 		}
 
-		$css_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/css/admin.css' );
-		wp_enqueue_style( 'versi-admin-css', VERSI_PLUGIN_URL . 'assets/css/admin.css', array(), $css_ver );
+		wp_enqueue_style( 'versi-admin-css', VERSI_PLUGIN_URL . 'assets/css/admin.css', array(), VERSI_VERSION );
 
 		if ( 'settings_page_versi' === $hook ) {
-			$js_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/js/admin.js' );
-			wp_enqueue_script( 'versi-admin', VERSI_PLUGIN_URL . 'assets/js/admin.js', array( 'jquery' ), $js_ver, true );
+			wp_enqueue_script( 'versi-admin', VERSI_PLUGIN_URL . 'assets/js/admin.js', array( 'jquery' ), VERSI_VERSION, true );
 			wp_localize_script(
 				'versi-admin',
 				'versiAdmin',
@@ -68,8 +66,7 @@ class Versi_Admin {
 		}
 
 		if ( 'media_page_versi-processing' === $hook ) {
-			$js_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/js/processing.js' );
-			wp_enqueue_script( 'versi-processing', VERSI_PLUGIN_URL . 'assets/js/processing.js', array( 'jquery' ), $js_ver, true );
+			wp_enqueue_script( 'versi-processing', VERSI_PLUGIN_URL . 'assets/js/processing.js', array( 'jquery' ), VERSI_VERSION, true );
 			wp_localize_script(
 				'versi-processing',
 				'versiProcessing',
@@ -132,8 +129,7 @@ class Versi_Admin {
 				)
 			);
 
-			$js_ver2 = filemtime( VERSI_PLUGIN_DIR . 'assets/js/background.js' );
-			wp_enqueue_script( 'versi-background', VERSI_PLUGIN_URL . 'assets/js/background.js', array( 'jquery' ), $js_ver2, true );
+			wp_enqueue_script( 'versi-background', VERSI_PLUGIN_URL . 'assets/js/background.js', array( 'jquery' ), VERSI_VERSION, true );
 			wp_localize_script(
 				'versi-background',
 				'versiBackground',
@@ -150,8 +146,7 @@ class Versi_Admin {
 				)
 			);
 
-			$js_ver3 = filemtime( VERSI_PLUGIN_DIR . 'assets/js/history.js' );
-			wp_enqueue_script( 'versi-history', VERSI_PLUGIN_URL . 'assets/js/history.js', array( 'jquery' ), $js_ver3, true );
+			wp_enqueue_script( 'versi-history', VERSI_PLUGIN_URL . 'assets/js/history.js', array( 'jquery' ), VERSI_VERSION, true );
 			wp_localize_script(
 				'versi-history',
 				'versiHistory',
@@ -164,8 +159,7 @@ class Versi_Admin {
 				)
 			);
 
-			$js_ver4 = filemtime( VERSI_PLUGIN_DIR . 'assets/js/audit.js' );
-			wp_enqueue_script( 'versi-audit', VERSI_PLUGIN_URL . 'assets/js/audit.js', array( 'jquery' ), $js_ver4, true );
+			wp_enqueue_script( 'versi-audit', VERSI_PLUGIN_URL . 'assets/js/audit.js', array( 'jquery' ), VERSI_VERSION, true );
 			wp_localize_script(
 				'versi-audit',
 				'versiAudit',
@@ -442,7 +436,7 @@ class Versi_Admin {
 		}
 
 		?>
-		<div class="notice notice-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;">
+		<div class="notice notice-info is-dismissible" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;">
 			<p style="margin:8px 0;">
 				<strong><?php echo esc_html( $stats['missing'] ); ?></strong>
 				<?php esc_html_e( 'missing', 'versi-content-tools' ); ?>
@@ -529,7 +523,6 @@ class Versi_Admin {
 		if ( 'upload.php' !== $hook ) {
 			return;
 		}
-		$js_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/js/media-library.js' );
-		wp_enqueue_script( 'versi-media-library', VERSI_PLUGIN_URL . 'assets/js/media-library.js', array( 'jquery' ), $js_ver, true );
+		wp_enqueue_script( 'versi-media-library', VERSI_PLUGIN_URL . 'assets/js/media-library.js', array( 'jquery' ), VERSI_VERSION, true );
 	}
 }

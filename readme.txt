@@ -5,36 +5,60 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.11.0
+Stable tag: 1.12.0
 License: GPL v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-AI-powered alt-text generation and excerpt management using WordPress 7.0's built-in WP AI Client.
+AI-powered content generation for alt text, excerpts, content cleanup, and SEO keywords using WordPress 7.0's built-in WP AI Client.
 
 == Description ==
 
-Versi Content Tools generates descriptive alt text for images and compelling excerpts for posts using
-your configured AI providers (OpenAI, Anthropic, Google, local Ollama, etc.) via WordPress 7.0's
-built-in `wp_ai_client_prompt()` API.
+Versi Content Tools generates descriptive alt text for images, compelling excerpts for posts, cleans up
+embedded content, and manages SEO focus keywords — all via your configured AI providers (OpenAI,
+Anthropic, Google, local Ollama, etc.) through WordPress 7.0's built-in `wp_ai_client_prompt()` API.
 
-**Two workloads in one plugin:**
+**Workloads:**
 
-* **Alt Text** &mdash; Single-pass or two-pass processing. Sets `_wp_attachment_image_alt` on
-  attachment images. Three modes: Fill Missing, Review & Improve, Regenerate All.
+* **Alt Text** &mdash; Single-pass or two-pass AI processing. Sets `_wp_attachment_image_alt` on
+  attachment images. Three modes: Fill Missing, Review & Improve, Regenerate All. Configurable vision
+  model per workload.
 * **Excerpts** &mdash; Text-only AI calls using post content. Sets `post_excerpt` on published posts.
-  Two modes: Generate Missing, Improve All.
+  Modes: Generate Missing, Fix Short, Improve All, Bulk Review. Configurable target word count and
+  custom prompt.
+* **Content Cleanup** &mdash; Bulk-edit alt attributes in `post_content` and strip self-linking image
+  wrappers, with an optional `the_content` filter for real-time updates.
+* **Attachment Auditor** &mdash; Scan your entire content for unlinked images and link them to their
+  proper attachment posts in bulk.
+* **SEO Extensions** &mdash; Detects Yoast SEO, Rank Math, SEOPress, and SmartCrawl. Injects focus
+  keywords into AI prompts for context-aware generation and auto-generates keywords saved directly to
+  plugin meta fields.
+* **WooCommerce** &mdash; Product content and excerpt support.
+
+**Processing modes:**
+
+* **Live mode** &mdash; Sequential batch processor with real-time results, per-item redo/undo, filterable
+  results (Success / Errors / Skipped), and CSV export.
+* **Background mode** &mdash; Cron-based batch processing. Start a job, close the browser, and check back
+  later. Supports pause, resume, and cancel.
+* **Bulk Review mode** &mdash; AI evaluates existing alt text or excerpts in batches, flags items with
+  reasons, and provides one-click regenerate buttons.
+* **WP-CLI** &mdash; `wp versi alt <mode>`, `wp versi excerpt <mode>`, and `wp versi content <mode>`.
 
 **Key features:**
 
-* Bulk processing on a dedicated **Media > Versi Content Actions** page with a workload selector
-* Live sequential batch processor with per-item redo/undo
-* Background cron-based processing (close the browser, check back later)
-* WP-CLI commands: `wp versi alt <mode>` and `wp versi excerpt <mode>`
-* Auto-generate on upload (alt text) and on save (excerpts)
-* Tabbed **Settings > Versi Content Tools** page with General / Alt Text / Excerpts tabs
-* Independently editable prompts with variable placeholder guides
-* 125-character server-side truncation + regex firewall for alt text
-* Target word count (10&ndash;200) for excerpts
+* Dedicated **Media > Versi Content Actions** processing page with workload selector and Dashboard tab
+* Tabbed **Settings > Versi Content Tools** page (General / Alt Text / Excerpts / Extensions / About)
+* Post type selection &mdash; choose which post types to process (Posts, Pages, Products, etc.)
+* Independently editable prompts with variable placeholder guides per workload
 * Model preference dropdowns populated live from your configured AI providers
+* Fallback model per workload when the primary is rate-limited or unavailable
+* Auto-retry on API rate limits (429) &mdash; detects retry-after headers, retries up to 5 times
+* Image size optimization &mdash; choose which attachment size to send to the AI vision model
+* 125-character server-side truncation + regex firewall for alt text safety
+* Target word count (10&ndash;200) for excerpts
+* Auto-generate on upload (alt text) and on publish (excerpts when empty)
+* Per-user rate limiting on all AJAX endpoints (20 requests per 10 seconds)
+* Processing history with CSV export, download, and clear
 * No custom database tables &mdash; uses `postmeta` and `options` only
 
 == Installation ==
@@ -87,6 +111,14 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 1.12.0 =
+* Fix: Clear History button now works without JavaScript (form POST fallback with nonce)
+* Fix: Admin notices now dismissible (`is-dismissible` class) per WP directory guidelines
+* Fix: Cache-busting uses `VERSI_VERSION` constant instead of `filemtime` for deployment safety
+* Tweak: Added `License URI:` to plugin header and readme.txt for WP directory compliance
+* Tweak: Added `license` field to composer.json
+* Tweak: Added `== Upgrade Notice ==` section to readme.txt
 
 = 1.11.0 =
 * Security: Fixed privilege escalation — all AJAX handlers now require `edit_others_posts` instead of `edit_posts` (Contributors can no longer modify others' content)
@@ -187,8 +219,16 @@ targets all excerpts.
 * Remove legacy autoalt_* migration and backward compatibility
 
 = 1.1.0 =
-* Initial release as Versi Content Tools
-* Alt-text workload (single-pass / two-pass) with three modes
-* Excerpt workload (missing / improve) with configurable word count
-* Tabbed settings page, bulk processing page, background cron jobs
-* WP-CLI commands, auto-generate on upload/save, Media Library overlay
+ * Initial release as Versi Content Tools
+ * Alt-text workload (single-pass / two-pass) with three modes
+ * Excerpt workload (missing / improve) with configurable word count
+ * Tabbed settings page, bulk processing page, background cron jobs
+ * WP-CLI commands, auto-generate on upload/save, Media Library overlay
+
+== Upgrade Notice ==
+
+= 1.12.0 =
+Plugin directory compliance fixes — dismissible notices, license URI headers, and Clear History fallback.
+
+= 1.11.0 =
+Security hardening — privilege escalation, IDOR, rate limiting, and AI error disclosure fixes. All users should upgrade.

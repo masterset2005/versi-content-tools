@@ -3,10 +3,11 @@
  * Plugin Name: Versi Content Tools
  * Plugin URI:  https://versihosting.com/
  * Description: AI-powered alt-text generation and excerpt management. Uses the WP AI Client (WordPress 7.0+).
- * Version:     1.11.0
+ * Version:     1.12.0
  * Author:      Sean Thompson
  * Author URI:  https://stprojects.net/
  * License:     GPL v2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: versi-content-tools
  * Domain Path: /languages
  * Requires at least: 7.0
@@ -17,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'VERSI_VERSION', '1.11.0' );
+define( 'VERSI_VERSION', '1.12.0' );
 define( 'VERSI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

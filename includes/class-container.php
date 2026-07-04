@@ -21,7 +21,7 @@ class Versi_Container {
 	 */
 	public static function get( string $class ): object {
 		if ( ! isset( self::$services[ $class ] ) ) {
-			throw new \RuntimeException( esc_html( "Service not registered: {$class}" ) );
+			throw new \RuntimeException( "Service not registered: {$class}" );
 		}
 		return self::$services[ $class ];
 	}

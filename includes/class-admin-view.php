@@ -793,6 +793,15 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 	public function render_history_tab() {
 		$history = get_option( 'versi_processing_history', array() );
+
+		if ( isset( $_POST['versi_clear_history'] ) && current_user_can( 'manage_options' ) ) {
+			check_admin_referer( 'versi_clear_history_action' );
+			foreach ( $history as $entry ) {
+				delete_option( 'versi_history_run_' . $entry['id'] );
+			}
+			delete_option( 'versi_processing_history' );
+			$history = array();
+		}
 		?>
 		<div class="versi-history-card">
 			<div class="versi-history-header">
@@ -802,7 +811,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					<p style="margin:2px 0 0;font-size:13px;color:#4b5563;"><?php esc_html_e( 'Recent processing runs and exported results.', 'versi-content-tools' ); ?></p>
 				</div>
 				<?php if ( ! empty( $history ) ) : ?>
-					<button type="button" id="versi-clear-history" class="button" style="margin-left:auto;"><?php esc_html_e( 'Clear History', 'versi-content-tools' ); ?></button>
+					<form method="post" style="margin-left:auto;">
+						<?php wp_nonce_field( 'versi_clear_history_action' ); ?>
+						<input type="hidden" name="versi_clear_history" value="1" />
+						<button type="submit" id="versi-clear-history" class="button"><?php esc_html_e( 'Clear History', 'versi-content-tools' ); ?></button>
+					</form>
 				<?php endif; ?>
 			</div>
 			<div class="versi-history-body">

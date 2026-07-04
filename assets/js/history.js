@@ -3,12 +3,13 @@
 
 	if ( typeof versiHistory === 'undefined' ) return;
 
-	$('#versi-clear-history').on('click', function() {
+	$('#versi-clear-history').on('click', function(e) {
+		e.preventDefault();
 		if (!confirm(versiHistory.l10n.clearConfirm)) return;
 		$.post(ajaxurl, {
 			action: 'versi_clear_history',
 			_ajax_nonce: versiHistory.nonce,
-		}, function() { location.reload(); });
+		}, function() { location.reload(); }).fail(function() { location.reload(); });
 	});
 
 	$(document).on('click', '.versi-history-download', function() {
