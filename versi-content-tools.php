@@ -96,6 +96,7 @@ function versi_init() {
 	Versi_Container::register( Versi_Abilities::class );
 	Versi_Container::register( Versi_Auditor::class );
 	Versi_Container::register( Versi_Admin_Settings::class );
+	Versi_Container::register( Versi_Admin_View::class );
 	Versi_Container::register( Versi_Admin::class );
 	Versi_Container::register( Versi_Admin_Ajax::class );
 	Versi_Container::register( Versi_Batch_Processor::class );
