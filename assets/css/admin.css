@@ -127,3 +127,152 @@ a:focus, button:focus, .button:focus, input:focus, select:focus, textarea:focus 
 .versi-audit-summary {
 	padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;margin-bottom:12px;
 }
+
+/* Results table */
+.versi-results-box {
+	background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+.versi-results-box .versi-results-header {
+	display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#f9fafb;flex-wrap:wrap;
+}
+.versi-results-box .versi-results-header .versi-summary-text {
+	font-size:13px;font-weight:600;color:#1e1e1e;flex:1;
+}
+.versi-results-box .versi-filter-chips {
+	display:flex;gap:6px;flex-wrap:wrap;
+}
+.versi-filter-chip {
+	font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid #d1d5db;background:#fff;color:#374151;cursor:pointer;transition:all 0.15s;font-weight:500;line-height:1.4;
+}
+.versi-filter-chip:hover { border-color:#9ca3af;background:#f3f4f6; }
+.versi-filter-chip.active { background:#2271b1;border-color:#2271b1;color:#fff; }
+.versi-filter-chip .chip-count { color:#9ca3af;font-weight:400;margin-left:2px; }
+.versi-filter-chip.active .chip-count { color:rgba(255,255,255,0.7); }
+.versi-filter-chip.search-chip {
+	padding:4px 8px;border-style:dashed;display:flex;align-items:center;gap:4px;
+}
+.versi-filter-chip.search-chip input {
+	border:none;background:transparent;font-size:12px;width:80px;outline:none;color:#374151;padding:0;
+}
+.versi-filter-chip.search-chip input::placeholder { color:#9ca3af; }
+
+.versi-results-table {
+	width:100%;border-collapse:collapse;font-size:13px;
+}
+.versi-results-table th {
+	text-align:left;padding:10px 12px;border-bottom:2px solid #e5e7eb;font-weight:600;color:#374151;background:#fafafa;position:sticky;top:0;z-index:1;white-space:nowrap;
+}
+.versi-results-table td {
+	padding:8px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;
+}
+.versi-results-table tr:hover td { background:#f9fafb; }
+.versi-results-table .versi-col-status { width:90px; }
+.versi-results-table .versi-col-id { width:70px;color:#6b7280;font-size:12px; }
+.versi-results-table .versi-col-actions { width:100px;text-align:right;white-space:nowrap; }
+
+.versi-result-row.status-success { border-left:3px solid #00a32a; }
+.versi-result-row.status-error { border-left:3px solid #d63638; }
+.versi-result-row.status-rate-limited { border-left:3px solid #dba617; }
+.versi-result-row.status-skipped { border-left:3px solid #c3c4c7; }
+.versi-result-row.status-good { border-left:3px solid #00a32a; }
+.versi-result-row.status-bad { border-left:3px solid #d63638; }
+.versi-result-row.status-info { border-left:3px solid #2271b1; }
+.versi-result-row.hidden { display:none; }
+
+.versi-results-scroll {
+	max-height:600px;overflow-y:auto;
+}
+
+/* Status badges */
+.versi-status-badge {
+	display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;line-height:1.5;white-space:nowrap;
+}
+.versi-status-badge::before {
+	content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;
+}
+.versi-status-badge.success { background:#edfaef;color:#166534; }
+.versi-status-badge.success::before { background:#00a32a; }
+.versi-status-badge.error { background:#fcf0f1;color:#991b1b; }
+.versi-status-badge.error::before { background:#d63638; }
+.versi-status-badge.skipped { background:#f6f7f7;color:#6b7280; }
+.versi-status-badge.skipped::before { background:#c3c4c7; }
+.versi-status-badge.good { background:#edfaef;color:#166534; }
+.versi-status-badge.good::before { background:#00a32a; }
+.versi-status-badge.bad { background:#fcf0f1;color:#991b1b; }
+.versi-status-badge.bad::before { background:#d63638; }
+.versi-status-badge.info { background:#f0f6fc;color:#0369a1; }
+.versi-status-badge.info::before { background:#2271b1; }
+.versi-status-badge.rate-limited { background:#fef8ee;color:#92400e; }
+.versi-status-badge.rate-limited::before { background:#dba617; }
+.versi-status-badge.kept { background:#fef8ee;color:#92400e; }
+.versi-status-badge.kept::before { background:#dba617; }
+
+/* Cell value truncation */
+.versi-cell-value {
+	max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;font-size:12px;color:#4b5563;
+}
+.versi-cell-value:hover { white-space:normal;overflow:visible;position:relative;z-index:2; }
+.versi-cell-value.prev { color:#991b1b; }
+.versi-cell-value.prev::before { content:'was: ';color:#9ca3af;font-size:10px; }
+.versi-cell-value.new { color:#166534; }
+.versi-cell-value.new::before { content:'now: ';color:#9ca3af;font-size:10px; }
+
+/* Table empty state */
+.versi-table-empty {
+	text-align:center;padding:60px 20px;color:#9ca3af;font-size:14px;line-height:1.6;
+}
+.versi-table-empty svg { display:block;margin:0 auto 12px; }
+
+/* Inline edit in review */
+.versi-review-edit {
+	margin-top:8px;padding:12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;
+}
+.versi-review-edit textarea {
+	width:100%;min-height:60px;font-size:12px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;resize:vertical;font-family:inherit;line-height:1.5;
+}
+.versi-review-edit textarea:focus { border-color:#2271b1;box-shadow:0 0 0 1px #2271b1;outline:none; }
+.versi-review-actions {
+	display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;
+}
+
+/* Review entry card */
+.versi-review-card {
+	padding:12px 16px;margin:4px 0;border-radius:10px;border:1px solid #e5e7eb;background:#fff;
+}
+.versi-review-card .versi-review-header {
+	display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;
+}
+
+/* Skeleton loading */
+@keyframes versi-shimmer {
+	0% { background-position:-200px 0; }
+	100% { background-position:calc(200px + 100%) 0; }
+}
+.versi-skeleton {
+	background:#f3f4f6 linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200px 100%;animation:versi-shimmer 1.5s infinite;border-radius:4px;display:inline-block;line-height:1;
+}
+.versi-skeleton.line { height:16px;width:100%;margin:4px 0; }
+.versi-skeleton.line.w60 { width:60px; }
+.versi-skeleton.line.w120 { width:120px; }
+
+/* Mode toggle (replaces sub-tab row) */
+.versi-mode-toggle {
+	display:inline-flex;border:1px solid #d1d5db;border-radius:8px;overflow:hidden;margin:0 0 16px;
+}
+.versi-mode-toggle button {
+	padding:6px 16px;font-size:12px;font-weight:500;border:none;background:#fff;color:#374151;cursor:pointer;transition:all 0.15s;line-height:1.4;
+}
+.versi-mode-toggle button:not(:last-child) { border-right:1px solid #d1d5db; }
+.versi-mode-toggle button:hover { background:#f3f4f6; }
+.versi-mode-toggle button.active { background:#2271b1;color:#fff; }
+.versi-mode-toggle button.active:hover { background:#135e96; }
+.versi-mode-toggle button:focus-visible { outline:2px solid #2271b1;outline-offset:2px;z-index:1;position:relative; }
+
+/* Responsive adjustments */
+@media (max-width:782px) {
+	.versi-results-table .versi-col-prev,
+	.versi-results-table .versi-col-new { display:none; }
+	.versi-results-table .versi-col-title { max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+	.versi-cell-value { max-width:120px; }
+	.versi-dash-grid { grid-template-columns:1fr; }
+}

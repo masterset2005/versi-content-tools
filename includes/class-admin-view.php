@@ -605,18 +605,17 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				</a>
 			</div>
 
-			<!-- Mode sub-tabs: Live Process / Background Jobs -->
-			<h3 class="nav-tab-wrapper" style="margin-bottom:16px;">
-				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'live', $refresh_url ) ); ?>" class="nav-tab <?php echo 'live' === $mode_tab ? 'nav-tab-active' : ''; ?>">
-					<?php esc_html_e( 'Live Process', 'versi-content-tools' ); ?>
+			<div class="versi-mode-toggle">
+				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'live', $refresh_url ) ); ?>" class="<?php echo 'live' === $mode_tab ? 'active' : ''; ?>">
+					<?php esc_html_e( 'Live', 'versi-content-tools' ); ?>
 				</a>
-				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'bg', $refresh_url ) ); ?>" class="nav-tab <?php echo 'bg' === $mode_tab ? 'nav-tab-active' : ''; ?>">
-					<?php esc_html_e( 'Background Jobs', 'versi-content-tools' ); ?>
+				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'bg', $refresh_url ) ); ?>" class="<?php echo 'bg' === $mode_tab ? 'active' : ''; ?>">
+					<?php esc_html_e( 'Background', 'versi-content-tools' ); ?>
 				</a>
-			</h3>
+			</div>
 
-				<?php if ( 'bg' === $mode_tab ) : ?>
-					<?php $this->render_background_tab( $workload ); ?>
+			<?php if ( 'bg' === $mode_tab ) : ?>
+				<?php $this->render_background_tab( $workload ); ?>
 			<?php else : ?>
 				<?php $this->render_live_tab( $workload ); ?>
 			<?php endif; ?>

@@ -24,7 +24,7 @@ class Versi_Admin {
 		add_action( 'admin_notices', array( $this, 'alt_quick_action_notice' ) );
 		add_action( 'admin_notices', array( $this, 'alt_generated_notice' ) );
 		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'mark_auto_generated' ), 10, 2 );
-		add_action( 'admin_footer-upload.php', array( $this, 'generated_script' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'generated_script' ) );
 		add_action( 'add_attachment', array( $this, 'alt_auto_generate_on_upload' ) );
 		add_action( 'transition_post_status', array( $this, 'excerpt_auto_generate_on_publish' ), 10, 3 );
 
@@ -100,6 +100,34 @@ class Versi_Admin {
 						'processing'       => __( 'Processing', 'versi-content-tools' ),
 						'remaining'        => __( 'remaining', 'versi-content-tools' ),
 						'in'               => __( 'in', 'versi-content-tools' ),
+						'all'              => __( 'All', 'versi-content-tools' ),
+						'searchResults'    => __( 'Search by ID or title...', 'versi-content-tools' ),
+						'noResults'        => __( 'No results match your filter.', 'versi-content-tools' ),
+						'accept'           => __( 'Accept', 'versi-content-tools' ),
+						'skip'             => __( 'Skip', 'versi-content-tools' ),
+						'reviewEditPrompt' => __( 'Edit and accept, or regenerate below:', 'versi-content-tools' ),
+						'acceptConfirm'    => __( 'Save this value for the item?', 'versi-content-tools' ),
+						'saved'            => __( 'Saved', 'versi-content-tools' ),
+						'filterAll'        => __( 'All', 'versi-content-tools' ),
+						'filterSuccess'    => __( 'Success', 'versi-content-tools' ),
+						'filterErrors'     => __( 'Errors', 'versi-content-tools' ),
+						'filterSkipped'    => __( 'Skipped', 'versi-content-tools' ),
+						'filterGood'       => __( 'Good', 'versi-content-tools' ),
+						'filterBad'        => __( 'Bad', 'versi-content-tools' ),
+						'statusSuccess'    => __( 'Success', 'versi-content-tools' ),
+						'statusError'      => __( 'Error', 'versi-content-tools' ),
+						'statusSkipped'    => __( 'Skipped', 'versi-content-tools' ),
+						'statusGood'       => __( 'Good', 'versi-content-tools' ),
+						'statusBad'        => __( 'Bad', 'versi-content-tools' ),
+						'statusInfo'       => __( 'Info', 'versi-content-tools' ),
+						'statusKept'       => __( 'Kept', 'versi-content-tools' ),
+						'replaced'         => __( 'Replaced', 'versi-content-tools' ),
+						'added'            => __( 'Added', 'versi-content-tools' ),
+						'kept'             => __( 'Kept (unchanged)', 'versi-content-tools' ),
+						'previous'         => __( 'Previous', 'versi-content-tools' ),
+						'newValue'         => __( 'New', 'versi-content-tools' ),
+						'actions'          => __( 'Actions', 'versi-content-tools' ),
+						'title'            => __( 'Title', 'versi-content-tools' ),
 					),
 				)
 			);
@@ -497,26 +525,11 @@ class Versi_Admin {
 	 *
 	 * @return void
 	 */
-	public function generated_script() {
-		?>
-		<script>
-		jQuery(function($) {
-			const orig = wp.media.view.Attachment.Library;
-			if (!orig) return;
-			wp.media.view.Attachment.Library = orig.extend({
-				render() {
-					const r = orig.prototype.render.apply(this, arguments);
-					if (this.model && this.model.get('versi_generated')) {
-						const alt = this.model.get('versi_generated');
-						this.$el.append(
-							'<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:2px 4px;line-height:1.3;word-break:break-word;max-height:100%;overflow:hidden;">AI: ' + $('<span>').text(alt).html() + '</div>'
-						);
-					}
-					return r;
-				}
-			});
-		});
-		</script>
-		<?php
+	public function generated_script( $hook ) {
+		if ( 'upload.php' !== $hook ) {
+			return;
+		}
+		$js_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/js/media-library.js' );
+		wp_enqueue_script( 'versi-media-library', VERSI_PLUGIN_URL . 'assets/js/media-library.js', array( 'jquery' ), $js_ver, true );
 	}
 }

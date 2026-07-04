@@ -26,6 +26,8 @@ class Versi_Admin_Ajax {
 		add_action( 'wp_ajax_versi_content_get_ids', array( $this, 'ajax_content_get_ids' ) );
 		add_action( 'wp_ajax_versi_alt_bulk_review', array( $this, 'ajax_alt_bulk_review' ) );
 		add_action( 'wp_ajax_versi_excerpt_bulk_review', array( $this, 'ajax_excerpt_bulk_review' ) );
+		add_action( 'wp_ajax_versi_alt_save_single', array( $this, 'ajax_alt_save_single' ) );
+		add_action( 'wp_ajax_versi_excerpt_save_single', array( $this, 'ajax_excerpt_save_single' ) );
 
 		// AJAX: shared.
 		add_action( 'wp_ajax_versi_get_models', array( $this, 'ajax_get_models' ) );
@@ -669,6 +671,37 @@ class Versi_Admin_Ajax {
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+	}
+
+	public function ajax_alt_save_single() {
+		$this->ajax_check();
+		$id    = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$value = isset( $_POST['value'] ) ? sanitize_text_field( wp_unslash( $_POST['value'] ) ) : '';
+		if ( ! $id ) {
+			wp_send_json_error( array( 'message' => 'Invalid ID.' ) );
+		}
+		$title = get_the_title( $id );
+		update_post_meta( $id, '_wp_attachment_image_alt', $value );
+		$shared = Versi_Container::get( Versi_Processor::class );
+		wp_send_json_success( $shared->result( $id, $title, 'success', null, $value ) );
+	}
+
+	public function ajax_excerpt_save_single() {
+		$this->ajax_check();
+		$id    = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$value = isset( $_POST['value'] ) ? sanitize_textarea_field( wp_unslash( $_POST['value'] ) ) : '';
+		if ( ! $id ) {
+			wp_send_json_error( array( 'message' => 'Invalid ID.' ) );
+		}
+		wp_update_post(
+			array(
+				'ID'           => $id,
+				'post_excerpt' => $value,
+			)
+		);
+		$title = get_the_title( $id );
+		$shared = Versi_Container::get( Versi_Processor::class );
+		wp_send_json_success( $shared->result( $id, $title, 'success', null, $value ) );
 	}
 
 }
