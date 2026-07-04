@@ -217,7 +217,7 @@ class Versi_Extensions {
 			'versi_seo_text_model',
 			array(
 				'type'              => 'string',
-				'sanitize_callback' => array( Versi_Container::get(Versi_Admin::class), 'sanitize_model_preference' ),
+				'sanitize_callback' => array( Versi_Container::get(Versi_Admin_Settings::class), 'sanitize_model_preference' ),
 				'default'           => '',
 			)
 		);
