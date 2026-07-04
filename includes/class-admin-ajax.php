@@ -49,9 +49,59 @@ class Versi_Admin_Ajax {
 	private function ajax_check( $nonce_action = 'versi_process' ) {
 		check_ajax_referer( $nonce_action );
 
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_others_posts' ) ) {
 			wp_send_json_error( 'Insufficient permissions' );
 		}
+
+		$this->check_rate_limit();
+	}
+
+	private function check_rate_limit() {
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			return;
+		}
+		$key   = 'versi_rate_' . $user_id;
+		$count = (int) get_transient( $key );
+		if ( $count > 20 ) {
+			wp_send_json_error( 'Rate limit exceeded. Please wait.' );
+		}
+		set_transient( $key, $count + 1, 10 );
+	}
+
+	private function user_can_edit_post( $post_id ) {
+		if ( current_user_can( 'edit_others_posts' ) ) {
+			return true;
+		}
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return false;
+		}
+		return (int) $post->post_author === get_current_user_id();
+	}
+
+	private function user_can_edit_attachment( $attachment_id ) {
+		if ( current_user_can( 'edit_others_posts' ) ) {
+			return true;
+		}
+		$attachment = get_post( $attachment_id );
+		if ( ! $attachment ) {
+			return false;
+		}
+		if ( $attachment->post_parent ) {
+			return $this->user_can_edit_post( $attachment->post_parent );
+		}
+		return (int) $attachment->post_author === get_current_user_id();
+	}
+
+	private function validate_mode( $mode, $valid_modes = array() ) {
+		if ( empty( $valid_modes ) ) {
+			$valid_modes = array( 'missing', 'regenerate', 'review', 'bulk_review', 'improve', 'short', 'update_alt', 'strip_links', 'both' );
+		}
+		if ( ! in_array( $mode, $valid_modes, true ) ) {
+			wp_send_json_error( 'Invalid mode.' );
+		}
+		return $mode;
 	}
 
 	public function ajax_alt_process_single() {
@@ -64,6 +114,10 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'No ID provided' );
 		}
 
+		if ( ! $this->user_can_edit_attachment( $id ) ) {
+			wp_send_json_error( 'Insufficient permissions for this attachment.' );
+		}
+
 		$result = Versi_Container::get(Versi_Alt_Text_Processor::class)->process_single( $id );
 		wp_send_json_success( $result );
 	}
@@ -71,7 +125,7 @@ class Versi_Admin_Ajax {
 	public function ajax_alt_get_ids() {
 		$this->ajax_check();
 
-		$mode   = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
+		$mode   = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'missing', 'regenerate', 'review' ) ) : 'missing';
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 		$cat_id = isset( $_POST['catId'] ) ? absint( $_POST['catId'] ) : 0;
@@ -88,6 +142,10 @@ class Versi_Admin_Ajax {
 
 		if ( ! $id ) {
 			wp_send_json_error( 'No ID' );
+		}
+
+		if ( ! $this->user_can_edit_attachment( $id ) ) {
+			wp_send_json_error( 'Insufficient permissions for this attachment.' );
 		}
 
 		update_post_meta( $id, '_wp_attachment_image_alt', $alt );
@@ -111,6 +169,10 @@ class Versi_Admin_Ajax {
 		$post = get_post( $id );
 		if ( ! $post ) {
 			wp_send_json_error( 'Post not found' );
+		}
+
+		if ( ! $this->user_can_edit_post( $id ) ) {
+			wp_send_json_error( 'Insufficient permissions for this post.' );
 		}
 
 		$ext       = Versi_Container::get(Versi_Extensions::class);
@@ -159,10 +221,14 @@ class Versi_Admin_Ajax {
 		$this->ajax_check();
 
 		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
-		$mode = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'update_alt';
+		$mode = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'update_alt', 'strip_links', 'both' ) ) : 'update_alt';
 
 		if ( ! $id ) {
 			wp_send_json_error( 'No ID provided' );
+		}
+
+		if ( ! $this->user_can_edit_post( $id ) ) {
+			wp_send_json_error( 'Insufficient permissions for this post.' );
 		}
 
 		$result = Versi_Container::get(Versi_Batch_Processor::class)->process_content_single( $id, $mode );
@@ -234,6 +300,10 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'No ID provided' );
 		}
 
+		if ( ! $this->user_can_edit_post( $id ) ) {
+			wp_send_json_error( 'Insufficient permissions for this post.' );
+		}
+
 		$result = Versi_Container::get(Versi_Excerpt_Processor::class)->process_single( $id );
 		wp_send_json_success( $result );
 	}
@@ -241,7 +311,7 @@ class Versi_Admin_Ajax {
 	public function ajax_excerpt_get_ids() {
 		$this->ajax_check();
 
-		$mode   = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
+		$mode   = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'missing', 'improve', 'short' ) ) : 'missing';
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 
@@ -257,6 +327,10 @@ class Versi_Admin_Ajax {
 
 		if ( ! $id ) {
 			wp_send_json_error( 'No ID' );
+		}
+
+		if ( ! $this->user_can_edit_post( $id ) ) {
+			wp_send_json_error( 'Insufficient permissions for this post.' );
 		}
 
 		wp_update_post(
@@ -562,6 +636,10 @@ class Versi_Admin_Ajax {
 	public function ajax_get_history() {
 		$this->ajax_check();
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
 		$history = get_option( 'versi_processing_history', array() );
 
 		$runs = array();
@@ -582,6 +660,10 @@ class Versi_Admin_Ajax {
 	public function ajax_get_history_run() {
 		$this->ajax_check();
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
 		$run_id = isset( $_POST['run_id'] ) ? sanitize_text_field( wp_unslash( $_POST['run_id'] ) ) : '';
 
 		if ( empty( $run_id ) ) {
@@ -599,6 +681,10 @@ class Versi_Admin_Ajax {
 	public function ajax_clear_history() {
 		$this->ajax_check();
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
 		$history = get_option( 'versi_processing_history', array() );
 		foreach ( $history as $entry ) {
 			delete_option( 'versi_history_run_' . $entry['id'] );
@@ -609,9 +695,10 @@ class Versi_Admin_Ajax {
 
 	public function ajax_run_audit() {
 		check_ajax_referer( 'versi_run_audit' );
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_others_posts' ) ) {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 		}
+		$this->check_rate_limit();
 
 		try {
 			$total = Versi_Container::get(Versi_Auditor::class)->get_unlinked_count();
@@ -629,9 +716,10 @@ class Versi_Admin_Ajax {
 
 	public function ajax_audit_progress() {
 		check_ajax_referer( 'versi_run_audit' );
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_others_posts' ) ) {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 		}
+		$this->check_rate_limit();
 
 		$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
 		$limit  = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : Versi_Auditor::BATCH_SIZE;
@@ -657,13 +745,20 @@ class Versi_Admin_Ajax {
 
 	public function ajax_link_attachment() {
 		check_ajax_referer( 'versi_link_attachment' );
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_others_posts' ) ) {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 		}
+		$this->check_rate_limit();
 		$att_id  = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
 		$post_id = isset( $_POST['post_id'] ) ? (int) $_POST['post_id'] : 0;
 		if ( ! $att_id || ! $post_id ) {
 			wp_send_json_error( array( 'message' => 'Invalid attachment or post ID.' ) );
+		}
+		if ( ! $this->user_can_edit_attachment( $att_id ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions for this attachment.' ) );
+		}
+		if ( ! $this->user_can_edit_post( $post_id ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions for this post.' ) );
 		}
 		try {
 			$result = Versi_Container::get(Versi_Auditor::class)->link_attachment( $att_id, $post_id );
@@ -680,6 +775,9 @@ class Versi_Admin_Ajax {
 		if ( ! $id ) {
 			wp_send_json_error( array( 'message' => 'Invalid ID.' ) );
 		}
+		if ( ! $this->user_can_edit_attachment( $id ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
+		}
 		$title = get_the_title( $id );
 		update_post_meta( $id, '_wp_attachment_image_alt', $value );
 		$shared = Versi_Container::get( Versi_Processor::class );
@@ -692,6 +790,9 @@ class Versi_Admin_Ajax {
 		$value = isset( $_POST['value'] ) ? sanitize_textarea_field( wp_unslash( $_POST['value'] ) ) : '';
 		if ( ! $id ) {
 			wp_send_json_error( array( 'message' => 'Invalid ID.' ) );
+		}
+		if ( ! $this->user_can_edit_post( $id ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ) );
 		}
 		wp_update_post(
 			array(

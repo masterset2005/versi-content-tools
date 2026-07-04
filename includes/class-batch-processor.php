@@ -46,6 +46,15 @@ class Versi_Batch_Processor {
 		$workload = $job['workload'];
 		$mode     = $job['mode'];
 
+		$valid_workloads = array( 'alt', 'excerpt', 'content', 'seo' );
+		if ( ! in_array( $workload, $valid_workloads, true ) ) {
+			$job['is_running'] = false;
+			$job['completed']  = false;
+			$job['updated_at'] = time();
+			update_option( 'versi_job_status', $job, false );
+			return false;
+		}
+
 		$ids_result = array( 'ids' => array() );
 
 		if ( 'alt' === $workload ) {

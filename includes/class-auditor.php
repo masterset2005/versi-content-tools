@@ -129,7 +129,7 @@ class Versi_Auditor {
 						'attachment_id'  => $attachment->ID,
 						'attachment_url' => $attachment->guid,
 						'att_edit_link'  => get_edit_post_link( $attachment->ID ),
-						'att_path'       => preg_replace( '/^.*\/wp-content\/uploads\//', '', $attachment->guid ),
+						'att_path'       => basename( $attachment->guid ),
 						'post_id'        => $post->ID,
 						'post_title'     => $post->post_title,
 						'post_edit_link' => get_edit_post_link( $post->ID ),

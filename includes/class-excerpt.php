@@ -86,12 +86,8 @@ class Versi_Excerpt_Processor {
 		}
 
 		if ( is_wp_error( $generated ) ) {
-			$error_msg = sprintf(
-			/* translators: %s: AI provider error message */
-				__( 'AI generation failed: %s', 'versi-content-tools' ),
-				$generated->get_error_message()
-			);
 			$error_info = $shared->classify_error( $generated->get_error_message() );
+			$error_msg  = __( 'AI generation failed. Please try again.', 'versi-content-tools' );
 			return $shared->result(
 				$post_id,
 				$post->post_title,

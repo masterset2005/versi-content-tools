@@ -96,12 +96,8 @@ class Versi_Alt_Text_Processor {
 			}
 
 			if ( is_wp_error( $alt_text ) ) {
-				$error_msg = sprintf(
-				/* translators: %s: AI provider error message */
-					__( 'AI generation failed: %s', 'versi-content-tools' ),
-					$alt_text->get_error_message()
-				);
 				$error_info = $shared->classify_error( $alt_text->get_error_message() );
+				$error_msg  = __( 'AI generation failed. Please try again.', 'versi-content-tools' );
 				return $shared->result(
 					$attachment_id,
 					$title,
@@ -140,12 +136,8 @@ class Versi_Alt_Text_Processor {
 			}
 
 			if ( is_wp_error( $alt_text ) ) {
-				$error_msg = sprintf(
-				/* translators: %s: AI provider error message */
-					__( 'AI generation failed: %s', 'versi-content-tools' ),
-					$alt_text->get_error_message()
-				);
 				$error_info = $shared->classify_error( $alt_text->get_error_message() );
+				$error_msg  = __( 'AI generation failed. Please try again.', 'versi-content-tools' );
 				return $shared->result(
 					$attachment_id,
 					$title,
