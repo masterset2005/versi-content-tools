@@ -47,7 +47,7 @@ class Versi_Admin {
 	 * @return void
 	 */
 	public function enqueue_scripts( $hook ) {
-		$plugin_pages = array( 'media_page_versi-processing', 'settings_page_versi-content-tools' );
+		$plugin_pages = array( 'media_page_versi-processing', 'settings_page_versi' );
 		if ( ! in_array( $hook, $plugin_pages, true ) ) {
 			return;
 		}
@@ -55,7 +55,7 @@ class Versi_Admin {
 		$css_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/css/admin.css' );
 		wp_enqueue_style( 'versi-admin-css', VERSI_PLUGIN_URL . 'assets/css/admin.css', array(), $css_ver );
 
-		if ( 'settings_page_versi-content-tools' === $hook ) {
+		if ( 'settings_page_versi' === $hook ) {
 			$js_ver = filemtime( VERSI_PLUGIN_DIR . 'assets/js/admin.js' );
 			wp_enqueue_script( 'versi-admin', VERSI_PLUGIN_URL . 'assets/js/admin.js', array( 'jquery' ), $js_ver, true );
 			wp_localize_script(
