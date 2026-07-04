@@ -8,7 +8,6 @@ class Versi_Admin_Settings {
 
 	public function __construct() {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
-		add_action( 'admin_init', array( $this, 'register_sections' ) );
 	}
 
 	public function register_settings() {

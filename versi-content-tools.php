@@ -26,7 +26,9 @@ define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
  */
 if ( file_exists( VERSI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 	require_once VERSI_PLUGIN_DIR . 'vendor/autoload.php';
-} else {
+}
+
+if ( ! class_exists( 'Versi_Container' ) ) {
 	require_once VERSI_PLUGIN_DIR . 'includes/trait-singleton.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-container.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-processor.php';
@@ -36,6 +38,7 @@ if ( file_exists( VERSI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 	require_once VERSI_PLUGIN_DIR . 'includes/class-extensions.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-abilities.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-admin.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/class-admin-view.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-admin-settings.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-admin-ajax.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-batch-processor.php';
