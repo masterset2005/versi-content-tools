@@ -39,6 +39,7 @@ class Versi_Admin_Settings {
 			'versi_seo_text_model'        => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
 			'versi_seo_text_fallback'     => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
 			'versi_seo_prompt'            => array( 'type' => 'string', 'sanitize' => 'sanitize_textarea_field', 'default' => '' ),
+			'versi_post_types'            => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_post_types' ), 'default' => 'post' ),
 		);
 
 		foreach ( $settings as $option => $cfg ) {
@@ -75,6 +76,13 @@ class Versi_Admin_Settings {
 
 	public function sanitize_model_preference( $value ) {
 		return trim( preg_replace( '/[^a-zA-Z0-9:.\-_\/,]/', '', $value ) );
+	}
+
+	public function sanitize_post_types( $value ) {
+		$allowed = get_post_types( array( 'public' => true ), 'names' );
+		$types   = array_map( 'trim', explode( ',', $value ) );
+		$types   = array_intersect( $types, $allowed );
+		return implode( ',', $types );
 	}
 
 }

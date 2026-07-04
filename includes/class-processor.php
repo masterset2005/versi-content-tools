@@ -370,9 +370,15 @@ class Versi_Processor {
 	 * @param int $batch  Batch size.
 	 * @return array{ids: int[], total: int}
 	 */
+	public function get_enabled_post_types(): array {
+		$saved = get_option( 'versi_post_types', 'post' );
+		$types = array_map( 'trim', explode( ',', $saved ) );
+		return array_filter( $types, 'post_type_exists' );
+	}
+
 	public function get_post_ids( $offset, $batch ) {
 		$args = array(
-			'post_type'        => 'post',
+			'post_type'        => $this->get_enabled_post_types(),
 			'post_status'      => 'publish',
 			'posts_per_page'   => $batch,
 			'offset'           => $offset,
@@ -399,7 +405,7 @@ class Versi_Processor {
 	 */
 	public function get_seo_ids( $offset, $batch ) {
 		$args = array(
-			'post_type'        => 'post',
+			'post_type'        => $this->get_enabled_post_types(),
 			'post_status'      => 'publish',
 			'posts_per_page'   => $batch,
 			'offset'           => $offset,
@@ -427,7 +433,7 @@ class Versi_Processor {
 	 */
 	public function get_excerpt_ids( $mode, $offset, $batch ) {
 		$args = array(
-			'post_type'      => 'post',
+			'post_type'      => $this->get_enabled_post_types(),
 			'post_status'    => 'publish',
 			'posts_per_page' => $batch,
 			'offset'         => $offset,

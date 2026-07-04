@@ -63,6 +63,28 @@ class Versi_Admin_View {
 								</label>
 							</td>
 						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Post Types', 'versi-content-tools' ); ?></th>
+							<td>
+								<fieldset>
+									<legend class="screen-reader-text"><?php esc_html_e( 'Post Types', 'versi-content-tools' ); ?></legend>
+									<?php
+									$saved     = get_option( 'versi_post_types', 'post' );
+									$selected  = array_map( 'trim', explode( ',', $saved ) );
+									$post_types = get_post_types( array( 'public' => true ), 'objects' );
+									foreach ( $post_types as $pt ) :
+										$checked = in_array( $pt->name, $selected, true );
+									?>
+									<label style="display:inline-block;min-width:120px;margin:2px 0;">
+										<input type="checkbox" class="versi-post-type-cb" value="<?php echo esc_attr( $pt->name ); ?>" <?php checked( $checked ); ?>>
+										<?php echo esc_html( $pt->labels->singular_name ?: $pt->name ); ?>
+									</label>
+									<?php endforeach; ?>
+									<input type="hidden" name="versi_post_types" id="versi_post_types" value="<?php echo esc_attr( $saved ); ?>">
+									<p class="description"><?php esc_html_e( 'Select which post types to include in excerpt, SEO, and content cleanup processing.', 'versi-content-tools' ); ?></p>
+								</fieldset>
+							</td>
+						</tr>
 					</table>
 				</div>
 
@@ -606,10 +628,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			</div>
 
 			<div class="versi-mode-toggle">
-				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'live', $refresh_url ) ); ?>" class="<?php echo 'live' === $mode_tab ? 'active' : ''; ?>">
+				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'live', $refresh_url ) ); ?>" class="button <?php echo 'live' === $mode_tab ? 'active' : ''; ?>">
 					<?php esc_html_e( 'Live', 'versi-content-tools' ); ?>
 				</a>
-				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'bg', $refresh_url ) ); ?>" class="<?php echo 'bg' === $mode_tab ? 'active' : ''; ?>">
+				<a href="<?php echo esc_url( add_query_arg( 'versi_mode_tab', 'bg', $refresh_url ) ); ?>" class="button <?php echo 'bg' === $mode_tab ? 'active' : ''; ?>">
 					<?php esc_html_e( 'Background', 'versi-content-tools' ); ?>
 				</a>
 			</div>

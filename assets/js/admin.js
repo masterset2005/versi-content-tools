@@ -52,4 +52,13 @@
 		});
 	});
 
+	// Post types checkboxes → hidden comma-separated input
+	$('.versi-post-type-cb').on('change', function() {
+		const vals = [];
+		$('.versi-post-type-cb:checked').each(function() {
+			vals.push($(this).val());
+		});
+		$('#versi_post_types').val(vals.join(','));
+	});
+
 })(jQuery);
