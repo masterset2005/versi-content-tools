@@ -826,19 +826,19 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							<?php foreach ( array_reverse( $history ) as $run ) : ?>
 								<tr>
 									<td style="white-space:nowrap;">
-										<?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $run['timestamp'] ) ); ?>
+										<?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $run['timestamp'] ?? 0 ) ); ?>
 									</td>
 									<td>
-										<span class="versi-history-badge <?php echo esc_attr( $run['workload'] ); ?>">
-											<?php echo esc_html( ucfirst( $run['workload'] ) ); ?>
+										<span class="versi-history-badge <?php echo esc_attr( $run['workload'] ?? '' ); ?>">
+											<?php echo esc_html( ucfirst( $run['workload'] ?? '' ) ); ?>
 										</span>
 									</td>
 									<td style="color:#6b7280;font-size:12px;">
-										<?php echo esc_html( str_replace( '_', ' ', $run['mode'] ) ); ?>
+										<?php echo esc_html( str_replace( '_', ' ', $run['mode'] ?? '' ) ); ?>
 									</td>
 									<td>
 										<?php
-										$summary = $run['summary'];
+										$summary = $run['summary'] ?? array();
 										$parts = array();
 										if ( ! empty( $summary['ok'] ) ) {
 											$parts[] = '<span style="color:#16a34a;font-weight:600;">' . esc_html( $summary['ok'] ) . ' ok</span>';
@@ -858,7 +858,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 										echo wp_kses_post( implode( ' &middot; ', $parts ) );
 										?>
 										<span style="color:#9ca3af;font-size:11px;margin-left:6px;">
-											(<?php echo esc_html( count( $run['results'] ) ); ?> <?php esc_html_e( 'items', 'versi-content-tools' ); ?>)
+											(<?php echo esc_html( $run['count'] ?? 0 ); ?> <?php esc_html_e( 'items', 'versi-content-tools' ); ?>)
 										</span>
 									</td>
 									<td>
