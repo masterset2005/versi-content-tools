@@ -12,6 +12,26 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Excerpt_Processor {
 
+	/**
+	 * Hook into post updates to invalidate stats cache.
+	 */
+	public function __construct() {
+		add_action( 'post_updated', array( $this, 'invalidate_stats_on_excerpt_change' ), 10, 3 );
+	}
+
+	/**
+	 * Invalidate stats cache when post_excerpt changes.
+	 *
+	 * @param int     $post_id     Post ID.
+	 * @param WP_Post $post_after  Post object after update.
+	 * @param WP_Post $post_before Post object before update.
+	 * @return void
+	 */
+	public function invalidate_stats_on_excerpt_change( $post_id, $post_after, $post_before ) {
+		if ( $post_after->post_excerpt !== $post_before->post_excerpt ) {
+			delete_transient( 'versi_excerpt_stats' );
+		}
+	}
 
 	/**
 	 * Process a single post: generate excerpt via AI.
@@ -66,24 +86,10 @@ class Versi_Excerpt_Processor {
 			}
 		}
 
-		$builder = wp_ai_client_prompt( $prompt )
+		$builder  = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
-		$builder = $shared->apply_text_preference( $builder, 'excerpt' );
-
-		$generated = $builder->generate_text();
-
-		if ( is_wp_error( $generated ) ) {
-			$error_info = $shared->classify_error( $generated->get_error_message() );
-			if ( $error_info['should_retry'] ) {
-				$fallback = $shared->get_text_fallback( 'excerpt' );
-				if ( '' !== $fallback ) {
-					$fb_builder = wp_ai_client_prompt( $prompt )
-						->using_system_instruction( $system )
-						->using_model_preference( $fallback );
-					$generated  = $fb_builder->generate_text();
-				}
-			}
-		}
+		$builder  = $shared->apply_text_preference( $builder, 'excerpt' );
+		$generated = $shared->generate_with_retry( $builder, $shared->get_text_fallback( 'excerpt' ) );
 
 		if ( is_wp_error( $generated ) ) {
 			$error_info = $shared->classify_error( $generated->get_error_message() );
@@ -227,6 +233,11 @@ class Versi_Excerpt_Processor {
 	 * @return array{total: int, missing: int, has_excerpt: int}
 	 */
 	public function get_stats() {
+		$cached = get_transient( 'versi_excerpt_stats' );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		global $wpdb;
 
 		$total = (int) $wpdb->get_var(
@@ -247,7 +258,10 @@ class Versi_Excerpt_Processor {
 			)
 		);
 
-		return compact( 'total', 'missing', 'has_excerpt', 'short' );
+		$stats = compact( 'total', 'missing', 'has_excerpt', 'short' );
+		set_transient( 'versi_excerpt_stats', $stats, 5 * MINUTE_IN_SECONDS );
+
+		return $stats;
 	}
 
 	/**
@@ -260,6 +274,8 @@ class Versi_Excerpt_Processor {
 	public function bulk_review( $ids ) {
 		$shared = Versi_Container::get(Versi_Processor::class);
 		$items  = array();
+
+		_prime_post_caches( $ids, true, true );
 
 		foreach ( $ids as $id ) {
 			$post    = get_post( $id );

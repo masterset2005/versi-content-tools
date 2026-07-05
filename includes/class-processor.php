@@ -534,19 +534,6 @@ class Versi_Processor {
 	}
 
 	/**
-	 * Detect rate-limit errors and extract retry-after seconds.
-	 *
-	 * Inspects common patterns from AI providers (Gemini, OpenAI, etc.).
-	 *
-	 * @param string $message WP_Error message from the AI client.
-	 * @return float|false Retry-after seconds, or false if not rate-limited.
-	 */
-	public function parse_rate_limit( $message ) {
-		$info = $this->classify_error( $message );
-		return $info['retry_after'];
-	}
-
-	/**
 	 * Classify error message for retry/fallback logic.
 	 *
 	 * @param string $message The error message.
@@ -590,6 +577,26 @@ class Versi_Processor {
 			$result['should_retry'] = false;
 			$result['reason']       = 'bad_request';
 			return $result;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Generate text with automatic retry and fallback model support.
+	 *
+	 * @param object $builder    WP_AI_Client_Prompt_Builder instance.
+	 * @param string $fallback   Fallback model ID (empty = no fallback).
+	 * @return string|\WP_Error Generated text or WP_Error.
+	 */
+	public function generate_with_retry( $builder, $fallback = '' ) {
+		$result = $builder->generate_text();
+
+		if ( is_wp_error( $result ) ) {
+			$error_info = $this->classify_error( $result->get_error_message() );
+			if ( $error_info['should_retry'] && '' !== $fallback ) {
+				$result = $builder->using_model_preference( $fallback )->generate_text();
+			}
 		}
 
 		return $result;

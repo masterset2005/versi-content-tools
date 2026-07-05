@@ -12,6 +12,26 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Alt_Text_Processor {
 
+	/**
+	 * Hook into meta updates to invalidate stats cache.
+	 */
+	public function __construct() {
+		add_action( 'updated_post_meta', array( $this, 'invalidate_stats_on_alt_change' ), 10, 3 );
+	}
+
+	/**
+	 * Invalidate stats cache when alt text meta changes.
+	 *
+	 * @param int    $meta_id  Meta ID.
+	 * @param int    $post_id  Post ID.
+	 * @param string $meta_key Meta key.
+	 * @return void
+	 */
+	public function invalidate_stats_on_alt_change( $meta_id, $post_id, $meta_key ) {
+		if ( '_wp_attachment_image_alt' === $meta_key ) {
+			delete_transient( 'versi_alt_stats' );
+		}
+	}
 
 	/**
 	 * Process a single attachment: generate alt text via AI.
@@ -78,81 +98,35 @@ class Versi_Alt_Text_Processor {
 				->using_system_instruction( $system )
 				->with_file( $file, $mime );
 			$builder                 = $shared->apply_vision_preference( $builder );
-
-			$alt_text = $builder->generate_text();
-
-			if ( is_wp_error( $alt_text ) ) {
-				$error_info = $shared->classify_error( $alt_text->get_error_message() );
-				if ( $error_info['should_retry'] ) {
-					$fallback = $shared->get_vision_fallback();
-					if ( '' !== $fallback ) {
-						$fb_builder = wp_ai_client_prompt( $prompt )
-							->using_system_instruction( $system )
-							->with_file( $file, $mime )
-							->using_model_preference( $fallback );
-						$alt_text   = $fb_builder->generate_text();
-					}
-				}
-			}
-
-			if ( is_wp_error( $alt_text ) ) {
-				$error_info = $shared->classify_error( $alt_text->get_error_message() );
-				$error_msg  = __( 'AI generation failed. Please try again.', 'versi-content-tools' );
-				return $shared->result(
-					$attachment_id,
-					$title,
-					'error',
-					null,
-					$error_msg,
-					null,
-					null,
-					false,
-					'',
-					$error_info['should_retry'],
-					$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
-				);
-			}
+			$alt_text                = $shared->generate_with_retry( $builder, $shared->get_vision_fallback() );
 		} else {
 			list( $prompt, $system ) = $this->build_prompt( $context['filename_label'] ?? '' );
 			$builder                 = wp_ai_client_prompt( $prompt )
 				->using_system_instruction( $system )
 				->with_file( $file, $mime );
 			$builder                 = $shared->apply_vision_preference( $builder );
+			$alt_text                = $shared->generate_with_retry( $builder, $shared->get_vision_fallback() );
+		}
 
-			$alt_text = $builder->generate_text();
+		if ( is_wp_error( $alt_text ) ) {
+			$error_info = $shared->classify_error( $alt_text->get_error_message() );
+			$error_msg  = __( 'AI generation failed. Please try again.', 'versi-content-tools' );
+			return $shared->result(
+				$attachment_id,
+				$title,
+				'error',
+				null,
+				$error_msg,
+				null,
+				null,
+				false,
+				'',
+				$error_info['should_retry'],
+				$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
+			);
+		}
 
-			if ( is_wp_error( $alt_text ) ) {
-				$error_info = $shared->classify_error( $alt_text->get_error_message() );
-				if ( $error_info['should_retry'] ) {
-					$fallback = $shared->get_vision_fallback();
-					if ( '' !== $fallback ) {
-						$fb_builder = wp_ai_client_prompt( $prompt )
-							->using_system_instruction( $system )
-							->with_file( $file, $mime )
-							->using_model_preference( $fallback );
-						$alt_text   = $fb_builder->generate_text();
-					}
-				}
-			}
-
-			if ( is_wp_error( $alt_text ) ) {
-				$error_info = $shared->classify_error( $alt_text->get_error_message() );
-				$error_msg  = __( 'AI generation failed. Please try again.', 'versi-content-tools' );
-				return $shared->result(
-					$attachment_id,
-					$title,
-					'error',
-					null,
-					$error_msg,
-					null,
-					null,
-					false,
-					'',
-					$error_info['should_retry'],
-					$error_info['should_retry'] ? (float) $error_info['retry_after'] : 0
-				);
-			}
-
+		if ( 'single-pass' !== $mode ) {
 			$alt_text = $this->compare_alt_texts( $context, $alt_text );
 		}
 
@@ -378,6 +352,11 @@ class Versi_Alt_Text_Processor {
 	 * @return array{total: int, missing: int, too_long: int, too_short: int}
 	 */
 	public function get_stats() {
+		$cached = get_transient( 'versi_alt_stats' );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		global $wpdb;
 
 		$total = (int) $wpdb->get_var(
@@ -402,7 +381,10 @@ class Versi_Alt_Text_Processor {
 			)
 		);
 
-		return compact( 'total', 'missing', 'too_long', 'too_short' );
+		$stats = compact( 'total', 'missing', 'too_long', 'too_short' );
+		set_transient( 'versi_alt_stats', $stats, 5 * MINUTE_IN_SECONDS );
+
+		return $stats;
 	}
 
 	/**
@@ -415,6 +397,8 @@ class Versi_Alt_Text_Processor {
 	public function bulk_review( $ids ) {
 		$shared = Versi_Container::get(Versi_Processor::class);
 		$items  = array();
+
+		_prime_post_caches( $ids, true, true );
 
 		foreach ( $ids as $id ) {
 			$alt   = get_post_meta( $id, '_wp_attachment_image_alt', true );

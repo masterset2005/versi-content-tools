@@ -359,6 +359,11 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'AI Client not available' );
 		}
 
+		$cached = get_transient( 'versi_ai_models' );
+		if ( false !== $cached ) {
+			wp_send_json_success( $cached );
+		}
+
 		try {
 			$registry     = \WordPress\AiClient\AiClient::defaultRegistry();
 			$provider_ids = $registry->getRegisteredProviderIds();
@@ -389,6 +394,7 @@ class Versi_Admin_Ajax {
 				}
 			}
 
+			set_transient( 'versi_ai_models', $models, HOUR_IN_SECONDS );
 			wp_send_json_success( $models );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( $e->getMessage() );
