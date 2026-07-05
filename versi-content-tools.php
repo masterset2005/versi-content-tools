@@ -64,8 +64,8 @@ register_deactivation_hook( __FILE__, 'versi_deactivate' );
 function versi_init() {
 	$stored_version = get_option( 'versi_version', '' );
 	if ( VERSI_VERSION !== $stored_version ) {
-		// Migrations for upgrades from < 1.9.0.
-		if ( '' === $stored_version || version_compare( $stored_version, '1.9.0', '<' ) ) {
+		// Migrations for upgrades from < 0.9.0.
+		if ( '' === $stored_version || version_compare( $stored_version, '0.9.0', '<' ) ) {
 			$vision = get_option( 'versi_vision_model' );
 			if ( $vision ) {
 				update_option( 'versi_alt_vision_model', $vision );

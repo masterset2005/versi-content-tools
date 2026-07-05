@@ -119,7 +119,7 @@ targets all excerpts.
 * New: Profiles & People prompt rules with {filename_label} variable extracted from image filenames
 * Tweak: AI prompts now use "available context" language instead of enumerating specific fields
 
-= 1.12.0 =
+= 0.12.0 =
 * Fix: Clear History button now works without JavaScript (form POST fallback with nonce)
 * Fix: Admin notices now dismissible (`is-dismissible` class) per WP directory guidelines
 * Fix: Cache-busting uses `VERSI_VERSION` constant instead of `filemtime` for deployment safety
@@ -127,7 +127,7 @@ targets all excerpts.
 * Tweak: Added `license` field to composer.json
 * Tweak: Added `== Upgrade Notice ==` section to readme.txt
 
-= 1.11.0 =
+= 0.11.0 =
 * Security: Fixed privilege escalation — all AJAX handlers now require `edit_others_posts` instead of `edit_posts` (Contributors can no longer modify others' content)
 * Security: Fixed IDOR — ownership checks added to all undo/save/link AJAX handlers (attachment and post author verification)
 * Security: Added per-user rate limiting (20 requests per 10 seconds) across all AJAX endpoints
@@ -136,18 +136,18 @@ targets all excerpts.
 * Security: AI error messages sanitized to prevent infrastructure information disclosure
 * Security: Attachment path exposure in auditor reduced to basename only
 
-= 1.10.0 =
+= 0.10.0 =
 * Refactor: God class (class-admin.php) split into focused files — AJAX handlers, settings, and admin page rendering each in their own class
 * Fix: Broken PHP tags in render_processing_page() causing URL variables to render as literal HTML text
 * Fix: Versi_Admin_Settings and Versi_Admin_Ajax now properly initialized on plugin load (hooks were silently not registering)
 * Dev: phpstan clean (0 errors)
 
-= 1.9.0 =
+= 0.9.0 =
 * Fix: Auditor scan reliability using tiered verification (Featured Image lookup + ID class lookup + tokenized filename matching)
 * Fix: Optimized SQL queries to prevent timeouts on large media libraries
 * Dev: Full codebase audit against WP coding standards and security practices
 
-= 1.8.0 =
+= 0.8.0 =
 * New: Image size optimization setting — choose which attachment size (thumbnail, medium, large, full) to send to the AI
 * New: Attachment Auditor — scan content for unlinked images and link them to their attachment posts
 * New: Dashboard tab on processing page showing tool overview, stats, and recommended run order
@@ -164,14 +164,14 @@ targets all excerpts.
 * Dev: PHPCS auto-fixes (34+ formatting issues), PHPDoc corrections, undefined variable hardening
 * Dev: Fix plugin version header to match readme stable tag
 
-= 1.6.0 =
+= 0.6.0 =
 * New: Auto-retry on API rate limits (429) — detects provider retry-after, waits and retries up to 5 times
 * New: Fallback model per workload — secondary model used when primary is rate-limited or unavailable
 * Fix: Custom prompt textareas no longer save HTML indentation whitespace
 * Fix: "Default prompt" expandable section now shows the hardcoded default, not the custom prompt
 * Fix: versi_seo_text_model and versi_seo_prompt added to uninstall cleanup
 
-= 1.5.0 =
+= 0.5.0 =
 * New: Bulk Review mode — AI evaluates existing alt text / excerpts in batches of 30, flags bad items with reasons and regenerate buttons
 * New: Content Cleanup workload tab — bulk-edit alt in post_content + strip self-linking image wrappers (database writes)
 * New: Fix Short Excerpts mode with configurable min length
@@ -184,7 +184,7 @@ targets all excerpts.
 * Tweak: Neutralized default excerpt prompt for site-neutral use; custom prompt textarea for niche overrides
 * Tweak: Available variables + Default prompt display on Extensions tab
 
-= 1.4.0 =
+= 0.4.0 =
 * New: Content Cleanup workload tab (alt attributes in content + strip self-linking images — writes to DB)
 * New: Strip Self-Linking Images toggle (the_content filter)
 * New: "Fix Short Excerpts" processing mode with configurable min length
@@ -194,38 +194,38 @@ targets all excerpts.
 * Security: Directory hardening (index.php in includes/, assets/, languages/)
 * Security: Hardened JS thumbnail rendering via .prop() instead of string interpolation
 
-= 1.3.3 =
+= 0.3.3 =
 * New: Optional the_content filter dynamically updates alt attributes in embedded images to match current attachment meta
 * New: "Update Content Alt" toggle on Settings > Versi Content Tools > Alt Text tab
 * Fix: Remove error_log() debug calls from production code
 * Tweak: Reduce background job to 1 batch per cron fire with 30s gap for lower server load
 * Tweak: Prefixed variables in uninstall.php per WPCS standards
 
-= 1.3.2 =
+= 0.3.2 =
 * Fix: Properly unschedule cron events on plugin deactivation (per WP docs)
 * Fix: Guard duplicate cron scheduling with wp_next_scheduled() check
 * Fix: Remove overly-aggressive DISABLE_WP_CRON synchronous drain
 * Fix: Detect stalled background jobs and show user-facing error with guidance
 * Fix: Add cron scheduling fallback when wp_schedule_single_event() fails to store
 
-= 1.3.1 =
+= 0.3.1 =
 * Add support for SEO plugin Extensions system (SmartCrawl, Yoast, Rank Math, SEOPress)
 * Add support for AI-generated focus keyword writing to SEO plugin metadata
 
-= 1.2.2 =
+= 0.2.2 =
 * UI: Show "show more/less" toggle for truncated text in processing results
 * UI: Add estimated time remaining to live processing status
 * Fix: Stronger excerpt prompt and cleaning to remove preamble from AI output
 
-= 1.2.1 =
+= 0.2.1 =
 * UI cleanup: Move model selectors to workload-specific settings tabs (Alt Text / Excerpts)
 
-= 1.2.0 =
+= 0.2.0 =
 * Add support for workload-specific model selection (alt-vision, alt-text, excerpt-text)
 * Add state persistence for live processing (resume after refresh/nav)
 * Remove legacy autoalt_* migration and backward compatibility
 
-= 1.1.0 =
+= 0.1.0 =
  * Initial release as Versi Content Tools
  * Alt-text workload (single-pass / two-pass) with three modes
  * Excerpt workload (missing / improve) with configurable word count
@@ -237,8 +237,8 @@ targets all excerpts.
 = 0.13.0 =
 Developer preview — Divi 5 integration, Profiles & People prompt rules.
 
-= 1.12.0 =
+= 0.12.0 =
 Plugin directory compliance fixes — dismissible notices, license URI headers, and Clear History fallback.
 
-= 1.11.0 =
+= 0.11.0 =
 Security hardening — privilege escalation, IDOR, rate limiting, and AI error disclosure fixes. All users should upgrade.
