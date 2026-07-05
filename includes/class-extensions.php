@@ -160,6 +160,25 @@ class Versi_Extensions {
 				),
 			);
 		}
+
+		// Divi 5.
+		if ( defined( 'ET_BUILDER_VERSION' ) ) {
+			$this->integrations['divi'] = array(
+				'id'       => 'divi',
+				'name'     => 'Divi 5',
+				'slug'     => 'Divi',
+				'detected' => true,
+				'desc'     => __( 'Visual page builder by Elegant Themes.', 'versi-content-tools' ),
+				'meta_key' => '',
+				'toggles'  => array(
+					'update_alt' => array(
+						'id'    => 'versi_ext_divi_update_alt',
+						'label' => __( 'Live alt text updates in Image and Blurb modules', 'versi-content-tools' ),
+						'desc'  => __( 'When enabled, images in Divi 5 Image and Blurb modules display the latest alt text from attachment metadata via a render_block filter. Non-destructive — nothing saved to the database. Works with Divi 5+ block format.', 'versi-content-tools' ),
+					),
+				),
+			);
+		}
 	}
 
 	/**

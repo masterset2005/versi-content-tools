@@ -25,7 +25,7 @@ class Versi_Divi5_Integration {
 	 * Hook into WordPress.
 	 */
 	public function __construct() {
-		if ( '1' === get_option( 'versi_alt_update_divi', '0' ) ) {
+		if ( '1' === get_option( 'versi_ext_divi_update_alt', '0' ) ) {
 			add_filter( 'render_block', array( $this, 'filter_block_alt' ), 10, 2 );
 		}
 	}

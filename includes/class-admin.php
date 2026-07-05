@@ -201,8 +201,8 @@ class Versi_Admin {
 	 */
 	public function add_settings_page() {
 		add_options_page(
-			__( 'Versi Content Tools', 'versi-content-tools' ),
-			__( 'Versi Content Tools', 'versi-content-tools' ),
+			__( 'Content Tools', 'versi-content-tools' ),
+			__( 'Content Tools', 'versi-content-tools' ),
 			'manage_options',
 			'versi',
 			array( $this, 'render_settings_page' )
@@ -216,8 +216,8 @@ class Versi_Admin {
 	 */
 	public function add_processing_page() {
 		add_media_page(
-			__( 'Versi Content Actions', 'versi-content-tools' ),
-			__( 'Versi Content Actions', 'versi-content-tools' ),
+			__( 'Content Actions', 'versi-content-tools' ),
+			__( 'Content Actions', 'versi-content-tools' ),
 			'edit_posts',
 			'versi-processing',
 			array( $this, 'render_processing_page' )

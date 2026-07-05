@@ -10,7 +10,7 @@ class Versi_Admin_View {
 		}
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Versi Content Tools', 'versi-content-tools' ); ?></h1>
+			<h1><?php esc_html_e( 'Content Tools', 'versi-content-tools' ); ?></h1>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'versi_settings' ); ?>
 				<h2 class="nav-tab-wrapper" id="versi-tabs">
@@ -123,20 +123,6 @@ class Versi_Admin_View {
 								</label>
 								<p class="description" style="margin-top:4px;">
 									<?php esc_html_e( 'When enabled, embedded images in posts and pages will display the latest alt text. This is non-destructive — nothing is saved to the database.', 'versi-content-tools' ); ?>
-								</p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="versi_alt_update_divi"><?php esc_html_e( 'Update Divi 5 Alt', 'versi-content-tools' ); ?></label>
-							</th>
-							<td>
-								<label>
-									<input type="checkbox" id="versi_alt_update_divi" name="versi_alt_update_divi" value="1" <?php checked( get_option( 'versi_alt_update_divi', '0' ), '1' ); ?>>
-									<?php esc_html_e( 'Update alt attributes in Divi 5 image modules dynamically.', 'versi-content-tools' ); ?>
-								</label>
-								<p class="description" style="margin-top:4px;">
-									<?php esc_html_e( 'When enabled, images in Divi 5 Image and Blurb modules will display the latest alt text from attachment metadata. This is non-destructive — nothing is saved to the database.', 'versi-content-tools' ); ?>
 								</p>
 							</td>
 						</tr>
@@ -429,7 +415,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 
 			<div id="versi-tab-about" class="versi-tab" style="display:none;margin-top:20px;">
 				<div class="postbox" style="max-width:640px;padding:24px;">
-					<h2><?php esc_html_e( 'Versi Content Tools', 'versi-content-tools' ); ?> <span class="version">v<?php echo esc_html( VERSI_VERSION ); ?></span></h2>
+					<h2><?php esc_html_e( 'Content Tools', 'versi-content-tools' ); ?> <span class="version">v<?php echo esc_html( VERSI_VERSION ); ?></span></h2>
 					<p><?php esc_html_e( 'Generate image alt text and post excerpts using WordPress AI Client (WP 7.0+).', 'versi-content-tools' ); ?></p>
 					<hr>
 					<p>
@@ -486,7 +472,7 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$job = get_option( 'versi_job_status' );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Versi Content Actions', 'versi-content-tools' ); ?></h1>
+			<h1><?php esc_html_e( 'Content Actions', 'versi-content-tools' ); ?></h1>
 
 			<?php if ( $job && ! empty( $job['is_running'] ) ) : ?>
 				<div class="notice notice-info" style="margin: 20px 0;">

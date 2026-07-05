@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.13.0
+Stable tag: 0.13.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,7 +112,7 @@ targets all excerpts.
 
 == Changelog ==
 
-= 1.13.0 =
+= 0.13.0 =
 * New: Divi 5 integration — live render_block filter updates alt text in Image and Blurb modules
 * New: Divi 5 Content Cleanup — rewrites content.module.alt.desktop.value in block JSON during DB cleanup
 * New: "Update Divi 5 Alt" toggle on Settings > Alt Text tab
@@ -234,8 +234,8 @@ targets all excerpts.
 
 == Upgrade Notice ==
 
-= 1.13.0 =
-Divi 5 integration — live alt updates + Content Cleanup for Image and Blurb modules. Profiles & People prompt rules.
+= 0.13.0 =
+Developer preview — Divi 5 integration, Profiles & People prompt rules.
 
 = 1.12.0 =
 Plugin directory compliance fixes — dismissible notices, license URI headers, and Clear History fallback.
