@@ -163,31 +163,6 @@ class Versi_Extensions {
 	}
 
 	/**
-	 * Return all discovered integrations.
-	 *
-	 * @return array
-	 */
-	public function get_detected_plugins(): array {
-		return $this->integrations;
-	}
-
-	/**
-	 * Check whether any detected plugin has at least one toggle active.
-	 *
-	 * @return bool
-	 */
-	public function has_active_integrations(): bool {
-		foreach ( $this->integrations as $plugin ) {
-			foreach ( $plugin['toggles'] as $toggle ) {
-				if ( '1' === get_option( $toggle['id'], '0' ) ) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
 	 * Check whether a specific toggle is enabled.
 	 *
 	 * @param string $plugin_id Plugin identifier (e.g. 'yoast').

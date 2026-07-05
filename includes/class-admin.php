@@ -237,49 +237,8 @@ class Versi_Admin {
 		Versi_Container::get( Versi_Admin_View::class )->render_processing_page();
 	}
 
-	public function format_error( $error ) {
-		return Versi_Container::get( Versi_Admin_View::class )->format_error( $error );
-	}
-
-	private function render_result_entry( $result, $workload ) {
-		Versi_Container::get( Versi_Admin_View::class )->render_result_entry( $result, $workload );
-	}
-
-	private function render_live_tab( $workload ) {
-		Versi_Container::get( Versi_Admin_View::class )->render_live_tab( $workload );
-	}
-
-	/**
-	 * Render the Background Jobs tab.
-	 *
-	 * @param string $workload 'alt' or 'excerpt'.
-	 * @return void
-	 */
-	/**
-	 * Render the Processing History tab.
-	 *
-	 * @return void
-	 */
-	private function render_history_tab() {
-		Versi_Container::get( Versi_Admin_View::class )->render_history_tab();
-	}
-
-	private function render_background_tab( $workload ) {
-		Versi_Container::get( Versi_Admin_View::class )->render_background_tab( $workload );
-	}
-
-	private function render_dashboard_tab() {
-		Versi_Container::get( Versi_Admin_View::class )->render_dashboard_tab();
-	}
-
-	private function render_auditor_tab() {
-		Versi_Container::get( Versi_Admin_View::class )->render_auditor_tab();
-	}
-
-
-
-
-
+	// -------------------------------------------------------------------------
+	// Auto-generate on upload / save
 	// -------------------------------------------------------------------------
 	// Auto-generate on upload / save
 	// -------------------------------------------------------------------------
