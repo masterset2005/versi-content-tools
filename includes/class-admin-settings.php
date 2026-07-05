@@ -29,6 +29,7 @@ class Versi_Admin_Settings {
 			'versi_alt_show_generated'    => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
 			'versi_alt_update_content'    => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
 			'versi_strip_self_links'      => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
+			'versi_alt_update_divi'       => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
 			'versi_alt_cat_filter'        => array( 'type' => 'integer', 'sanitize' => 'absint', 'default' => 0 ),
 			'versi_excerpt_text_model'    => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
 			'versi_excerpt_text_fallback' => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),

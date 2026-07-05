@@ -159,6 +159,9 @@ class Versi_Batch_Processor {
 
 		if ( 'update_alt' === $mode || 'both' === $mode ) {
 			$new_content = $this->process_content_update_alt( $new_content, $changed );
+			$new_content = Versi_Divi5_Integration::get_instance()->update_alt_in_content( $new_content );
+			// Check if Divi 5 update made changes (compare serialized to avoid redundant work).
+			$changed = $changed || $new_content !== $content;
 		}
 
 		if ( 'strip_links' === $mode || 'both' === $mode ) {

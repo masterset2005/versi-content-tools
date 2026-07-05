@@ -128,6 +128,20 @@ class Versi_Admin_View {
 						</tr>
 						<tr>
 							<th scope="row">
+								<label for="versi_alt_update_divi"><?php esc_html_e( 'Update Divi 5 Alt', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<label>
+									<input type="checkbox" id="versi_alt_update_divi" name="versi_alt_update_divi" value="1" <?php checked( get_option( 'versi_alt_update_divi', '0' ), '1' ); ?>>
+									<?php esc_html_e( 'Update alt attributes in Divi 5 image modules dynamically.', 'versi-content-tools' ); ?>
+								</label>
+								<p class="description" style="margin-top:4px;">
+									<?php esc_html_e( 'When enabled, images in Divi 5 Image and Blurb modules will display the latest alt text from attachment metadata. This is non-destructive — nothing is saved to the database.', 'versi-content-tools' ); ?>
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
 								<label for="versi_strip_self_links"><?php esc_html_e( 'Strip Self-Linking Images', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
