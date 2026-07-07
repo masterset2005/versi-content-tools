@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.13.0
+Stable tag: 0.14.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,16 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 0.14.0 =
+* New: Universal content extraction — all AI-facing post content paths now render through `the_content` filter + registered extractors, supporting any page builder (Divi 5, Elementor, Beaver Builder, Gutenberg, etc.) without per-builder code
+* New: Extension framework API — `Versi_Extensions::register()` and `versi_register_extension` action let third-party plugins self-register integrations
+* New: `Versi_Content_Extractor` interface — page builders can register an optimized fast-path to strip block JSON before the_content rendering
+* New: Divi 5 content extraction — `extract_text()` recursively walks Divi 5 block JSON to decode text from any module type, feeds excerpts and AI context with clean readable text
+* New: Content Extractors section in Extensions tab — shows active page builder decoders
+* Tweak: Author style samples now use the content extraction pipeline for better samples from page-builder content
+* Fix: `Versi_Singleton::get_instance()` alias added for phpstan compliance
+* Dev: All plugin content extraction centralized in `Versi_Extensions::get_clean_content()` with per-post request cache
 
 = 0.13.0 =
 * New: Divi 5 integration — live render_block filter updates alt text in Image and Blurb modules
@@ -233,6 +243,9 @@ targets all excerpts.
  * WP-CLI commands, auto-generate on upload/save, Media Library overlay
 
 == Upgrade Notice ==
+
+= 0.14.0 =
+Universal content extraction framework — page builder content (Divi 5, Elementor, etc.) now decoded via `the_content` pipeline for excerpts and AI context. Extension registration API for third-party plugins.
 
 = 0.13.0 =
 Developer preview — Divi 5 integration, Profiles & People prompt rules.

@@ -40,7 +40,7 @@ class Versi_Excerpt_Processor {
 	 * @return array
 	 */
 	public function process_single( $post_id ) {
-		$shared = Versi_Container::get(Versi_Processor::class);
+		$shared = Versi_Container::get( Versi_Processor::class );
 		$post   = get_post( $post_id );
 
 		if ( ! $post ) {
@@ -51,7 +51,8 @@ class Versi_Excerpt_Processor {
 			return $shared->result( $post_id, $post->post_title, 'error', null, __( 'AI Client not available.', 'versi-content-tools' ) );
 		}
 
-		$content = wp_strip_all_tags( $post->post_content );
+		$content = Versi_Extensions::get_clean_content( $post->post_content, $post_id );
+		$content = wp_strip_all_tags( $content );
 		if ( mb_strlen( $content ) < 20 ) {
 			return $shared->result( $post_id, $post->post_title, 'skipped', null, null, __( 'Post content too short.', 'versi-content-tools' ) );
 		}
@@ -73,22 +74,22 @@ class Versi_Excerpt_Processor {
 		}
 
 		if ( class_exists( 'Versi_Extensions' ) ) {
-			$keywords = Versi_Container::get(Versi_Extensions::class)->get_focus_keywords( $post_id );
+			$keywords = Versi_Container::get( Versi_Extensions::class )->get_focus_keywords( $post_id );
 			if ( $keywords ) {
 				$system .= "\n\n**SEO focus keyphrases:** {$keywords}\nNaturally incorporate these keyphrases into the excerpt text. Do NOT list, label, or append them separately — never output \"Keywords:\" or \"Keyphrases:\" or any similar prefix.";
 			}
 
 			if ( 'product' === get_post_type( $post_id ) ) {
-				$product_ctx = Versi_Container::get(Versi_Extensions::class)->get_product_context( $post_id );
+				$product_ctx = Versi_Container::get( Versi_Extensions::class )->get_product_context( $post_id );
 				if ( $product_ctx ) {
 					$system .= "\n\n**Product context:** {$product_ctx}\nUse this context to inform the excerpt, but stay focused on the article itself.";
 				}
 			}
 		}
 
-		$builder  = wp_ai_client_prompt( $prompt )
+		$builder   = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
-		$builder  = $shared->apply_text_preference( $builder, 'excerpt' );
+		$builder   = $shared->apply_text_preference( $builder, 'excerpt' );
 		$generated = $shared->generate_with_retry( $builder, $shared->get_text_fallback( 'excerpt' ) );
 
 		if ( is_wp_error( $generated ) ) {
@@ -272,7 +273,7 @@ class Versi_Excerpt_Processor {
 	 * @return array[] Each item: {id, title, excerpt, status, reason}
 	 */
 	public function bulk_review( $ids ) {
-		$shared = Versi_Container::get(Versi_Processor::class);
+		$shared = Versi_Container::get( Versi_Processor::class );
 		$items  = array();
 
 		_prime_post_caches( $ids, true, true );

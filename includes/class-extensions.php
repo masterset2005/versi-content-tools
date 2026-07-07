@@ -23,11 +23,25 @@ class Versi_Extensions {
 	public static ?array $last_rate_limit = null;
 
 	/**
-	 * Discovered integrations.
+	 * Registered integrations.
 	 *
 	 * @var array
 	 */
 	private array $integrations = array();
+
+	/**
+	 * Registered content extractors for page builders.
+	 *
+	 * @var Versi_Content_Extractor[]
+	 */
+	private array $extractors = array();
+
+	/**
+	 * Cached clean content per post_id to avoid repeated extraction.
+	 *
+	 * @var array<int, string>
+	 */
+	private static array $extracted_content_cache = array();
 
 	/**
 	 * Hook into WordPress.
@@ -38,7 +52,93 @@ class Versi_Extensions {
 	}
 
 	/**
+	 * Public API: register an extension integration.
+	 *
+	 * Third-party plugins can call this on 'wp_loaded' to register
+	 * themselves without modifying plugin files.
+	 *
+	 * @param string $id     Unique identifier (e.g. 'my-plugin').
+	 * @param array  $config Integration configuration.
+	 * @return void
+	 */
+	public function register( string $id, array $config ): void {
+		$this->integrations[ $id ] = $config;
+	}
+
+	/**
+	 * Register a content extractor for page builder text extraction.
+	 *
+	 * @param Versi_Content_Extractor $extractor The extractor instance.
+	 * @return void
+	 */
+	public function register_content_extractor( Versi_Content_Extractor $extractor ): void {
+		$id                            = $extractor->get_identifier();
+		$this->extractors[ $id ]       = $extractor;
+		self::$extracted_content_cache = array(); // Clear cache on new registration.
+	}
+
+	/**
+	 * Get clean readable text from raw post_content for AI context.
+	 *
+	 * Uses two strategies in sequence:
+	 *   1. Registered extractors — fast-path that strips known page-builder
+	 *      block JSON (e.g. Divi 5, Gutenberg) from the raw content.
+	 *   2. WordPress rendering — applies the_content filter so any remaining
+	 *      blocks, shortcodes, and theme/plugin markup are rendered as they
+	 *      would appear on the front end.
+	 *
+	 * This avoids per-page-builder extraction code while still supporting
+	 * optimized extractors when available. Rendered HTML is stripped so
+	 * only visible text reaches the AI.
+	 *
+	 * Caches per post_id for the current request.
+	 *
+	 * @param string $raw_content Raw post_content.
+	 * @param int    $post_id     Optional post ID for caching.
+	 * @return string Clean text content.
+	 */
+	public static function get_clean_content( string $raw_content, int $post_id = 0 ): string {
+		if ( $post_id > 0 && isset( self::$extracted_content_cache[ $post_id ] ) ) {
+			return self::$extracted_content_cache[ $post_id ];
+		}
+
+		// Step 1: fast-path — registered extractors strip known block JSON
+		// (Divi 5, etc.) before the heavier rendering step.
+		$extensions = Versi_Container::get( self::class );
+		foreach ( $extensions->extractors as $extractor ) {
+			$raw_content = $extractor->extract_text( $raw_content );
+		}
+
+		// Step 2: render through WordPress's content pipeline so all blocks,
+		// shortcodes, and theme/plugin hooks produce final HTML.
+		$rendered = apply_filters( 'the_content', $raw_content );
+
+		// Strip HTML and normalize whitespace.
+		$clean = wp_strip_all_tags( $rendered );
+		$clean = preg_replace( '/\s+/', ' ', $clean );
+		$clean = trim( $clean );
+
+		if ( $post_id > 0 ) {
+			self::$extracted_content_cache[ $post_id ] = $clean;
+		}
+
+		return $clean;
+	}
+
+	/**
+	 * Check if any content extractors are registered and active.
+	 *
+	 * @return bool
+	 */
+	public function has_content_extractors(): bool {
+		return ! empty( $this->extractors );
+	}
+
+	/**
 	 * Scan for installed plugins and register integrations.
+	 *
+	 * Fires a 'versi_register_extension' filter so third-party plugins
+	 * can register themselves without modifying plugin files.
 	 *
 	 * @return void
 	 */
@@ -46,6 +146,17 @@ class Versi_Extensions {
 		if ( ! empty( $this->integrations ) ) {
 			return;
 		}
+
+		/**
+		 * Allow third-party plugins to register themselves as extensions.
+		 *
+		 * The callback receives a Versi_Extensions instance and should
+		 * call $extensions->register( $id, $config ).
+		 *
+		 * @since 0.13.0
+		 */
+		do_action( 'versi_register_extension', $this );
+
 		// SmartCrawl Pro / SmartCrawl.
 		if ( defined( 'SMARTCRAWL_VERSION' ) ) {
 			$this->integrations['smartcrawl'] = array(
@@ -211,7 +322,7 @@ class Versi_Extensions {
 			'versi_seo_text_model',
 			array(
 				'type'              => 'string',
-				'sanitize_callback' => array( Versi_Container::get(Versi_Admin_Settings::class), 'sanitize_model_preference' ),
+				'sanitize_callback' => array( Versi_Container::get( Versi_Admin_Settings::class ), 'sanitize_model_preference' ),
 				'default'           => '',
 			)
 		);
@@ -336,11 +447,16 @@ class Versi_Extensions {
 			</tr>
 		</table>
 		<?php
-		if ( empty( $this->integrations ) ) {
+		if ( empty( $this->integrations ) && empty( $this->extractors ) ) {
 			echo '<div class="notice notice-info is-dismissible" style="margin-top:20px;"><p>';
 			esc_html_e( 'No supported third-party plugins detected. Install Yoast SEO, Rank Math, SEOPress, SmartCrawl, or WooCommerce to enable integrations.', 'versi-content-tools' );
 			echo '</p></div>';
 			return;
+		}
+		if ( empty( $this->integrations ) && ! empty( $this->extractors ) ) {
+			echo '<p style="color:#4b5563;font-style:italic;">';
+			esc_html_e( 'Page builder content extractors are active (see below). No SEO integrations require configuration.', 'versi-content-tools' );
+			echo '</p>';
 		}
 		?>
 		<table class="form-table">
@@ -370,6 +486,30 @@ class Versi_Extensions {
 				</tr>
 			<?php endforeach; ?>
 		</table>
+		</table>
+		<?php if ( ! empty( $this->extractors ) ) : ?>
+		<h3 style="margin-top:24px;"><?php esc_html_e( 'Content Extractors', 'versi-content-tools' ); ?></h3>
+		<p style="color:#4b5563;font-size:13px;margin:4px 0 12px;">
+			<?php esc_html_e( 'The following page builders have registered content extractors. All content is decoded through WordPress\'s the_content filter so blocks, shortcodes, and theme markup are rendered as on the front end, then stripped to clean text for excerpt generation, SEO keyword analysis, and AI context.', 'versi-content-tools' ); ?>
+		</p>
+		<table class="form-table">
+			<?php foreach ( $this->extractors as $extractor ) : ?>
+				<tr>
+					<th scope="row" style="vertical-align:top;padding-top:16px;">
+						<strong><?php echo esc_html( $extractor->get_name() ); ?></strong>
+					</th>
+					<td style="padding-top:16px;">
+						<p style="color:#16a34a;font-size:13px;margin:0;">
+							<?php esc_html_e( 'Content extraction active', 'versi-content-tools' ); ?>
+						</p>
+						<p style="color:#4b5563;font-size:12px;margin:4px 0 0;">
+							<?php esc_html_e( 'Registers an optimized fast-path to strip block JSON before the standard the_content rendering pipeline. Improves performance and text quality for AI context.', 'versi-content-tools' ); ?>
+						</p>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+		</table>
+		<?php endif; ?>
 		<?php
 	}
 
@@ -492,7 +632,8 @@ class Versi_Extensions {
 			return '';
 		}
 
-		$content = wp_strip_all_tags( $post->post_content );
+		$content = self::get_clean_content( $post->post_content, $post_id );
+		$content = wp_strip_all_tags( $content );
 		$content = mb_substr( $content, 0, 1500 );
 
 		if ( mb_strlen( $content ) < 20 ) {
@@ -510,15 +651,15 @@ class Versi_Extensions {
 
 		$builder = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system );
-		$builder = Versi_Container::get(Versi_Processor::class)->apply_text_preference( $builder, 'seo' );
+		$builder = Versi_Container::get( Versi_Processor::class )->apply_text_preference( $builder, 'seo' );
 
 		self::$last_rate_limit = null;
 		$generated             = $builder->generate_text();
 
 		if ( is_wp_error( $generated ) ) {
-			$error_info = Versi_Container::get(Versi_Processor::class)->classify_error( $generated->get_error_message() );
+			$error_info = Versi_Container::get( Versi_Processor::class )->classify_error( $generated->get_error_message() );
 			if ( $error_info['should_retry'] ) {
-				$fallback = Versi_Container::get(Versi_Processor::class)->get_text_fallback( 'seo' );
+				$fallback = Versi_Container::get( Versi_Processor::class )->get_text_fallback( 'seo' );
 				if ( '' !== $fallback ) {
 					$fb_builder = wp_ai_client_prompt( $prompt )
 						->using_system_instruction( $system )
@@ -529,7 +670,7 @@ class Versi_Extensions {
 		}
 
 		if ( is_wp_error( $generated ) ) {
-			$error_info = Versi_Container::get(Versi_Processor::class)->classify_error( $generated->get_error_message() );
+			$error_info = Versi_Container::get( Versi_Processor::class )->classify_error( $generated->get_error_message() );
 			if ( $error_info['should_retry'] ) {
 				self::$last_rate_limit = array( 'retry_after' => (float) $error_info['retry_after'] );
 			}

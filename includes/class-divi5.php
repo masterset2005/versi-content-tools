@@ -1,6 +1,6 @@
 <?php
 /**
- * Divi 5 integration: live alt text updates and content cleanup.
+ * Divi 5 integration: live alt text updates, content cleanup, and text extraction.
  *
  * @package Versi_Content_Tools
  */
@@ -8,16 +8,18 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Integrates with Divi 5 block-based content to update image alt text.
+ * Integrates with Divi 5 block-based content.
  *
  * Divi 5 stores content as WordPress block comments with JSON attributes
- * in post_content (e.g. <!-- wp:divi/image {...} /-->). The alt text is
- * stored as a module setting, not read dynamically from attachment metadata.
- * This class provides:
+ * in post_content (e.g. <!-- wp:divi/image {...} /-->). This class provides:
  *   1. A render_block filter for non-destructive front-end alt updates.
- *   2. A post_content parser for permanent database-level cleanup.
+ *   2. A post_content parser for permanent database-level alt cleanup.
+ *   3. A content extractor that decodes Divi block JSON into clean text
+ *      for excerpt generation, SEO analysis, and AI context.
+ *
+ * @implements Versi_Content_Extractor
  */
-class Versi_Divi5_Integration {
+class Versi_Divi5_Integration implements Versi_Content_Extractor {
 
 	use Versi_Singleton;
 
@@ -31,10 +33,29 @@ class Versi_Divi5_Integration {
 	}
 
 	/**
-	 * Intercept rendered Divi 5 blocks and swap alt text from attachment metadata.
+	 * Unique identifier for this extractor.
 	 *
-	 * Hooked into render_block so it fires for every block during the_content.
-	 * Only acts on Divi 5 blocks that contain images.
+	 * @return string
+	 */
+	public function get_identifier(): string {
+		return 'divi';
+	}
+
+	/**
+	 * Display name for admin UI.
+	 *
+	 * @return string
+	 */
+	public function get_name(): string {
+		return 'Divi 5';
+	}
+
+	// -------------------------------------------------------------------------
+	// Live alt-text filter (render_block)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Intercept rendered Divi 5 blocks and swap alt text from attachment metadata.
 	 *
 	 * @param string $block_content The rendered block HTML.
 	 * @param array  $block         The parsed block data.
@@ -106,12 +127,12 @@ class Versi_Divi5_Integration {
 		$attrs = $block['attrs'] ?? array();
 		$src   = '';
 
-		// divi/image: content.module.src.desktop.value
+		// divi/image: content.module.src.desktop.value.
 		if ( isset( $attrs['content']['module']['src']['desktop']['value'] ) ) {
 			$src = $attrs['content']['module']['src']['desktop']['value'];
 		}
 
-		// divi/blurb: content.module.image.desktop.value
+		// divi/blurb: content.module.image.desktop.value.
 		if ( empty( $src ) && isset( $attrs['content']['module']['image']['desktop']['value'] ) ) {
 			$src = $attrs['content']['module']['image']['desktop']['value'];
 		}
@@ -119,12 +140,12 @@ class Versi_Divi5_Integration {
 		return is_string( $src ) ? $src : '';
 	}
 
+	// -------------------------------------------------------------------------
+	// DB-level alt-text update
+	// -------------------------------------------------------------------------
+
 	/**
 	 * Update alt text in Divi 5 block JSON within post_content.
-	 *
-	 * Parses post_content for <!-- wp:divi/image ... /--> blocks,
-	 * maps their src URL to attachment metadata, and updates the alt
-	 * attribute in the JSON. Returns the modified content.
 	 *
 	 * @param string $content Raw post_content (may contain Divi 5 blocks).
 	 * @return string Updated content.
@@ -137,8 +158,8 @@ class Versi_Divi5_Integration {
 		return preg_replace_callback(
 			'/<!--\s+wp:divi\/image\s+(.*?)\s*\/-->/s',
 			function ( $matches ) {
-				$json  = $matches[1];
-				$data  = json_decode( $json, true );
+				$json = $matches[1];
+				$data = json_decode( $json, true );
 				if ( ! is_array( $data ) ) {
 					return $matches[0];
 				}
@@ -158,7 +179,6 @@ class Versi_Divi5_Integration {
 					return $matches[0];
 				}
 
-				// Ensure the alt path exists before setting.
 				if ( ! isset( $data['content']['module']['alt'] ) ) {
 					$data['content']['module']['alt'] = array();
 				}
@@ -171,5 +191,145 @@ class Versi_Divi5_Integration {
 			},
 			$content
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Content extraction (Versi_Content_Extractor interface)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Extract clean readable text from Divi 5 block content.
+	 *
+	 * Strips all Divi block comments and recursively walks the JSON to
+	 * collect user-visible text values from any module type. Non-text
+	 * values (URLs, shortcodes, pure numbers, fragments) are discarded.
+	 *
+	 * @param string $raw_content Raw post_content containing Divi 5 blocks.
+	 * @return string Clean text with block artifacts removed.
+	 */
+	public function extract_text( string $raw_content ): string {
+		if ( '' === $raw_content || false === stripos( $raw_content, '<!-- wp:divi/' ) ) {
+			return $raw_content;
+		}
+
+		$text_parts = array();
+
+		// 1. Extract text from self-closing blocks: <!-- wp:divi/text {...} /-->
+		$raw_content = preg_replace_callback(
+			'/<!--\s+wp:divi\/(\w+)\s+(.*?)\s*\/-->/s',
+			function ( $m ) use ( &$text_parts ) {
+				$data = json_decode( $m[2], true );
+				if ( is_array( $data ) ) {
+					$this->collect_text_values( $data, $text_parts );
+				}
+				return '';
+			},
+			$raw_content
+		);
+
+		// 2. Extract text from inner blocks with closing tags:
+		// <!-- wp:divi/accordion {...}--> ... <!-- /wp:divi/accordion -->
+		$raw_content = preg_replace_callback(
+			'/<!--\s+wp:divi\/(\w+)\s+(.*?)-->(.*?)<!--\s+\/wp:divi\/\1\s+-->/s',
+			function ( $m ) use ( &$text_parts ) {
+				$data = json_decode( $m[2], true );
+				if ( is_array( $data ) ) {
+					$this->collect_text_values( $data, $text_parts );
+				}
+				// Inner HTML may contain more blocks; return it for further processing.
+				return $m[3];
+			},
+			$raw_content
+		);
+
+		// 3. Remove any remaining orphaned Divi comments (opening or closing).
+		$raw_content = preg_replace( '/<!--\s+\/?wp:divi\/?\w*\s*.*?-->/s', '', $raw_content );
+
+		$text_parts[] = $raw_content;
+
+		// Merge all parts, strip HTML, and normalize whitespace.
+		$result = implode( "\n\n", array_filter( $text_parts, 'strlen' ) );
+		$result = wp_strip_all_tags( $result );
+		$result = preg_replace( '/\s+/', ' ', $result );
+		$result = trim( $result );
+
+		return $result;
+	}
+
+	/**
+	 * Recursively walk decoded block JSON and collect string values that
+	 * look like visible text content.
+	 *
+	 * Any array that has a string 'value' key at any depth is a candidate.
+	 * URLs, shortcodes, standalone numbers, 1-2 char fragments, and
+	 * CSS-selector-like strings are filtered out.
+	 *
+	 * @param array $data  Decoded JSON array (portion of block attrs).
+	 * @param array $texts Reference array to collect text strings into.
+	 */
+	private function collect_text_values( array $data, array &$texts ): void {
+		foreach ( $data as $value ) {
+			if ( is_array( $value ) ) {
+				// If this array has a string 'value' key, check it.
+				if ( isset( $value['value'] ) && is_string( $value['value'] ) ) {
+					$v = trim( $value['value'] );
+					if ( $this->is_visible_text( $v ) ) {
+						$texts[] = $v;
+					}
+				} else {
+					$this->collect_text_values( $value, $texts );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Determine whether a string looks like visible text content
+	 * rather than internal data (URLs, shortcodes, numbers, etc.).
+	 *
+	 * @param string $value The trimmed string to check.
+	 * @return bool
+	 */
+	private function is_visible_text( string $value ): bool {
+		if ( '' === $value ) {
+			return false;
+		}
+
+		// Minimum length: at least 3 characters of substantive text.
+		if ( mb_strlen( $value ) < 3 ) {
+			return false;
+		}
+
+		// Skip URLs.
+		if ( str_starts_with( $value, 'http' ) || str_starts_with( $value, '//' ) ) {
+			return false;
+		}
+
+		// Skip filesystem paths.
+		if ( str_starts_with( $value, '/' ) ) {
+			return false;
+		}
+
+		// Skip shortcodes and template tags.
+		if ( str_starts_with( $value, '[' ) || str_starts_with( $value, '{' ) ) {
+			return false;
+		}
+
+		// Skip standalone numbers and hex values.
+		if ( is_numeric( $value ) || preg_match( '/^#[a-fA-F0-9]{6}$/', $value ) ) {
+			return false;
+		}
+
+		// Skip things that look like CSS classes or IDs.
+		if ( preg_match( '/^[.#][a-zA-Z]/', $value ) ) {
+			return false;
+		}
+
+		// Skip data URIs and base64.
+		if ( str_starts_with( $value, 'data:' ) || preg_match( '/^[A-Za-z0-9+\/]{20,}={0,2}$/', $value ) ) {
+			return false;
+		}
+
+		return true;
 	}
 }

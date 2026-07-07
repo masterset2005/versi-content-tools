@@ -116,7 +116,7 @@ class Versi_Processor {
 			'article_content' => '',
 			'existing_alt'    => $this->sanitize_input( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
 			'author_style'    => '',
-			'filename_label'     => $this->extract_filename_label( $attachment_id ),
+			'filename_label'  => $this->extract_filename_label( $attachment_id ),
 		);
 
 		$parent = null;
@@ -125,10 +125,15 @@ class Versi_Processor {
 		}
 
 		if ( $parent ) {
-			$context['article_title']   = $this->sanitize_input( $parent->post_title );
+			$context['article_title'] = $this->sanitize_input( $parent->post_title );
+
+			// Extract clean text through registered page builder extractors,
+			// then strip any remaining HTML tags.
+			$clean_content              = Versi_Extensions::get_clean_content( $parent->post_content, $parent->ID );
+			$clean_content              = wp_strip_all_tags( $clean_content );
 			$context['article_content'] = $this->sanitize_input(
 				mb_substr(
-					wp_strip_all_tags( $parent->post_content ),
+					$clean_content,
 					0,
 					absint( get_option( 'versi_content_limit', 500 ) )
 				)
@@ -176,7 +181,7 @@ class Versi_Processor {
 
 		$pieces = array();
 		foreach ( $samples as $sample ) {
-			$text = wp_strip_all_tags( $sample->post_content );
+			$text = Versi_Extensions::get_clean_content( $sample->post_content, $sample->ID );
 			$text = trim( preg_replace( '/\s+/', ' ', $text ) );
 			if ( mb_strlen( $text ) < 30 ) {
 				continue;
@@ -264,12 +269,24 @@ class Versi_Processor {
 
 		// Remove common non-name tokens.
 		$stop_words = array(
-			'headshot', 'profile', 'photo', 'picture', 'portrait',
-			'thumb', 'thumbnail', 'img', 'image', 'dsc', 'pic',
-			'mugshot', 'selfie', 'avatar', 'screenshot',
+			'headshot',
+			'profile',
+			'photo',
+			'picture',
+			'portrait',
+			'thumb',
+			'thumbnail',
+			'img',
+			'image',
+			'dsc',
+			'pic',
+			'mugshot',
+			'selfie',
+			'avatar',
+			'screenshot',
 		);
-		$parts     = explode( ' ', $name );
-		$filtered  = array();
+		$parts      = explode( ' ', $name );
+		$filtered   = array();
 		foreach ( $parts as $part ) {
 			$lower = strtolower( $part );
 			if ( in_array( $lower, $stop_words, true ) ) {
@@ -364,11 +381,9 @@ class Versi_Processor {
 	}
 
 	/**
-	 * Get post IDs for SEO focus keyword generation.
+	 * Get enabled post types for processing.
 	 *
-	 * @param int $offset Pagination offset.
-	 * @param int $batch  Batch size.
-	 * @return array{ids: int[], total: int}
+	 * @return string[]
 	 */
 	public function get_enabled_post_types(): array {
 		$saved = get_option( 'versi_post_types', 'post' );
@@ -376,6 +391,13 @@ class Versi_Processor {
 		return array_filter( $types, 'post_type_exists' );
 	}
 
+	/**
+	 * Get post IDs for content cleanup processing.
+	 *
+	 * @param int $offset Pagination offset.
+	 * @param int $batch  Batch size.
+	 * @return array{ids: int[], total: int}
+	 */
 	public function get_post_ids( $offset, $batch ) {
 		$args = array(
 			'post_type'        => $this->get_enabled_post_types(),

@@ -32,6 +32,15 @@ trait Versi_Singleton {
 	}
 
 	/**
+	 * Get or create the singleton (alias for init).
+	 *
+	 * @return self
+	 */
+	public static function get_instance() {
+		return self::init();
+	}
+
+	/**
 	 * Prevent cloning.
 	 */
 	private function __clone() {}

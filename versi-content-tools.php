@@ -3,7 +3,7 @@
  * Plugin Name: Versi Content Tools
  * Plugin URI:  https://versihosting.com/
  * Description: AI-powered alt-text generation and excerpt management. Uses the WP AI Client (WordPress 7.0+).
- * Version:     0.13.0
+ * Version:     0.14.0
  * Author:      Sean Thompson
  * Author URI:  https://stprojects.net/
  * License:     GPL v2 or later
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'VERSI_VERSION', '0.13.0' );
+define( 'VERSI_VERSION', '0.14.0' );
 define( 'VERSI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VERSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -31,6 +31,7 @@ if ( file_exists( VERSI_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 
 if ( ! class_exists( 'Versi_Container' ) ) {
 	require_once VERSI_PLUGIN_DIR . 'includes/trait-singleton.php';
+	require_once VERSI_PLUGIN_DIR . 'includes/interface-content-extractor.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-container.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-processor.php';
 	require_once VERSI_PLUGIN_DIR . 'includes/class-auditor.php';
@@ -83,7 +84,7 @@ function versi_init() {
 		$prompt_options = array( 'versi_alt_single_prompt', 'versi_alt_system_prompt', 'versi_alt_compare_prompt', 'versi_excerpt_prompt', 'versi_seo_prompt' );
 		foreach ( $prompt_options as $opt ) {
 			$val = get_option( $opt, '' );
-			if ( '' !== $val && $val !== trim( $val ) ) {
+			if ( '' !== $val && trim( $val ) !== $val ) {
 				update_option( $opt, trim( $val ) );
 			}
 		}
@@ -103,5 +104,15 @@ function versi_init() {
 	Versi_Container::register( Versi_Admin_Ajax::class );
 	Versi_Container::register( Versi_Batch_Processor::class );
 	Versi_Container::register( Versi_Divi5_Integration::class );
+
+	// Register Divi 5 as a content extractor for page builder text decoding.
+	if ( class_exists( Versi_Extensions::class ) && class_exists( Versi_Divi5_Integration::class ) ) {
+		add_action(
+			'versi_register_extension',
+			function ( $extensions ) {
+				$extensions->register_content_extractor( Versi_Divi5_Integration::get_instance() );
+			}
+		);
+	}
 }
 add_action( 'plugins_loaded', 'versi_init' );
