@@ -687,12 +687,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 		$base_url = admin_url( 'upload.php?page=versi-processing&versi_workload=' . $workload . '&versi_mode_tab=live' );
 
 		if ( 'alt' === $workload ) {
-			$safe_label   = __( 'Generate Missing Alt Text', 'versi-content-tools' );
-			$safe_mode    = 'missing';
-			$review_label = __( 'Bulk Review Alt Text', 'versi-content-tools' );
-			$review_mode  = 'bulk_review';
-			$dest_label   = __( 'Regenerate All Alt Text', 'versi-content-tools' );
-			$dest_mode    = 'regenerate';
+			$safe_label       = __( 'Generate Missing Alt Text', 'versi-content-tools' );
+			$safe_mode        = 'missing';
+			$short_label      = __( 'Fix Alt Under 15 Chars', 'versi-content-tools' );
+			$short_mode       = 'too_short';
+			$long_label       = __( 'Fix Alt Over 125 Chars', 'versi-content-tools' );
+			$long_mode        = 'too_long';
+			$review_label     = __( 'Bulk Review Alt Text', 'versi-content-tools' );
+			$review_mode      = 'bulk_review';
+			$dest_label       = __( 'Regenerate All Alt Text', 'versi-content-tools' );
+			$dest_mode        = 'regenerate';
 		} elseif ( 'content' === $workload ) {
 			$safe_label  = __( 'Update Alt Attributes in Content', 'versi-content-tools' );
 			$safe_mode   = 'update_alt';
@@ -732,7 +736,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						<?php echo esc_html( $review_label ); ?>
 					</button>
 				<?php endif; ?>
-				<?php if ( 'excerpt' === $workload ) : ?>
+				<?php if ( 'alt' === $workload ) : ?>
+					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+						<?php echo esc_html( $short_label ); ?>
+					</button>
+					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $long_mode ); ?>">
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+						<?php echo esc_html( $long_label ); ?>
+					</button>
+				<?php elseif ( 'excerpt' === $workload ) : ?>
 					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
 						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
 						<?php echo esc_html( $short_label ); ?>

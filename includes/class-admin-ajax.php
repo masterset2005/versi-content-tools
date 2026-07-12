@@ -96,7 +96,7 @@ class Versi_Admin_Ajax {
 
 	private function validate_mode( $mode, $valid_modes = array() ) {
 		if ( empty( $valid_modes ) ) {
-			$valid_modes = array( 'missing', 'regenerate', 'review', 'bulk_review', 'improve', 'short', 'update_alt', 'strip_links', 'both' );
+			$valid_modes = array( 'missing', 'regenerate', 'review', 'bulk_review', 'improve', 'short', 'update_alt', 'strip_links', 'both', 'too_long', 'too_short' );
 		}
 		if ( ! in_array( $mode, $valid_modes, true ) ) {
 			wp_send_json_error( 'Invalid mode.' );
@@ -125,7 +125,7 @@ class Versi_Admin_Ajax {
 	public function ajax_alt_get_ids() {
 		$this->ajax_check();
 
-		$mode   = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'missing', 'regenerate', 'review' ) ) : 'missing';
+		$mode   = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'missing', 'regenerate', 'review', 'too_long', 'too_short' ) ) : 'missing';
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 		$cat_id = isset( $_POST['catId'] ) ? absint( $_POST['catId'] ) : 0;

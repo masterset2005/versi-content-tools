@@ -328,7 +328,7 @@ class Versi_Processor {
 	/**
 	 * Get image IDs for bulk processing, filtered by mode and optional category.
 	 *
-	 * @param string $mode   'missing', 'review', or 'regenerate'.
+	 * @param string $mode   'missing', 'too_long', 'too_short', 'review', or 'regenerate'.
 	 * @param int    $offset Pagination offset.
 	 * @param int    $batch  Batch size.
 	 * @param int    $cat_id Category ID filter (0 = all).
@@ -373,11 +373,60 @@ class Versi_Processor {
 			);
 		}
 
+		if ( 'too_long' === $mode || 'too_short' === $mode ) {
+			$args['meta_query'] = array(
+				array(
+					'key'     => '_wp_attachment_image_alt',
+					'compare' => 'EXISTS',
+				),
+			);
+			$hook               = 'too_long' === $mode ? 'filter_alt_too_long' : 'filter_alt_too_short';
+			add_filter( 'posts_where', array( $this, $hook ) );
+		}
+
 		$query = new WP_Query( $args );
+
+		if ( 'too_long' === $mode ) {
+			remove_filter( 'posts_where', array( $this, 'filter_alt_too_long' ) );
+		}
+		if ( 'too_short' === $mode ) {
+			remove_filter( 'posts_where', array( $this, 'filter_alt_too_short' ) );
+		}
+
 		return array(
 			'ids'   => $query->posts,
 			'total' => (int) $query->found_posts,
 		);
+	}
+
+	/**
+	 * Filter posts_where to only include images with alt text over 125 chars.
+	 *
+	 * @param string $where The WHERE clause.
+	 * @return string
+	 */
+	public function filter_alt_too_long( $where ) {
+		global $wpdb;
+		$where .= $wpdb->prepare(
+			" AND {$wpdb->postmeta}.meta_key = '_wp_attachment_image_alt' AND CHAR_LENGTH({$wpdb->postmeta}.meta_value) > %d",
+			125
+		);
+		return $where;
+	}
+
+	/**
+	 * Filter posts_where to only include images with alt text under 15 chars.
+	 *
+	 * @param string $where The WHERE clause.
+	 * @return string
+	 */
+	public function filter_alt_too_short( $where ) {
+		global $wpdb;
+		$where .= $wpdb->prepare(
+			" AND {$wpdb->postmeta}.meta_key = '_wp_attachment_image_alt' AND CHAR_LENGTH({$wpdb->postmeta}.meta_value) BETWEEN 1 AND %d",
+			15
+		);
+		return $where;
 	}
 
 	/**

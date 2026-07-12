@@ -23,6 +23,14 @@ class Versi_Abilities {
 	 * Register Versi abilities.
 	 */
 	public function register_abilities() {
+		wp_register_ability_category(
+			'content-generation',
+			array(
+				'label'       => __( 'Content Generation', 'versi-content-tools' ),
+				'description' => __( 'Abilities that generate or modify content using AI.', 'versi-content-tools' ),
+			)
+		);
+
 		wp_register_ability(
 			'versi/generate-alt-text',
 			array(
