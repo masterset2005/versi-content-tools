@@ -13,16 +13,17 @@ defined( 'ABSPATH' ) || exit;
 class Versi_Abilities {
 
 	/**
-	 * Register abilities on init.
+	 * Register hooks.
 	 */
 	public function __construct() {
+		add_action( 'wp_abilities_api_categories_init', array( $this, 'register_categories' ) );
 		add_action( 'wp_abilities_api_init', array( $this, 'register_abilities' ) );
 	}
 
 	/**
-	 * Register Versi abilities.
+	 * Register Versi ability categories.
 	 */
-	public function register_abilities() {
+	public function register_categories() {
 		wp_register_ability_category(
 			'content-generation',
 			array(
@@ -30,7 +31,12 @@ class Versi_Abilities {
 				'description' => __( 'Abilities that generate or modify content using AI.', 'versi-content-tools' ),
 			)
 		);
+	}
 
+	/**
+	 * Register Versi abilities.
+	 */
+	public function register_abilities() {
 		wp_register_ability(
 			'versi/generate-alt-text',
 			array(
