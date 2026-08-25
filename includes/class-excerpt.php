@@ -191,6 +191,27 @@ class Versi_Excerpt_Processor {
 			return $shared->result( $post_id, $post->post_title, 'skipped', null, null, __( 'Excerpt already within limit.', 'versi-content-tools' ) );
 		}
 
+		$ends_clean = in_array( substr( trim( $trimmed ), -1 ), array( '.', '!', '?' ), true );
+		if ( ( mb_strlen( $trimmed ) > $max || ! $ends_clean ) && function_exists( 'wp_ai_client_prompt' ) ) {
+			$retry_prompt  = "Rewrite this blog excerpt as a single complete sentence that ends with a period. "
+				. "Stay under {$max} characters. Preserve the original meaning and tone.\n\n"
+				. "Original: {$trimmed}";
+			$retry_builder = wp_ai_client_prompt( $retry_prompt )
+				->using_system_instruction( 'You rewrite blog excerpts to be shorter while keeping them complete, grammatical sentences. Output ONLY the rewritten excerpt text with no labels or commentary.' );
+			$retry_builder = $shared->apply_text_preference( $retry_builder, 'excerpt' );
+			$retry_result  = $shared->generate_with_retry( $retry_builder, $shared->get_text_fallback( 'excerpt' ) );
+
+			if ( ! is_wp_error( $retry_result ) && ! empty( $retry_result ) ) {
+				$retry_clean = $this->clean_excerpt( $retry_result, 55 );
+				$retry_clean = $this->truncate_incomplete_sentence( $retry_clean );
+				if ( mb_strlen( $retry_clean ) <= $max && mb_strlen( $retry_clean ) < mb_strlen( $trimmed ) ) {
+					$trimmed = $retry_clean;
+				}
+			}
+		}
+
+		$trimmed = $this->truncate_incomplete_sentence( $trimmed );
+
 		$updated = wp_update_post(
 			array(
 				'ID'           => $post_id,
