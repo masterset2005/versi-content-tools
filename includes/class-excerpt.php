@@ -117,6 +117,27 @@ class Versi_Excerpt_Processor {
 		}
 
 		$generated = $this->clean_excerpt( $generated, $target_length );
+		$generated = $this->truncate_incomplete_sentence( $generated );
+
+		$max_chars = absint( get_option( 'versi_excerpt_max_length', 155 ) );
+		$ends_clean = in_array( substr( trim( $generated ), -1 ), array( '.', '!', '?' ), true );
+		if ( ( mb_strlen( $generated ) > $max_chars || ! $ends_clean ) && function_exists( 'wp_ai_client_prompt' ) ) {
+			$retry_prompt  = "Rewrite this blog excerpt as a single complete sentence that ends with a period. "
+				. "Stay under {$max_chars} characters. Preserve the original meaning and tone.\n\n"
+				. "Original: {$generated}";
+			$retry_builder = wp_ai_client_prompt( $retry_prompt )
+				->using_system_instruction( 'You rewrite blog excerpts to be shorter while keeping them complete, grammatical sentences. Output ONLY the rewritten excerpt text with no labels or commentary.' );
+			$retry_builder = $shared->apply_text_preference( $retry_builder, 'excerpt' );
+			$retry_result  = $shared->generate_with_retry( $retry_builder, $shared->get_text_fallback( 'excerpt' ) );
+
+			if ( ! is_wp_error( $retry_result ) && ! empty( $retry_result ) ) {
+				$retry_clean = $this->clean_excerpt( $retry_result, $target_length );
+				$retry_clean = $this->truncate_incomplete_sentence( $retry_clean );
+				if ( mb_strlen( $retry_clean ) <= $max_chars && mb_strlen( $retry_clean ) < mb_strlen( $generated ) ) {
+					$generated = $retry_clean;
+				}
+			}
+		}
 
 		if ( empty( $generated ) ) {
 			return $shared->result( $post_id, $post->post_title, 'error', null, __( 'Generated excerpt was empty after cleaning.', 'versi-content-tools' ) );
@@ -347,6 +368,51 @@ class Versi_Excerpt_Processor {
 		}
 
 		return $raw;
+	}
+
+	/**
+	 * If the excerpt doesn't end with terminal punctuation, truncate back
+	 * to the last complete sentence and append an ellipsis so it reads
+	 * cleanly in search results.
+	 *
+	 * @param string $text Excerpt text.
+	 * @return string
+	 */
+	private function truncate_incomplete_sentence( $text ) {
+		$text = trim( $text );
+		if ( '' === $text ) {
+			return $text;
+		}
+
+		$last = substr( $text, -1 );
+		if ( in_array( $last, array( '.', '!', '?' ), true ) ) {
+			return $text;
+		}
+
+		$sentences = preg_split( '/(?<=[.!?])\s+/', $text );
+		if ( is_array( $sentences ) && count( $sentences ) > 1 ) {
+			$complete = $sentences[0];
+			for ( $i = 1, $count = count( $sentences ); $i < $count; ++$i ) {
+				$candidate = $complete . ' ' . $sentences[ $i ];
+				$last_char = substr( trim( $sentences[ $i ] ), -1 );
+				if ( in_array( $last_char, array( '.', '!', '?' ), true ) ) {
+					$complete = $candidate;
+				} else {
+					break;
+				}
+			}
+			if ( $complete !== $text ) {
+				return rtrim( $complete ) . '…';
+			}
+		}
+
+		$cut   = mb_substr( $text, 0, mb_strlen( $text ) - 3 );
+		$space = mb_strrpos( $cut, ' ' );
+		if ( false !== $space && $space > 20 ) {
+			$cut = mb_substr( $cut, 0, $space );
+		}
+
+		return rtrim( $cut ) . '…';
 	}
 
 	/**

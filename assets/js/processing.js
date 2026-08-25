@@ -493,7 +493,7 @@
 		});
 	}
 
-	const reviewBatchSize = 30;
+	const reviewBatchSize = Math.max(1, Math.min(batchSize, 50));
 
 	function fetchReviewBatch() {
 		if (!running) return;

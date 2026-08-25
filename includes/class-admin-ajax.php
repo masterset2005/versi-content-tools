@@ -239,7 +239,7 @@ class Versi_Admin_Ajax {
 		$this->ajax_check();
 
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
-		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 30;
+		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : absint( get_option( 'versi_batch_size', 5 ) );
 
 		$ids_result = Versi_Container::get(Versi_Processor::class)->get_image_ids( 'regenerate', $offset, $batch, 0 );
 		$ids        = $ids_result['ids'];
@@ -267,7 +267,7 @@ class Versi_Admin_Ajax {
 		$this->ajax_check();
 
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
-		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 30;
+		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : absint( get_option( 'versi_batch_size', 5 ) );
 
 		$ids_result = Versi_Container::get(Versi_Processor::class)->get_excerpt_ids( 'improve', $offset, $batch );
 		$ids        = $ids_result['ids'];
