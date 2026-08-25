@@ -97,7 +97,7 @@ class Versi_CLI extends WP_CLI_Command {
 	 * ## OPTIONS
 	 *
 	 * <mode>
-	 * : Processing mode: missing or improve.
+	 * : Processing mode: missing, short, long, or improve.
 	 *
 	 * [--limit=<number>]
 	 * : Max posts to process (0 = unlimited).
@@ -115,8 +115,8 @@ class Versi_CLI extends WP_CLI_Command {
 		$mode  = $args[0] ?? 'missing';
 		$limit = absint( $assoc_args['limit'] ?? 0 );
 
-		if ( ! in_array( $mode, array( 'missing', 'improve' ), true ) ) {
-			WP_CLI::error( 'Mode must be missing or improve.' );
+		if ( ! in_array( $mode, array( 'missing', 'improve', 'short', 'long' ), true ) ) {
+			WP_CLI::error( 'Mode must be missing, short, long, or improve.' );
 		}
 
 		$shared    = Versi_Container::get(Versi_Processor::class);
@@ -140,7 +140,7 @@ class Versi_CLI extends WP_CLI_Command {
 			}
 
 			foreach ( $ids as $id ) {
-				$res = $excl_proc->process_single( $id );
+				$res = $excl_proc->process_single( $id, $mode );
 				++$done;
 
 				if ( 'error' === $res['status'] ) {

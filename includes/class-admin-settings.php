@@ -36,6 +36,7 @@ class Versi_Admin_Settings {
 			'versi_excerpt_prompt'        => array( 'type' => 'string', 'sanitize' => 'sanitize_textarea_field', 'default' => '' ),
 			'versi_excerpt_length'        => array( 'type' => 'integer', 'sanitize' => array( $this, 'sanitize_excerpt_length' ), 'default' => 55 ),
 			'versi_excerpt_min_length'    => array( 'type' => 'integer', 'sanitize' => 'absint', 'default' => 50 ),
+			'versi_excerpt_max_length'    => array( 'type' => 'integer', 'sanitize' => 'absint', 'default' => 155 ),
 			'versi_seo_text_model'        => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
 			'versi_seo_text_fallback'     => array( 'type' => 'string', 'sanitize' => array( $this, 'sanitize_model_preference' ), 'default' => '' ),
 			'versi_seo_prompt'            => array( 'type' => 'string', 'sanitize' => 'sanitize_textarea_field', 'default' => '' ),

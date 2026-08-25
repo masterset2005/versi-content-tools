@@ -36,10 +36,16 @@ class Versi_Excerpt_Processor {
 	/**
 	 * Process a single post: generate excerpt via AI.
 	 *
-	 * @param int $post_id Post ID.
+	 * @param int    $post_id Post ID.
+	 * @param string $mode    Processing mode. 'long' trims the existing excerpt
+	 *                        locally at a word boundary instead of regenerating.
 	 * @return array
 	 */
-	public function process_single( $post_id ) {
+	public function process_single( $post_id, $mode = '' ) {
+		if ( 'long' === $mode ) {
+			return $this->trim_single( $post_id );
+		}
+
 		$shared = Versi_Container::get( Versi_Processor::class );
 		$post   = get_post( $post_id );
 
@@ -128,6 +134,67 @@ class Versi_Excerpt_Processor {
 		update_post_meta( $post_id, 'versi_excerpt_generated', '1' );
 
 		return $shared->result( $post_id, $post->post_title, 'success', $existing_excerpt, null, null, $generated, $changed );
+	}
+
+	/**
+	 * Trim a single post's excerpt to the configured max length.
+	 *
+	 * Cuts at a word boundary (never mid-word) and stores the original
+	 * excerpt as the previous value so the per-item undo can restore it.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array
+	 */
+	public function trim_single( $post_id ) {
+		$shared = Versi_Container::get( Versi_Processor::class );
+		$post   = get_post( $post_id );
+
+		if ( ! $post ) {
+			return $shared->result( $post_id, '', 'error', null, __( 'Post not found.', 'versi-content-tools' ) );
+		}
+
+		$original = (string) $post->post_excerpt;
+		if ( '' === trim( $original ) ) {
+			return $shared->result( $post_id, $post->post_title, 'skipped', null, null, __( 'Post has no excerpt.', 'versi-content-tools' ) );
+		}
+
+		$max     = absint( get_option( 'versi_excerpt_max_length', 155 ) );
+		$trimmed = $this->trim_to_length( $original, $max );
+
+		if ( $trimmed === $original ) {
+			return $shared->result( $post_id, $post->post_title, 'skipped', null, null, __( 'Excerpt already within limit.', 'versi-content-tools' ) );
+		}
+
+		wp_update_post(
+			array(
+				'ID'           => $post_id,
+				'post_excerpt' => $trimmed,
+			)
+		);
+
+		return $shared->result( $post_id, $post->post_title, 'success', $original, null, null, $trimmed, true );
+	}
+
+	/**
+	 * Trim text to a maximum character count at a word boundary.
+	 *
+	 * @param string $raw       Original text.
+	 * @param int    $max_chars Maximum character count.
+	 * @return string Original text if already within the limit, otherwise the trimmed text.
+	 */
+	public function trim_to_length( $raw, $max_chars ) {
+		$raw = trim( $raw );
+		if ( $max_chars < 1 || mb_strlen( $raw ) <= $max_chars ) {
+			return $raw;
+		}
+
+		$cut   = mb_substr( $raw, 0, $max_chars );
+		$space = mb_strrpos( $cut, ' ' );
+		if ( false !== $space && $space > 0 ) {
+			$cut = mb_substr( $cut, 0, $space );
+		}
+
+		return rtrim( $cut, " \t\n\r\0\x0B,;:–—" );
 	}
 
 	/**
@@ -231,7 +298,7 @@ class Versi_Excerpt_Processor {
 	/**
 	 * Get excerpt stats.
 	 *
-	 * @return array{total: int, missing: int, has_excerpt: int}
+	 * @return array{total: int, missing: int, has_excerpt: int, short: int, long: int}
 	 */
 	public function get_stats() {
 		$cached = get_transient( 'versi_excerpt_stats' );
@@ -259,7 +326,15 @@ class Versi_Excerpt_Processor {
 			)
 		);
 
-		$stats = compact( 'total', 'missing', 'has_excerpt', 'short' );
+		$max  = absint( get_option( 'versi_excerpt_max_length', 155 ) );
+		$long = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish' AND post_excerpt != '' AND CHAR_LENGTH(post_excerpt) > %d",
+				$max
+			)
+		);
+
+		$stats = compact( 'total', 'missing', 'has_excerpt', 'short', 'long' );
 		set_transient( 'versi_excerpt_stats', $stats, 5 * MINUTE_IN_SECONDS );
 
 		return $stats;

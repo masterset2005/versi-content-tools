@@ -23,6 +23,7 @@ $versi_options = array(
 	'versi_excerpt_prompt',
 	'versi_excerpt_length',
 	'versi_excerpt_min_length',
+	'versi_excerpt_max_length',
 
 	// Shared options.
 	'versi_version',

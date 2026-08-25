@@ -374,13 +374,14 @@ class Versi_Processor {
 		}
 
 		if ( 'too_long' === $mode || 'too_short' === $mode ) {
-			$args['meta_query'] = array(
+			$args['suppress_filters'] = false;
+			$args['meta_query']       = array(
 				array(
 					'key'     => '_wp_attachment_image_alt',
 					'compare' => 'EXISTS',
 				),
 			);
-			$hook               = 'too_long' === $mode ? 'filter_alt_too_long' : 'filter_alt_too_short';
+			$hook                     = 'too_long' === $mode ? 'filter_alt_too_long' : 'filter_alt_too_short';
 			add_filter( 'posts_where', array( $this, $hook ) );
 		}
 
@@ -497,7 +498,7 @@ class Versi_Processor {
 	/**
 	 * Get post IDs for excerpt processing.
 	 *
-	 * @param string $mode   'missing' or 'improve'.
+	 * @param string $mode   'missing', 'short', 'long', or 'improve'.
 	 * @param int    $offset Pagination offset.
 	 * @param int    $batch  Batch size.
 	 * @return array{ids: int[], total: int}
@@ -518,6 +519,8 @@ class Versi_Processor {
 			add_filter( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
 		} elseif ( 'short' === $mode ) {
 			add_filter( 'posts_where', array( $this, 'filter_short_excerpt' ) );
+		} elseif ( 'long' === $mode ) {
+			add_filter( 'posts_where', array( $this, 'filter_long_excerpt' ) );
 		}
 
 		$query = new WP_Query( $args );
@@ -526,6 +529,8 @@ class Versi_Processor {
 			remove_filter( 'posts_where', array( $this, 'filter_missing_excerpt' ) );
 		} elseif ( 'short' === $mode ) {
 			remove_filter( 'posts_where', array( $this, 'filter_short_excerpt' ) );
+		} elseif ( 'long' === $mode ) {
+			remove_filter( 'posts_where', array( $this, 'filter_long_excerpt' ) );
 		}
 
 		return array(
@@ -559,6 +564,23 @@ class Versi_Processor {
 		$where .= $wpdb->prepare(
 			" AND {$wpdb->posts}.post_excerpt != '' AND CHAR_LENGTH({$wpdb->posts}.post_excerpt) < %d",
 			$min
+		);
+		return $where;
+	}
+
+	/**
+	 * Filter posts_where to only include posts with a non-empty but overly
+	 * long excerpt (above versi_excerpt_max_length).
+	 *
+	 * @param string $where The WHERE clause.
+	 * @return string
+	 */
+	public function filter_long_excerpt( $where ) {
+		global $wpdb;
+		$max    = absint( get_option( 'versi_excerpt_max_length', 155 ) );
+		$where .= $wpdb->prepare(
+			" AND {$wpdb->posts}.post_excerpt != '' AND CHAR_LENGTH({$wpdb->posts}.post_excerpt) > %d",
+			$max
 		);
 		return $where;
 	}

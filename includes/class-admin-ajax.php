@@ -294,7 +294,8 @@ class Versi_Admin_Ajax {
 	public function ajax_excerpt_process_single() {
 		$this->ajax_check();
 
-		$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$mode = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'missing', 'improve', 'short', 'long' ) ) : '';
 
 		if ( ! $id ) {
 			wp_send_json_error( 'No ID provided' );
@@ -304,14 +305,14 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'Insufficient permissions for this post.' );
 		}
 
-		$result = Versi_Container::get(Versi_Excerpt_Processor::class)->process_single( $id );
+		$result = Versi_Container::get(Versi_Excerpt_Processor::class)->process_single( $id, $mode );
 		wp_send_json_success( $result );
 	}
 
 	public function ajax_excerpt_get_ids() {
 		$this->ajax_check();
 
-		$mode   = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'missing', 'improve', 'short' ) ) : 'missing';
+		$mode   = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'missing', 'improve', 'short', 'long' ) ) : 'missing';
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 

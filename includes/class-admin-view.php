@@ -355,6 +355,15 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 						</tr>
 						<tr>
 							<th scope="row">
+								<label for="versi_excerpt_max_length"><?php esc_html_e( 'Max Excerpt Length', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<input type="number" id="versi_excerpt_max_length" name="versi_excerpt_max_length" value="<?php echo esc_attr( get_option( 'versi_excerpt_max_length', 155 ) ); ?>" min="50" max="2000" step="5" style="width:80px;">
+								<p class="description"><?php esc_html_e( 'Maximum character count for excerpts. Search engines typically display 120–160 characters of meta description. Excerpts above this length are considered "long" and will be trimmed at a word boundary by the Fix Long Excerpts mode.', 'versi-content-tools' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
 								<label for="versi_excerpt_text_model"><?php esc_html_e( 'Text Model', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
@@ -621,6 +630,23 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							<div class="versi-stat-label"><?php esc_html_e( 'short excerpts', 'versi-content-tools' ); ?></div>
 						</div>
 					</div>
+					<div class="versi-stat-card">
+						<div class="versi-stat-icon" style="background:#fffbeb;color:#d97706;">
+							<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+						</div>
+						<div>
+							<div class="versi-stat-number"><?php echo esc_html( $exc_stats['long'] ); ?></div>
+							<div class="versi-stat-label">
+								<?php
+								printf(
+									/* translators: %d: character count threshold. */
+									esc_html__( 'over %d chars', 'versi-content-tools' ),
+									absint( get_option( 'versi_excerpt_max_length', 155 ) )
+								);
+								?>
+							</div>
+						</div>
+					</div>
 				<?php endif; ?>
 				<a href="<?php echo esc_url( $refresh_url ); ?>" class="button" style="margin-left:auto;align-self:center;">
 					<?php esc_html_e( 'Refresh', 'versi-content-tools' ); ?>
@@ -709,6 +735,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$safe_mode    = 'missing';
 			$short_label  = __( 'Fix Short Excerpts', 'versi-content-tools' );
 			$short_mode   = 'short';
+			$long_label   = __( 'Fix Long Excerpts', 'versi-content-tools' );
+			$long_mode    = 'long';
 			$review_label = __( 'Bulk Review Excerpts', 'versi-content-tools' );
 			$review_mode  = 'bulk_review';
 			$dest_label   = __( 'Improve All Excerpts', 'versi-content-tools' );
@@ -749,6 +777,10 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
 						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
 						<?php echo esc_html( $short_label ); ?>
+					</button>
+					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $long_mode ); ?>">
+						<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+						<?php echo esc_html( $long_label ); ?>
 					</button>
 				<?php elseif ( 'content' === $workload ) : ?>
 					<button type="button" class="versi-mode-card versi-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
@@ -926,6 +958,8 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 			$safe_mode   = 'missing';
 			$short_label = __( 'Fix Short Excerpts', 'versi-content-tools' );
 			$short_mode  = 'short';
+			$long_label  = __( 'Fix Long Excerpts', 'versi-content-tools' );
+			$long_mode   = 'long';
 			$dest_label  = __( 'Improve All Excerpts', 'versi-content-tools' );
 			$dest_mode   = 'improve';
 		}
@@ -957,6 +991,11 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 				<?php if ( 'content' === $workload || 'excerpt' === $workload ) : ?>
 					<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $short_mode ); ?>">
 						<?php echo esc_html( $short_label ); ?>
+					</button>
+				<?php endif; ?>
+				<?php if ( 'excerpt' === $workload ) : ?>
+					<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $long_mode ); ?>">
+						<?php echo esc_html( $long_label ); ?>
 					</button>
 				<?php endif; ?>
 					<button type="button" class="button versi-bg-start-btn" data-workload="<?php echo esc_attr( $workload ); ?>" data-mode="<?php echo esc_attr( $dest_mode ); ?>">

@@ -86,7 +86,7 @@ class Versi_Batch_Processor {
 			} elseif ( 'content' === $workload ) {
 				$result = $this->process_content_single( $id, $mode );
 			} else {
-				$result = $exc_proc->process_single( $id );
+				$result = $exc_proc->process_single( $id, $mode );
 			}
 
 			if ( ! empty( $result['rate_limited'] ) ) {
