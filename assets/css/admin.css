@@ -207,11 +207,10 @@ a:focus, button:focus, .button:focus, input:focus, select:focus, textarea:focus 
 .versi-status-badge.kept { background:#fef8ee;color:#92400e; }
 .versi-status-badge.kept::before { background:#dba617; }
 
-/* Cell value truncation */
+/* Cell value display */
 .versi-cell-value {
-	max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;font-size:12px;color:#4b5563;
+	max-width:400px;word-wrap:break-word;overflow-wrap:break-word;white-space:normal;display:block;font-size:12px;color:#4b5563;line-height:1.5;
 }
-.versi-cell-value:hover { white-space:normal;overflow:visible;position:relative;z-index:2; }
 .versi-cell-value.prev { color:#991b1b; }
 .versi-cell-value.prev::before { content:'was: ';color:#9ca3af;font-size:10px; }
 .versi-cell-value.new { color:#166534; }
