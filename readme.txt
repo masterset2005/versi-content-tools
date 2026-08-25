@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.14.0
+Stable tag: 0.15.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,17 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 0.15.0 =
+* New: Fix Long Excerpts mode — local sentence-aware trim for excerpts over max length, with per-item undo
+* New: Max Excerpt Length setting (default 155) — controls long-excerpt threshold and generation cap
+* New: AI Request Timeout setting (default 300s) — configurable timeout for all AI calls via `http_request_args`
+* Fix: `suppress_filters` bug that prevented alt text length modes (too_long/too_short) from working
+* Fix: Excerpt generation retries with a shorter rewrite when text exceeds max length or lacks terminal punctuation
+* Fix: Incomplete sentences now truncated to last complete sentence with ellipsis as a safety net
+* Fix: Review batch size now follows the Batch Size setting (was hardcoded to 30)
+* Tweak: Sentence-aware trimming for long excerpts — keeps complete sentences, fills remaining budget at word boundary
+* Tweak: Save verification — `wp_update_post` return value checked in excerpt and alt text paths
 
 = 0.14.0 =
 * New: Universal content extraction — all AI-facing post content paths now render through `the_content` filter + registered extractors, supporting any page builder (Divi 5, Elementor, Beaver Builder, Gutenberg, etc.) without per-builder code
@@ -243,6 +254,9 @@ targets all excerpts.
  * WP-CLI commands, auto-generate on upload/save, Media Library overlay
 
 == Upgrade Notice ==
+
+= 0.15.0 =
+Excerpt quality improvements — long excerpts trimmed at sentence boundaries, incomplete sentences auto-fixed, configurable AI timeout, and review batch size fix.
 
 = 0.14.0 =
 Universal content extraction framework — page builder content (Divi 5, Elementor, etc.) now decoded via `the_content` pipeline for excerpts and AI context. Extension registration API for third-party plugins.
