@@ -12,6 +12,60 @@ defined( 'ABSPATH' ) || exit;
  */
 class Versi_Processor {
 
+	/**
+	 * Depth counter for in-flight AI HTTP calls. While above zero, the
+	 * HTTP timeout for outbound requests is extended to versi_ai_timeout.
+	 *
+	 * @var int
+	 */
+	private $ai_call_depth = 0;
+
+	/**
+	 * Mark the start of an AI HTTP call, extending the request timeout.
+	 *
+	 * @return void
+	 */
+	public function begin_ai_call() {
+		if ( 0 === $this->ai_call_depth ) {
+			add_filter( 'http_request_args', array( $this, 'extend_http_timeout' ), PHP_INT_MAX, 2 );
+			// Best effort: allow the request to run at least as long as the AI timeout.
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( max( absint( get_option( 'versi_ai_timeout', 300 ) ), 300 ) );
+			}
+		}
+		++$this->ai_call_depth;
+	}
+
+	/**
+	 * Mark the end of an AI HTTP call.
+	 *
+	 * @return void
+	 */
+	public function end_ai_call() {
+		if ( $this->ai_call_depth > 0 ) {
+			--$this->ai_call_depth;
+		}
+		if ( 0 === $this->ai_call_depth ) {
+			remove_filter( 'http_request_args', array( $this, 'extend_http_timeout' ), PHP_INT_MAX );
+		}
+	}
+
+	/**
+	 * Extend the HTTP timeout for requests made during AI calls so slow
+	 * local/self-hosted models are not cut off by short defaults.
+	 *
+	 * @param array  $args HTTP request arguments.
+	 * @param string $url  Request URL (unused).
+	 * @return array
+	 */
+	public function extend_http_timeout( $args, $url = '' ) {
+		unset( $url );
+		$timeout = absint( get_option( 'versi_ai_timeout', 300 ) );
+		if ( $timeout > 0 && ( ! isset( $args['timeout'] ) || (int) $args['timeout'] < $timeout ) ) {
+			$args['timeout'] = $timeout;
+		}
+		return $args;
+	}
 
 	/**
 	 * Get vision model preference as an array (for alt-text).
@@ -683,15 +737,20 @@ class Versi_Processor {
 	 * @return string|\WP_Error Generated text or WP_Error.
 	 */
 	public function generate_with_retry( $builder, $fallback = '' ) {
-		$result = $builder->generate_text();
+		$this->begin_ai_call();
+		try {
+			$result = $builder->generate_text();
 
-		if ( is_wp_error( $result ) ) {
-			$error_info = $this->classify_error( $result->get_error_message() );
-			if ( $error_info['should_retry'] && '' !== $fallback ) {
-				$result = $builder->using_model_preference( $fallback )->generate_text();
+			if ( is_wp_error( $result ) ) {
+				$error_info = $this->classify_error( $result->get_error_message() );
+				if ( $error_info['should_retry'] && '' !== $fallback ) {
+					$result = $builder->using_model_preference( $fallback )->generate_text();
+				}
 			}
-		}
 
-		return $result;
+			return $result;
+		} finally {
+			$this->end_ai_call();
+		}
 	}
 }

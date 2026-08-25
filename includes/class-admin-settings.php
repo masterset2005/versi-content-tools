@@ -13,6 +13,7 @@ class Versi_Admin_Settings {
 	public function register_settings() {
 		$settings = array(
 			'versi_batch_size'            => array( 'type' => 'integer', 'sanitize' => array( $this, 'sanitize_batch_size' ), 'default' => 5 ),
+			'versi_ai_timeout'            => array( 'type' => 'integer', 'sanitize' => array( $this, 'sanitize_ai_timeout' ), 'default' => 300 ),
 			'versi_match_author_tone'     => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
 			'versi_debug_mode'            => array( 'type' => 'string', 'sanitize' => 'sanitize_text_field', 'default' => '0' ),
 			'versi_content_limit'         => array( 'type' => 'integer', 'sanitize' => array( $this, 'sanitize_content_limit' ), 'default' => 500 ),
@@ -58,6 +59,16 @@ class Versi_Admin_Settings {
 
 	public function sanitize_batch_size( $value ) {
 		return min( max( absint( $value ), 1 ), 50 );
+	}
+
+	/**
+	 * Clamp AI request timeout between 10 seconds and one hour.
+	 *
+	 * @param mixed $value Raw option value.
+	 * @return int
+	 */
+	public function sanitize_ai_timeout( $value ) {
+		return min( max( absint( $value ), 10 ), 3600 );
 	}
 
 	public function sanitize_content_limit( $value ) {

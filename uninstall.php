@@ -28,6 +28,7 @@ $versi_options = array(
 	// Shared options.
 	'versi_version',
 	'versi_batch_size',
+	'versi_ai_timeout',
 	'versi_vision_model',
 	'versi_text_model',
 	'versi_alt_vision_model',

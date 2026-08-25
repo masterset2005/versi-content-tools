@@ -654,23 +654,34 @@ class Versi_Extensions {
 		$builder = Versi_Container::get( Versi_Processor::class )->apply_text_preference( $builder, 'seo' );
 
 		self::$last_rate_limit = null;
-		$generated             = $builder->generate_text();
+		$shared                = Versi_Container::get( Versi_Processor::class );
+		$shared->begin_ai_call();
+		try {
+			$generated = $builder->generate_text();
+		} finally {
+			$shared->end_ai_call();
+		}
 
 		if ( is_wp_error( $generated ) ) {
-			$error_info = Versi_Container::get( Versi_Processor::class )->classify_error( $generated->get_error_message() );
+			$error_info = $shared->classify_error( $generated->get_error_message() );
 			if ( $error_info['should_retry'] ) {
-				$fallback = Versi_Container::get( Versi_Processor::class )->get_text_fallback( 'seo' );
+				$fallback = $shared->get_text_fallback( 'seo' );
 				if ( '' !== $fallback ) {
 					$fb_builder = wp_ai_client_prompt( $prompt )
 						->using_system_instruction( $system )
 						->using_model_preference( $fallback );
-					$generated  = $fb_builder->generate_text();
+					$shared->begin_ai_call();
+					try {
+						$generated = $fb_builder->generate_text();
+					} finally {
+						$shared->end_ai_call();
+					}
 				}
 			}
 		}
 
 		if ( is_wp_error( $generated ) ) {
-			$error_info = Versi_Container::get( Versi_Processor::class )->classify_error( $generated->get_error_message() );
+			$error_info = $shared->classify_error( $generated->get_error_message() );
 			if ( $error_info['should_retry'] ) {
 				self::$last_rate_limit = array( 'retry_after' => (float) $error_info['retry_after'] );
 			}

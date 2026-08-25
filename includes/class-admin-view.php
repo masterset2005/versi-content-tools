@@ -34,6 +34,15 @@ class Versi_Admin_View {
 						</tr>
 						<tr>
 							<th scope="row">
+								<label for="versi_ai_timeout"><?php esc_html_e( 'AI Request Timeout', 'versi-content-tools' ); ?></label>
+							</th>
+							<td>
+								<input type="number" id="versi_ai_timeout" name="versi_ai_timeout" value="<?php echo esc_attr( get_option( 'versi_ai_timeout', 300 ) ); ?>" min="10" max="3600" step="10" style="width:80px;"> <?php esc_html_e( 'seconds', 'versi-content-tools' ); ?>
+								<p class="description"><?php esc_html_e( 'Maximum seconds to wait for an AI response. Increase this when using slow local or self-hosted models (e.g. Ollama) that need more than a minute per request.', 'versi-content-tools' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
 								<label for="versi_content_limit"><?php esc_html_e( 'Content Limit', 'versi-content-tools' ); ?></label>
 							</th>
 							<td>
