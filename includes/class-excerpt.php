@@ -124,12 +124,17 @@ class Versi_Excerpt_Processor {
 
 		$changed = $generated !== $existing_excerpt;
 
-		wp_update_post(
+		$updated = wp_update_post(
 			array(
 				'ID'           => $post_id,
 				'post_excerpt' => $generated,
-			)
+			),
+			true
 		);
+
+		if ( is_wp_error( $updated ) || 0 === $updated ) {
+			return $shared->result( $post_id, $post->post_title, 'error', $existing_excerpt, __( 'Failed to save generated excerpt to the database.', 'versi-content-tools' ) );
+		}
 
 		update_post_meta( $post_id, 'versi_excerpt_generated', '1' );
 
@@ -165,12 +170,17 @@ class Versi_Excerpt_Processor {
 			return $shared->result( $post_id, $post->post_title, 'skipped', null, null, __( 'Excerpt already within limit.', 'versi-content-tools' ) );
 		}
 
-		wp_update_post(
+		$updated = wp_update_post(
 			array(
 				'ID'           => $post_id,
 				'post_excerpt' => $trimmed,
-			)
+			),
+			true
 		);
+
+		if ( is_wp_error( $updated ) || 0 === $updated ) {
+			return $shared->result( $post_id, $post->post_title, 'error', $original, __( 'Failed to save trimmed excerpt to the database.', 'versi-content-tools' ) );
+		}
 
 		return $shared->result( $post_id, $post->post_title, 'success', $original, null, null, $trimmed, true );
 	}
@@ -178,9 +188,10 @@ class Versi_Excerpt_Processor {
 	/**
 	 * Trim text to a maximum character count.
 	 *
-	 * Ends on the last complete sentence that fits; falls back to a word
-	 * boundary when no sentence boundary exists within the limit, so text
-	 * is never cut mid-word.
+	 * Keeps every complete sentence that fits, then fills any remaining
+	 * space from the following sentence cut at a word boundary — so short
+	 * leading sentences never discard the descriptive body, and words are
+	 * never split mid-word.
 	 *
 	 * @param string $raw       Original text.
 	 * @param int    $max_chars Maximum character count.
@@ -192,17 +203,37 @@ class Versi_Excerpt_Processor {
 			return $raw;
 		}
 
-		// Prefer keeping whole sentences that fit within the limit.
-		$best      = '';
 		$sentences = preg_split( '/(?<=[.!?])\s+/', $raw );
-		if ( $sentences ) {
-			foreach ( $sentences as $sentence ) {
-				$candidate = ( '' === $best ) ? $sentence : $best . ' ' . $sentence;
-				if ( mb_strlen( $candidate ) <= $max_chars ) {
-					$best = $candidate;
-				} else {
-					break;
-				}
+		if ( ! is_array( $sentences ) || empty( $sentences ) ) {
+			$sentences = array( $raw );
+		}
+
+		// Accumulate whole sentences while they fit.
+		$best  = '';
+		$index = 0;
+		foreach ( $sentences as $sentence ) {
+			$candidate = ( '' === $best ) ? $sentence : $best . ' ' . $sentence;
+			if ( mb_strlen( $candidate ) <= $max_chars ) {
+				$best = $candidate;
+				++$index;
+			} else {
+				break;
+			}
+		}
+
+		// Fill leftover space from the next sentence, cut at a word boundary.
+		$remaining = $max_chars - mb_strlen( $best );
+		if ( isset( $sentences[ $index ] ) && $remaining > 40 ) {
+			$next       = trim( $sentences[ $index ] );
+			$space_left = $remaining - 1; // Room for the separating space.
+			$cut        = mb_substr( $next, 0, $space_left );
+			$space      = mb_strrpos( $cut, ' ' );
+			if ( false !== $space && $space > 0 ) {
+				$cut = mb_substr( $cut, 0, $space );
+			}
+			$cut = rtrim( $cut, " \t\n\r\0\x0B,;:–—" );
+			if ( mb_strlen( $cut ) > 20 ) {
+				$best = ( '' === $best ) ? $cut : $best . ' ' . $cut;
 			}
 		}
 
@@ -210,7 +241,7 @@ class Versi_Excerpt_Processor {
 			return $best;
 		}
 
-		// No sentence fits — cut back to the last word boundary so words are never split.
+		// Nothing usable fit — fall back to a word-boundary cut.
 		$cut   = mb_substr( $raw, 0, $max_chars );
 		$space = mb_strrpos( $cut, ' ' );
 		if ( false !== $space && $space > 0 ) {
@@ -433,7 +464,12 @@ class Versi_Excerpt_Processor {
 			->using_system_instruction( $system );
 		$builder = $shared->apply_text_preference( $builder, 'excerpt' );
 
-		$result = $builder->generate_text();
+		$shared->begin_ai_call();
+		try {
+			$result = $builder->generate_text();
+		} finally {
+			$shared->end_ai_call();
+		}
 
 		if ( is_wp_error( $result ) ) {
 			foreach ( $items as &$item ) {

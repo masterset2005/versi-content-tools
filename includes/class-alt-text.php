@@ -249,7 +249,13 @@ class Versi_Alt_Text_Processor {
 
 		$builder = Versi_Container::get(Versi_Processor::class)->apply_text_preference( $builder, 'alt' );
 
-		$result = $builder->generate_text();
+		$shared = Versi_Container::get(Versi_Processor::class);
+		$shared->begin_ai_call();
+		try {
+			$result = $builder->generate_text();
+		} finally {
+			$shared->end_ai_call();
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $new_alt;
@@ -457,7 +463,12 @@ class Versi_Alt_Text_Processor {
 			->using_system_instruction( $system );
 		$builder = $shared->apply_text_preference( $builder, 'alt' );
 
-		$result = $builder->generate_text();
+		$shared->begin_ai_call();
+		try {
+			$result = $builder->generate_text();
+		} finally {
+			$shared->end_ai_call();
+		}
 
 		if ( is_wp_error( $result ) ) {
 			foreach ( $items as &$item ) {
