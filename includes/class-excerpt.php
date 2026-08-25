@@ -176,7 +176,11 @@ class Versi_Excerpt_Processor {
 	}
 
 	/**
-	 * Trim text to a maximum character count at a word boundary.
+	 * Trim text to a maximum character count.
+	 *
+	 * Ends on the last complete sentence that fits; falls back to a word
+	 * boundary when no sentence boundary exists within the limit, so text
+	 * is never cut mid-word.
 	 *
 	 * @param string $raw       Original text.
 	 * @param int    $max_chars Maximum character count.
@@ -188,6 +192,25 @@ class Versi_Excerpt_Processor {
 			return $raw;
 		}
 
+		// Prefer keeping whole sentences that fit within the limit.
+		$best      = '';
+		$sentences = preg_split( '/(?<=[.!?])\s+/', $raw );
+		if ( $sentences ) {
+			foreach ( $sentences as $sentence ) {
+				$candidate = ( '' === $best ) ? $sentence : $best . ' ' . $sentence;
+				if ( mb_strlen( $candidate ) <= $max_chars ) {
+					$best = $candidate;
+				} else {
+					break;
+				}
+			}
+		}
+
+		if ( '' !== $best ) {
+			return $best;
+		}
+
+		// No sentence fits — cut back to the last word boundary so words are never split.
 		$cut   = mb_substr( $raw, 0, $max_chars );
 		$space = mb_strrpos( $cut, ' ' );
 		if ( false !== $space && $space > 0 ) {
