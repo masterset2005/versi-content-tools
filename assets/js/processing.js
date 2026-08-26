@@ -14,7 +14,7 @@
 	const $resumeText = $('#versi-resume-text');
 	const catId = 0;
 	const batchSize = parseInt(versiProcessing.batchSize, 10);
-	const fetchSize = Math.min(batchSize * 4, 200);
+	const fetchSize = 100;
 	const workload = versiProcessing.workload;
 	let running = false;
 	let mode = '';
