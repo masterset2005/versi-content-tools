@@ -381,6 +381,10 @@
 			success(response) {
 				if (stopRequested) return;
 				const r = response.data;
+				if (typeof r !== 'object' || !r || !r.id) {
+					addEntry({ id: id, title: '', status: 'error', error: versiProcessing.l10n.requestFailed });
+					return;
+				}
 				if (r.rate_limited && retryCount < maxRetries) {
 					retrying = true;
 					const waitMs = Math.max((parseFloat(r.retry_after) || 5) * 1000, 5000);
