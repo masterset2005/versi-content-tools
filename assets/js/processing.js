@@ -29,6 +29,7 @@
 	let currentFilter = 'all';
 	let searchQuery = '';
 	let reviewResults = [];
+	let batchWatchdog = null;
 
 	const l10n = versiProcessing.l10n;
 
@@ -192,6 +193,7 @@
 		isPaused = !isPaused;
 		const $btn = $(this);
 		if (isPaused) {
+			if (batchWatchdog) { clearInterval(batchWatchdog); batchWatchdog = null; }
 			$btn.html('<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg> ' + versiProcessing.l10n.resume);
 		} else {
 			$btn.html('<svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6"/></svg> ' + versiProcessing.l10n.pause);
@@ -207,6 +209,7 @@
 		if (!running) return;
 		stopRequested = true;
 		running = false;
+		if (batchWatchdog) { clearInterval(batchWatchdog); batchWatchdog = null; }
 		let ok = 0, errs = 0;
 		resultsData.forEach(r => {
 			if (r.status === 'success') ok++;
@@ -416,9 +419,11 @@
 			return;
 		}
 
+		if (batchWatchdog) { clearInterval(batchWatchdog); batchWatchdog = null; }
 		const batchStart = Date.now();
 		const origCb = cb;
 		cb = function () {
+			if (batchWatchdog) { clearInterval(batchWatchdog); batchWatchdog = null; }
 			const elapsed = Date.now() - batchStart;
 			batchTimes.push(elapsed);
 			if (batchTimes.length > 30) batchTimes.shift();
@@ -428,6 +433,17 @@
 		let i = 0;
 		let active = 0;
 		const maxConcurrent = Math.min(Math.max(batchSize, 1), 3, ids.length);
+
+		// Watchdog: if a single item takes >90s, force-complete the batch to unstick the queue.
+		const batchWatchdogMs = 90000;
+		batchWatchdog = setInterval(function () {
+			if (Date.now() - batchStart > batchWatchdogMs && active > 0) {
+				// Log the stuck items and force complete.
+				console.warn('[versi] Batch watchdog: forcing completion after ' + Math.round((Date.now() - batchStart) / 1000) + 's with ' + active + ' items still active.');
+				batchWatchdog = null;
+				cb();
+			}
+		}, 15000);
 
 		function startNext() {
 			while (active < maxConcurrent && i < ids.length && running) {
@@ -470,8 +486,9 @@
 
 				const d = response.data;
 				if (typeof d !== 'object' || !d || !Array.isArray(d.ids)) {
-					running = false;
-					$status.text(versiProcessing.l10n.failedFetch);
+					// Retry once on unexpected response format.
+					console.warn('[versi] get_ids returned unexpected response, retrying...', response);
+					setTimeout(fetchBatch, 2000);
 					return;
 				}
 				total = d.total || total;
@@ -496,8 +513,9 @@
 			},
 			error() {
 				if (stopRequested) return;
-				running = false;
-				$status.text(versiProcessing.l10n.failedFetch);
+				// Retry once on network/server error.
+				console.warn('[versi] get_ids request failed, retrying in 3s...');
+				setTimeout(fetchBatch, 3000);
 			},
 		});
 	}

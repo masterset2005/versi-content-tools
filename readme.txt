@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.16.0
+Stable tag: 0.16.1
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,15 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 0.16.1 =
+* Fix: Processing no longer stalls mid-run — AJAX handlers now catch exceptions so PHP errors return JSON instead of killing the request
+* Fix: Batch watchdog detects stalled items (>90s) and force-completes the batch to keep the queue moving
+* Fix: get_ids retry on unexpected response or network error instead of stopping
+* Fix: Over-length excerpts — hard trim_to_length() safety net after retry guarantees no excerpt exceeds the character limit
+* Fix: Retry acceptance relaxed — accepts any retry that's shorter AND under the limit, not just retries shorter than the original
+* Tweak: Excerpt prompt now explicitly forbids starting with "Discover", "Understanding", "Navigating", or "Explore"
+* Tweak: Prompt constraints add "NEVER exceed" wording for character limit
 
 = 0.16.0 =
 * Fix: Rate limiter removed — concurrency cap in JS is sufficient protection; rate limit was blocking fast local-trim items
@@ -264,6 +273,9 @@ targets all excerpts.
  * WP-CLI commands, auto-generate on upload/save, Media Library overlay
 
 == Upgrade Notice ==
+
+= 0.16.1 =
+Critical stability fix — processing no longer stalls mid-run. Also improves excerpt length enforcement and reduces repetitive opening words.
 
 = 0.16.0 =
 Performance and reliability — rate limiter removed, concurrency capped at 3, excerpt prompts hardened with character constraints, and live feed expanded for easier skimming.

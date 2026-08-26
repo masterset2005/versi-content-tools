@@ -112,8 +112,20 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'Insufficient permissions for this attachment.' );
 		}
 
-		$result = Versi_Container::get(Versi_Alt_Text_Processor::class)->process_single( $id );
-		wp_send_json_success( $result );
+		try {
+			$result = Versi_Container::get(Versi_Alt_Text_Processor::class)->process_single( $id );
+			wp_send_json_success( $result );
+		} catch ( \Exception $e ) {
+			wp_send_json_success(
+				Versi_Container::get( Versi_Processor::class )->result(
+					$id,
+					get_the_title( $id ),
+					'error',
+					null,
+					$e->getMessage()
+				)
+			);
+		}
 	}
 
 	public function ajax_alt_get_ids() {
@@ -225,8 +237,20 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'Insufficient permissions for this post.' );
 		}
 
-		$result = Versi_Container::get(Versi_Batch_Processor::class)->process_content_single( $id, $mode );
-		wp_send_json_success( $result );
+		try {
+			$result = Versi_Container::get(Versi_Batch_Processor::class)->process_content_single( $id, $mode );
+			wp_send_json_success( $result );
+		} catch ( \Exception $e ) {
+			wp_send_json_success(
+				Versi_Container::get( Versi_Processor::class )->result(
+					$id,
+					get_the_title( $id ),
+					'error',
+					null,
+					$e->getMessage()
+				)
+			);
+		}
 	}
 
 	public function ajax_alt_bulk_review() {
@@ -302,8 +326,20 @@ class Versi_Admin_Ajax {
 			wp_send_json_error( 'Insufficient permissions for this post.' );
 		}
 
-		$result = Versi_Container::get(Versi_Excerpt_Processor::class)->process_single( $id, $mode );
-		wp_send_json_success( $result );
+		try {
+			$result = Versi_Container::get(Versi_Excerpt_Processor::class)->process_single( $id, $mode );
+			wp_send_json_success( $result );
+		} catch ( \Exception $e ) {
+			wp_send_json_success(
+				Versi_Container::get( Versi_Processor::class )->result(
+					$id,
+					get_the_title( $id ),
+					'error',
+					null,
+					$e->getMessage()
+				)
+			);
+		}
 	}
 
 	public function ajax_excerpt_get_ids() {

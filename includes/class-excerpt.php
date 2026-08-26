@@ -133,10 +133,20 @@ class Versi_Excerpt_Processor {
 			if ( ! is_wp_error( $retry_result ) && ! empty( $retry_result ) ) {
 				$retry_clean = $this->clean_excerpt( $retry_result, $target_length );
 				$retry_clean = $this->truncate_incomplete_sentence( $retry_clean );
-				if ( mb_strlen( $retry_clean ) >= 80 && mb_strlen( $retry_clean ) <= $max_chars && mb_strlen( $retry_clean ) < mb_strlen( $generated ) ) {
+				$retry_len   = mb_strlen( $retry_clean );
+				$orig_len    = mb_strlen( $generated );
+				// Accept if under the limit and either shorter than original or original was also under
+				// the limit (e.g. punctuation-only retry). This ensures we always make progress.
+				if ( $retry_len >= 80 && $retry_len <= $max_chars && ( $retry_len < $orig_len || $orig_len <= $max_chars ) ) {
 					$generated = $retry_clean;
 				}
 			}
+		}
+
+		// Hard safety net: if still over the limit after retry, truncate at a word boundary.
+		if ( mb_strlen( $generated ) > $max_chars ) {
+			$generated = $this->trim_to_length( $generated, $max_chars );
+			$generated = $this->truncate_incomplete_sentence( $generated );
 		}
 
 		if ( empty( $generated ) ) {
@@ -204,10 +214,18 @@ class Versi_Excerpt_Processor {
 			if ( ! is_wp_error( $retry_result ) && ! empty( $retry_result ) ) {
 				$retry_clean = $this->clean_excerpt( $retry_result, 55 );
 				$retry_clean = $this->truncate_incomplete_sentence( $retry_clean );
-				if ( mb_strlen( $retry_clean ) >= 80 && mb_strlen( $retry_clean ) <= $max && mb_strlen( $retry_clean ) < mb_strlen( $trimmed ) ) {
+				$retry_len   = mb_strlen( $retry_clean );
+				$orig_len    = mb_strlen( $trimmed );
+				if ( $retry_len >= 80 && $retry_len <= $max && ( $retry_len < $orig_len || $orig_len <= $max ) ) {
 					$trimmed = $retry_clean;
 				}
 			}
+		}
+
+		// Hard safety net: if still over the limit after retry, truncate at a word boundary.
+		if ( mb_strlen( $trimmed ) > $max ) {
+			$trimmed = $this->trim_to_length( $trimmed, $max );
+			$trimmed = $this->truncate_incomplete_sentence( $trimmed );
 		}
 
 		$trimmed = $this->truncate_incomplete_sentence( $trimmed );
@@ -313,7 +331,8 @@ class Versi_Excerpt_Processor {
 			. '- Never start with "I", "my", or "we" unless the post is a first-person story.' . "\n"
 			. '- Avoid alarmist, judgmental, or sales-like phrasing.' . "\n"
 			. '- No spoilers or revealing the main "aha" moment.' . "\n"
-			. '- No "in conclusion" fillers, rambling, cliffhangers.' . "\n";
+			. '- No "in conclusion" fillers, rambling, cliffhangers.' . "\n"
+			. '- Vary your opening words. Never start with "Discover", "Understanding", "Navigating", or "Explore" — these are overused. Instead, lead with a concrete noun, verb, or the reader\'s situation directly.' . "\n";
 	}
 
 	/**
@@ -330,6 +349,7 @@ class Versi_Excerpt_Processor {
 			. "- The output MUST be a single complete sentence.\n"
 			. "- It MUST end with a period (.), exclamation mark (!), or question mark (?).\n"
 			. "- It MUST be {$max_chars} characters or fewer. Count your characters before outputting.\n"
+			. "- NEVER exceed {$max_chars} characters. If the sentence is too long, shorten it.\n"
 			. "- If you cannot fit the idea in {$max_chars} characters, shorten the idea — do NOT exceed the limit.\n"
 			. "- Output ONLY the excerpt text. No labels, no commentary, no preamble.\n";
 
