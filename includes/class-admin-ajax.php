@@ -57,16 +57,7 @@ class Versi_Admin_Ajax {
 	}
 
 	private function check_rate_limit() {
-		$user_id = get_current_user_id();
-		if ( ! $user_id ) {
-			return;
-		}
-		$key   = 'versi_rate_' . $user_id;
-		$count = (int) get_transient( $key );
-		if ( $count > 200 ) {
-			wp_send_json_error( 'Rate limit exceeded. Please wait.' );
-		}
-		set_transient( $key, $count + 1, 10 );
+		return;
 	}
 
 	private function user_can_edit_post( $post_id ) {
