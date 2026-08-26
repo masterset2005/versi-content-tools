@@ -427,7 +427,7 @@
 
 		let i = 0;
 		let active = 0;
-		const maxConcurrent = Math.min(batchSize, ids.length);
+		const maxConcurrent = Math.min(Math.max(batchSize, 1), 3, ids.length);
 
 		function startNext() {
 			while (active < maxConcurrent && i < ids.length && running) {
@@ -469,8 +469,13 @@
 				if (stopRequested) return;
 
 				const d = response.data;
-				total = d.total;
-				const ids = d.ids || [];
+				if (typeof d !== 'object' || !d || !Array.isArray(d.ids)) {
+					running = false;
+					$status.text(versiProcessing.l10n.failedFetch);
+					return;
+				}
+				total = d.total || total;
+				const ids = d.ids;
 
 				if (ids.length === 0) {
 					running = false;
