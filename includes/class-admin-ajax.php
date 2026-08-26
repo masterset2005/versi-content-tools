@@ -63,7 +63,7 @@ class Versi_Admin_Ajax {
 		}
 		$key   = 'versi_rate_' . $user_id;
 		$count = (int) get_transient( $key );
-		if ( $count > 20 ) {
+		if ( $count > 200 ) {
 			wp_send_json_error( 'Rate limit exceeded. Please wait.' );
 		}
 		set_transient( $key, $count + 1, 10 );
