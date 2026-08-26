@@ -5,7 +5,7 @@ Tags: AI, alt text, excerpts, accessibility, WP AI Client
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.15.0
+Stable tag: 0.16.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,16 @@ targets all excerpts.
 4. Processing page showing live batch results with redo/undo
 
 == Changelog ==
+
+= 0.16.0 =
+* Fix: Rate limiter removed — concurrency cap in JS is sufficient protection; rate limit was blocking fast local-trim items
+* Fix: Live processing concurrency hard-capped at 3 regardless of Batch Size setting
+* Fix: Fetch size decoupled from Batch Size — always fetches 100 IDs to keep pipeline full
+* Fix: Excerpt prompt now appends hard constraints (complete sentence, terminal punctuation, character limit) after both default and custom prompts
+* Fix: processId guards against malformed AJAX responses — shows proper error instead of #undefined
+* Fix: get_ids response validated before use — preserves total from previous batch if current response is bad
+* Tweak: Cell values in live feed now wrap instead of truncating on hover
+* Tweak: set_time_limit(0) in excerpt and alt text AJAX handlers prevents PHP timeout when LLM retry fires
 
 = 0.15.0 =
 * New: Fix Long Excerpts mode — local sentence-aware trim for excerpts over max length, with per-item undo
@@ -254,6 +264,9 @@ targets all excerpts.
  * WP-CLI commands, auto-generate on upload/save, Media Library overlay
 
 == Upgrade Notice ==
+
+= 0.16.0 =
+Performance and reliability — rate limiter removed, concurrency capped at 3, excerpt prompts hardened with character constraints, and live feed expanded for easier skimming.
 
 = 0.15.0 =
 Excerpt quality improvements — long excerpts trimmed at sentence boundaries, incomplete sentences auto-fixed, configurable AI timeout, and review batch size fix.
