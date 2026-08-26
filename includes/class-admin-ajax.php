@@ -106,6 +106,9 @@ class Versi_Admin_Ajax {
 
 	public function ajax_alt_process_single() {
 		$this->ajax_check();
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 0 );
+		}
 
 		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$mode = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
@@ -293,6 +296,9 @@ class Versi_Admin_Ajax {
 
 	public function ajax_excerpt_process_single() {
 		$this->ajax_check();
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 0 );
+		}
 
 		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$mode = isset( $_POST['mode'] ) ? $this->validate_mode( sanitize_key( $_POST['mode'] ), array( 'missing', 'improve', 'short', 'long' ) ) : '';

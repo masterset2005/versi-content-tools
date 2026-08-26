@@ -324,9 +324,18 @@ class Versi_Excerpt_Processor {
 	 * @return array
 	 */
 	public function build_prompt( $existing = '', $target_length = 55 ) {
+		$max_chars = absint( get_option( 'versi_excerpt_max_length', 155 ) );
+
+		$constraints = "\n\n**CRITICAL — you must follow these rules:**\n"
+			. "- The output MUST be a single complete sentence.\n"
+			. "- It MUST end with a period (.), exclamation mark (!), or question mark (?).\n"
+			. "- It MUST be {$max_chars} characters or fewer. Count your characters before outputting.\n"
+			. "- If you cannot fit the idea in {$max_chars} characters, shorten the idea — do NOT exceed the limit.\n"
+			. "- Output ONLY the excerpt text. No labels, no commentary, no preamble.\n";
+
 		$custom = get_option( 'versi_excerpt_prompt', '' );
 		if ( ! empty( trim( $custom ) ) ) {
-			return array( '', $custom );
+			return array( '', $custom . $constraints );
 		}
 
 		$prompt = $this->default_prompt();
@@ -336,7 +345,7 @@ class Versi_Excerpt_Processor {
 				. 'Improve upon it — do not repeat it verbatim.' . "\n";
 		}
 
-		return array( '', $prompt );
+		return array( '', $prompt . $constraints );
 	}
 
 	/**
